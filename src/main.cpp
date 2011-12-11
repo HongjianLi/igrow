@@ -25,7 +25,9 @@
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
-#include <boost/process.hpp>
+#include <boost/process/child.hpp>
+#include <boost/process/context.hpp>
+#include <boost/process/operations.hpp>
 #include "seed.hpp"
 #include "file.hpp"
 #include "tee.hpp"
@@ -295,21 +297,21 @@ main(int argc, char* argv[])
 	for (size_t current_generation = 1; current_generation <= num_generations; ++current_generation)
 	{
 	    const path current_generation_folder_path(output_folder_path / path(lexical_cast<string > (current_generation)));
-	    ctx.work_dir = current_generation_folder_path.string();
+	    //ctx.work_dir = current_generation_folder_path.string();
 
 	    log << "Converting ligands to PDBQT format\n";
 	    for (size_t i = 1; i <= population_size; ++i)
 	    {
-		prepare_ligand4_args[2] = "ligand" + lexical_cast<string>(i) + ".pdb";
-		create_child(python_path.string(), prepare_ligand4_args, ctx).wait();
+			prepare_ligand4_args[2] = "ligand" + lexical_cast<string>(i) + ".pdb";
+			create_child(python_path.string(), prepare_ligand4_args, ctx).wait();
 	    }
 	    
 	    log << "Docking ligands\n";
 	    for (size_t i = 1; i <= population_size; ++i)
 	    {
-		vina_args[3] = "ligand" + lexical_cast<string>(i) + ".pdbqt";
-		vina_args[5] = "ligand" + lexical_cast<string>(i) + ".txt";
-		create_child(find_executable_in_path("vina"), vina_args, ctx).wait();
+			vina_args[3] = "ligand" + lexical_cast<string>(i) + ".pdbqt";
+			vina_args[5] = "ligand" + lexical_cast<string>(i) + ".txt";
+			create_child(find_executable_in_path("vina"), vina_args, ctx).wait();
 	    }
 	    
 //	    Ligand* child = interact.mate(m1, m2);
