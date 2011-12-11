@@ -1,113 +1,136 @@
-- About
-  SmartGrow is a drug design project which runs under linux.
+igrow
+=====
 
-- Setup script files
-
-  Download AutoDock Vina, http://vina.scripps.edu/
-  Download MGLTools, http://mgltools.scripps.edu/downloads
-  Install the mentioned programs
-
-autovina.dat
-
-  "Absolute path to Vina" --receptor "<RECEPTORFILENAME>" --ligand "<LIGANDFILENAME>" --center_x <CENTER_X> --center_y <CENTER_Y> --center_z <CENTER_Z> --size_x <SIZE_X> --size_y <SIZE_Y> --size_z <SIZE_Z> --out "<COMBINEDFILENAME>" --log "<LOGFILENAME>"
-
-  Change "Absolute path to Vina" to the system path to Autodock Vina
-
-prepare_ligand.dat
-
-  "Absolute Path/MGLTools 1.5.4/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.py" -l "<PDBFILENAME>" -o "<PDBQTFILENAME>"
-
-  Change the "Absolute path" section such that it points to "prepare_ligand4.py" of MGLTools
-
-prepare_receptor.dat
-
-  "Absolute Path/MGLTools 1.5.4/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_receptor4.py" -r "<FILENAME>" -o "<FILENAME>.pdbqt"
-
-  Change the "Absolute path" section such that it points to "prepare_receptor4.py" of MGLTools
-
-- Setting up SmartGrow
-
-  Extract the packed resources files for scripts and fragment libraries
-
-  Under Linux
-
-  Unpack the source code, go to the root director of the source code and type "make all" in the command console
+igrow is a multithreaded structure-based [drug design] tool for computational drug discovery. It is hosted by GitHub at https://github.com/HongjianLi/igrow under [Apache License 2.0].
 
 
-- Executing SmartGrow
-  To execute SmartGrow, assuming the executable is called SmartGrow
-  Type the following the in command console
+Features
+--------
 
-    ./SmartGrow -run_mode Execute -parm_file default.prm
+* igrow is inspired by [AutoGrow]. It can use AutoDock Vina or idock as backend docking engine.
 
-  It specified the running mode to be "Execute" and utilised "default.prm" as the parameters file.
 
-  To rerun the program, remove all folders and files under the "working root directory".
+Supported operating systems and compilers
+-----------------------------------------
 
-- Parameter file
-  Example parameter file
+* Ubuntu 11.10 x86_64 and GCC 4.6.1
+* Ubuntu 11.10 x86_64 and CLANG 2.9
+* Ubuntu 11.10 x86_64 and Intel C++ Compiler 12.0.5.220
+* Arch Linux 3.1.4 x86_64 and GCC 4.6.2
+* Arch Linux 3.1.4 x86_64 and CLANG 3.0
+* Oracle Solaris 11 11/11 and GCC 4.5.2
+* Windows 7 SP1 x64 and Windows SDK 7.1
+* Windows 7 SP1 x64 and Visual Studio 2010
+* Windows 7 SP1 x64 and Intel C++ Compiler XE 12.1.1.258
 
-  //DIRECTORIES
 
-  // The generated drug candidates are placed under this path
-  working root directory: C:/Documents and Settings/Administrator/My Documents/Visual Studio 2010/Projects/SmartGrow/Debug
+Unsupported operating systems and compilers
+-------------------------------------------
 
-  // The fragment library to added to the initial ligand
-  fragments directory: C:/Documents and Settings/Administrator/My Documents/Visual Studio   2010/Projects/SmartGrow/fragment
+* Windows 8 Developer Preview and Visual Studio 11 Developer Preview
+* Solaris 11 Express 2010.11 x86_64 and GCC 3.4.3
+* Mac OS X Lion 10.7.0 and Xcode 4.2
+* Mac OS X Lion 10.7.0 and GCC 4.6.1
+* Mac OS X Lion 10.7.0 and CLANG 3.0
 
-  // Necessary scripts to call Autodock Vina, conversion and other tools
-  scripts directory: C:/Documents and Settings/Administrator/My Documents/Visual Studio   2010/Projects/SmartGrow/scripts
 
-  //INPUT FILES
+Compilation
+-----------
 
-  // The path of the initial ligand
-  initial ligand: C:/Documents and Settings/Administrator/My Documents/Visual Studio     2010/Projects/SmartGrow/HIV protease/3KFNlig.pdbqt
+igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The Boost libraries required by idock are `System`, `Thread`, `Filesystem`, and `Program Options`.
 
-  // The path of target protein to dock
-  receptor: C:/Documents and Settings/Administrator/My Documents/Visual Studio 2010/Projects/SmartGrow/HIV protease/3KFNrec.pdbqt
+### Compilation on Linux
 
-  //AUTODOCK PARAMETERS
+The Makefile uses GCC as the default compiler. To compile, simply run
 
-  // initial orientation of docking parameters
-  autodock grid center: 18.490 3.665 1.864
-  autodock box size: 12 14 12
+    make -j
 
-  //EVOLUTION PARAMETERS
+CLANG is also supported.
 
-  // The number of elitist to carryover to the next generation
-  number of carryovers: 12
+    make -j TOOLSET=clang
 
-  // The number of individuals produced by crossover
-  number of children:  8
+Intel C++ Compiler is also supported.
 
-  // The number of individuals produced by mutation
-  number of mutants: 40
+    make -j TOOLSET=intel-linux
 
-  // The maximum number of atoms an individual can substain
-  max number atoms: 70
+One may modify the Makefile to use a different compiler or different compilation options.
 
-  // The set of indices of hydrogen that will not be used to add a fragment, please keep default = -1
-  indices of hydrogens that are not linkers: -1
+The generated objects will be placed in the `obj` folder, and the generated executable will be placed in the `bin` folder.
 
-  // Total number of generation to execute, usually a multiple of "dock frequency"
-  number of generations: 24
+### Compilation on Windows
 
-  // The period on how frequent the docking program is executed, 3 means docking program is called every 3 generations
-  dock frequency: 3
+Visual Studio 2010 solution and project files are provided in the `msvc` folder. The project file uses Windows 7.1 SDK as platform toolset by default. One may revert it to vc100. To compile, simply run
 
-  //OPTIONAL PARAMETERS
+    msbuild /t:Build /p:Configuration=Release /m
 
-  // Control whether the evaluation to consider the molecular weight of the individuals, default = false
-  score ligand size: false
+Or one may open `igrow.sln` in Visual Studio 2010 and do a full rebuild.
 
-  // Add hydrogens to the initial ligand when applicable, default = true
-  add hydrogen: true
+The generated objects will be placed in the `obj` folder, and the generated executable will be placed in the `bin` folder.
 
-  // Advanced joining method can be used during mutation, default = true
-  advanced synthesis mode: true
 
-  // Incorporate drug-like properties in the constraint, default = true
-  lipinski rule: true
+Usage
+-----
 
-  // The threshold parameter to decide how similar two individuals are, default = 0.01
-  molecule similarity: 0.01
+First add igrow to your PATH environment variable.
+
+To display a full list of available options, simply run the program without arguments
+
+    igrow
+
+The `examples` folder contains several use cases. One can supply the options from command line arguments
+
+    igrow --fragment_folder ~/igrow/fragments --initial_ligand 
+~/igrow/examples/2ZD1/ZINC09.pdb --python --prepare_ligand4 ~/MGLTools/ 
+--vina_cfg ~/igrow/examples/2ZD1/vina.cfg 
+
+Or one can instruct idock to load the options from a configuration file
+
+    cd examples/2ZD1
+    igrow --config igrow.cfg
+
+
+Documentation Creation
+----------------------
+
+Documentations in both HTML and LaTeX formats can be esaily created by running [doxygen]
+
+    doxygen doxygen
+
+The created documents will be placed in `doc` folder. To compile LaTeX files into PDF, one must have `pdflatex` installed.
+
+    cd doc/latex
+    make
+
+The generated PDF will be `refman.pdf`.
+
+
+Change Log
+----------
+
+### 1.0 (2011-12-20)
+
+* First release.
+
+
+Contact Author
+--------------
+
+Jacky Lee (JackyLeeHongJian@Gmail.com)
+
+
+Logo
+----
+
+![idock logo](https://github.com/HongjianLi/idock/raw/master/logo.png)
+
+Green grape is chosen as the logo for idock because it is the author's favorite fruit. The logo image is collected from [Open Clip Art].
+
+
+[drug design]: http://en.wikipedia.org/wiki/Drug_design
+[AutoGrow]: http://autogrow.ucsd.edu
+[Apache License 2.0]: http://www.apache.org/licenses/LICENSE-2.0.html
+[C++11]: http://en.wikipedia.org/wiki/C++11
+[Boost C++ Libraries]: http://www.boost.org
+[doxygen]: http://www.doxygen.org
+[Open Clip Art]: http://www.openclipart.org
+
