@@ -7,7 +7,7 @@ igrow is a multithreaded structure-based [drug design] tool for computational dr
 Features
 --------
 
-* igrow is inspired by [AutoGrow]. It can use AutoDock Vina or idock as backend docking engine.
+* igrow is inspired by [AutoGrow]. It can use [AutoDock Vina] or [idock] as backend docking engine.
 
 
 Supported operating systems and compilers
@@ -79,9 +79,7 @@ To display a full list of available options, simply run the program without argu
 
 The `examples` folder contains several use cases. One can supply the options from command line arguments
 
-    igrow --fragment_folder ~/igrow/fragments --initial_ligand 
-~/igrow/examples/2ZD1/ZINC09.pdb --python --prepare_ligand4 ~/MGLTools/ 
---vina_cfg ~/igrow/examples/2ZD1/vina.cfg 
+    igrow --fragment_folder ~/igrow/fragments --initial_ligand ~/igrow/examples/2ZD1/ZINC09.pdb --python --prepare_ligand4 ~/MGLTools/ --vina_cfg ~/igrow/examples/2ZD1/vina.cfg 
 
 Or one can instruct idock to load the options from a configuration file
 
@@ -121,13 +119,15 @@ Jacky Lee (JackyLeeHongJian@Gmail.com)
 Logo
 ----
 
-![idock logo](https://github.com/HongjianLi/idock/raw/master/logo.png)
+![igrow logo](https://github.com/HongjianLi/igrow/raw/master/logo.png)
 
-Green grape is chosen as the logo for idock because it is the author's favorite fruit. The logo image is collected from [Open Clip Art].
+Red grape is chosen as the logo for igrow because it is one of the author's favorite fruit. The logo image is collected from [Open Clip Art].
 
 
 [drug design]: http://en.wikipedia.org/wiki/Drug_design
 [AutoGrow]: http://autogrow.ucsd.edu
+[AutoDock Vina]: http://vina.scripps.edu
+[idock]: https://github.com/HongjianLi/idock
 [Apache License 2.0]: http://www.apache.org/licenses/LICENSE-2.0.html
 [C++11]: http://en.wikipedia.org/wiki/C++11
 [Boost C++ Libraries]: http://www.boost.org
