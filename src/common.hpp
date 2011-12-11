@@ -16,8 +16,8 @@
 
 */
 
-#ifndef IGROW_COMMAND_HPP
-#define IGROW_COMMAND_HPP
+#ifndef IGROW_COMMON_HPP
+#define IGROW_COMMON_HPP
 
 #include <string>
 #include <iostream>

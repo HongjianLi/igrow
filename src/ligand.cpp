@@ -23,6 +23,8 @@
 #include <sstream>
 #include <fstream>
 
+#define M_PI (3.14159265358979323846)
+
 using namespace std;
 
 // default to create bond when not found
