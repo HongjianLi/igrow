@@ -79,7 +79,7 @@ To display a full list of available options, simply run the program without argu
 
 The `examples` folder contains several use cases. One can supply the options from command line arguments
 
-    igrow --fragment_folder ~/igrow/fragments --initial_ligand ~/igrow/examples/2ZD1/ZINC09.pdb --python --prepare_ligand4 ~/MGLTools/ --vina_cfg ~/igrow/examples/2ZD1/vina.cfg 
+    igrow --fragment_folder ~/igrow/fragments --initial_ligand ~/igrow/examples/2ZD1/ZINC01019824.pdb --python ~/MGLTools/bin/python2.5 --prepare_ligand4 ~/MGLTools/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.pyo --vina_cfg ~/igrow/examples/2ZD1/vina.cfg
 
 Or one can instruct idock to load the options from a configuration file
 
