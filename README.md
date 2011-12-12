@@ -37,7 +37,7 @@ Unsupported operating systems and compilers
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The Boost libraries required by idock are `System`, `Thread`, `Filesystem`, and `Program Options`.
+igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The Boost libraries required by igrow are `System`, `Thread`, `Filesystem`, and `Program Options`.
 
 ### Compilation on Linux
 
@@ -81,7 +81,7 @@ The `examples` folder contains several use cases. One can supply the options fro
 
     igrow --fragment_folder ~/igrow/fragments --initial_ligand ~/igrow/examples/2ZD1/ZINC01019824.pdb --python ~/MGLTools/bin/python2.5 --prepare_ligand4 ~/MGLTools/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.pyo --vina_cfg ~/igrow/examples/2ZD1/vina.cfg
 
-Or one can instruct idock to load the options from a configuration file
+Or one can instruct igrow to load the options from a configuration file
 
     cd examples/2ZD1
     igrow --config igrow.cfg
