@@ -25,17 +25,4 @@
 #include "vec.hpp"
 #include "bondlibrary.hpp"
 
-#ifdef _WIN32
-#include <process.h>
-#include <windows.h>
-#include <direct.h>
-#else
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <errno.h>
-#endif
-
 #endif
