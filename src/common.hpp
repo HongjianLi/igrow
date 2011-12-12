@@ -25,4 +25,9 @@
 #include "vec.hpp"
 #include "bondlibrary.hpp"
 
+namespace igrow
+{
+
+}
+
 #endif

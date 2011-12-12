@@ -14,42 +14,49 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-*/
+ */
 
 #include "interact.hpp"
 #include <sstream>
 
 using namespace std;
 
-// overloaded method to accept file name
-Ligand* Interaction::mate(string Filename1, string Filename2) {
+namespace igrow
+{
+
+    // overloaded method to accept file name
+
+    Ligand* Interaction::mate(string Filename1, string Filename2)
+    {
 	Ligand* male = new Ligand();
 	male->LoadPDB(Filename1);
 	Ligand* female = new Ligand();
 	female->LoadPDB(Filename2);
 	return mate(male, female);
-}
+    }
 
-Ligand* Interaction::mate(Ligand *male, Ligand *female) {
+    Ligand* Interaction::mate(Ligand *male, Ligand *female)
+    {
 	// since index starts with 1, just add to it
 	int updateIndex, cascadeIndex = male->MaxIndex();
 	set<int> tempIndice;
 	ostringstream output;
 	// append molecule to another by cascading the index
-	for (map<int,atom>::iterator it = female->atoms.begin(); it != female->atoms.end(); ++it) {
-		atom toAdd = atom(it->second);
-		updateIndex = atoi(toAdd.PDBIndex.c_str());
-		updateIndex += cascadeIndex;
-		output.str(string());
-		output << updateIndex;
-		toAdd.PDBIndex = output.str();
-		tempIndice.clear();
-		for (set<int>::iterator iter = toAdd.IndexArray.begin(); iter != toAdd.IndexArray.end(); ++iter)
-			tempIndice.insert(*iter + cascadeIndex);
-		toAdd.IndexArray.clear();
-		for (set<int>::iterator iter = tempIndice.begin(); iter != tempIndice.end(); ++iter)
-			toAdd.IndexArray.insert(*iter);
-		male->atoms.insert(pair<int,atom>(updateIndex,toAdd));
+	for (map<int, atom>::iterator it = female->atoms.begin(); it != female->atoms.end(); ++it)
+	{
+	    atom toAdd = atom(it->second);
+	    updateIndex = atoi(toAdd.PDBIndex.c_str());
+	    updateIndex += cascadeIndex;
+	    output.str(string());
+	    output << updateIndex;
+	    toAdd.PDBIndex = output.str();
+	    tempIndice.clear();
+	    for (set<int>::iterator iter = toAdd.IndexArray.begin(); iter != toAdd.IndexArray.end(); ++iter)
+		tempIndice.insert(*iter + cascadeIndex);
+	    toAdd.IndexArray.clear();
+	    for (set<int>::iterator iter = tempIndice.begin(); iter != tempIndice.end(); ++iter)
+		toAdd.IndexArray.insert(*iter);
+	    male->atoms.insert(pair<int, atom > (updateIndex, toAdd));
 	}
 
 	// initialise sets
@@ -59,72 +66,86 @@ Ligand* Interaction::mate(Ligand *male, Ligand *female) {
 	scanned.clear();
 
 	// obtain overlapping
-	map<int,atom>::iterator it1, it2;
+	map<int, atom>::iterator it1, it2;
 	atom *atom1, *atom2;
 	// prevent comparison of atom in same molecule
 	it1 = male->atoms.begin();
 	// there are cascadeIndex number of atoms in first molecule
-	while (it1 != male->atoms.end()) {
-		// move iterator to appended molecule
-		it2 = it1;
-		++it2;
-		// scan till the end, only cascadeIndex to the end number of atoms in second molecule
-		while (it2 != male->atoms.end()) {
-			// skip index that can be found in the first molecule
-			if (it2->first <= cascadeIndex) {
-				++it2;
-				continue;
-			}
-			atom1 = &it1->second;
-			atom2 = &it2->second;
-			// there could only be 1 equivalent atom
-			if (atom1->name == atom2->name && atom1->coordinates == atom2->coordinates) {
-				for (set<int>::iterator it = atom2->IndexArray.begin(); it != atom2->IndexArray.end(); ++it) {
-					atom1->IndexArray.insert(*it);
-					male->atoms[*it].IndexArray.insert(it1->first);
-				}
-				for (set<int>::iterator it = atom1->IndexArray.begin(); it != atom1->IndexArray.end(); ++it) {
-					atom2->IndexArray.insert(*it);
-					male->atoms[*it].IndexArray.insert(it2->first);
-				}
-				// register equivalent pair
-				overlap.insert(pair<int,int>(it1->first,it2->first));
-				overlap.insert(pair<int,int>(it2->first,it1->first));
-				// remove larger indexed one
-				toRemove.insert(it2->first);
-				break;
-			}
-			++it2;
+	while (it1 != male->atoms.end())
+	{
+	    // move iterator to appended molecule
+	    it2 = it1;
+	    ++it2;
+	    // scan till the end, only cascadeIndex to the end number of atoms in second molecule
+	    while (it2 != male->atoms.end())
+	    {
+		// skip index that can be found in the first molecule
+		if (it2->first <= cascadeIndex)
+		{
+		    ++it2;
+		    continue;
 		}
-		++it1;
+		atom1 = &it1->second;
+		atom2 = &it2->second;
+		// there could only be 1 equivalent atom
+		if (atom1->name == atom2->name && atom1->coordinates == atom2->coordinates)
+		{
+		    for (set<int>::iterator it = atom2->IndexArray.begin(); it != atom2->IndexArray.end(); ++it)
+		    {
+			atom1->IndexArray.insert(*it);
+			male->atoms[*it].IndexArray.insert(it1->first);
+		    }
+		    for (set<int>::iterator it = atom1->IndexArray.begin(); it != atom1->IndexArray.end(); ++it)
+		    {
+			atom2->IndexArray.insert(*it);
+			male->atoms[*it].IndexArray.insert(it2->first);
+		    }
+		    // register equivalent pair
+		    overlap.insert(pair<int, int>(it1->first, it2->first));
+		    overlap.insert(pair<int, int>(it2->first, it1->first));
+		    // remove larger indexed one
+		    toRemove.insert(it2->first);
+		    break;
+		}
+		++it2;
+	    }
+	    ++it1;
 	}
 
 	// select some atoms to keep
 	scan_recursive(male, male->MinIndex());
 
 	// removal step
-	map<int,atom>::reverse_iterator r_it = male->atoms.rbegin();
-	while (r_it != male->atoms.rend()) {
-		// atom not scanned
-		if (scanned.find(r_it->first) == scanned.end()) {
-			r_it = male->DeleteAtom(r_it->first);
+	map<int, atom>::reverse_iterator r_it = male->atoms.rbegin();
+	while (r_it != male->atoms.rend())
+	{
+	    // atom not scanned
+	    if (scanned.find(r_it->first) == scanned.end())
+	    {
+		r_it = male->DeleteAtom(r_it->first);
 		// repeated atom
-		} else if (toRemove.find(r_it->first) != toRemove.end()) {
-			r_it = male->DeleteAtom(r_it->first);
-		} else {
-			++r_it;
-		}
+	    }
+	    else if (toRemove.find(r_it->first) != toRemove.end())
+	    {
+		r_it = male->DeleteAtom(r_it->first);
+	    }
+	    else
+	    {
+		++r_it;
+	    }
 	}
 	delete female;
 	return male;
-}
+    }
 
-// traverse the molecule graph
-void Interaction::scan_recursive(Ligand* ref, int index) {
+    // traverse the molecule graph
+
+    void Interaction::scan_recursive(Ligand* ref, int index)
+    {
 	scanned.insert(index);
 	// make its counterpart scanned, prevent double counting
 	if (overlap.find(index) != overlap.end())
-		scanned.insert(overlap[index]);
+	    scanned.insert(overlap[index]);
 
 	set<int> IDs;
 	set<int>::iterator it;
@@ -133,74 +154,80 @@ void Interaction::scan_recursive(Ligand* ref, int index) {
 	int outgoingEdge(0);
 
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
-		// find not scanned neighbour
-		if (scanned.find(*it) == scanned.end())
-			if (overlap.find(index) != overlap.end() && overlap.find(*it) == overlap.end())
-				++outgoingEdge;
+	    // find not scanned neighbour
+	    if (scanned.find(*it) == scanned.end())
+		if (overlap.find(index) != overlap.end() && overlap.find(*it) == overlap.end())
+		    ++outgoingEdge;
 
-	if (outgoingEdge == 0) {
-		for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
-			if (scanned.find(*it) == scanned.end()) {
-				connect_atom = (*(ref->atoms.find(*it))).second;
-				if (connect_atom.ID == cur_atom.ID)
-					scan_recursive(ref, *it);
-			}
-		return;
+	if (outgoingEdge == 0)
+	{
+	    for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
+		if (scanned.find(*it) == scanned.end())
+		{
+		    connect_atom = (*(ref->atoms.find(*it))).second;
+		    if (connect_atom.ID == cur_atom.ID)
+			scan_recursive(ref, *it);
+		}
+	    return;
 	}
 
 	// find possible IDs from connected atoms
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
-		if (scanned.find(*it) == scanned.end())
-			IDs.insert(ref->atoms[*it].ID);
+	    if (scanned.find(*it) == scanned.end())
+		IDs.insert(ref->atoms[*it].ID);
 
 	if (IDs.empty()) return;
 
 	it = IDs.begin();
-//	advance(it, generator_int()%IDs.size());
-	advance(it, 0 % IDs.size());	
+	//	advance(it, generator_int()%IDs.size());
+	advance(it, 0 % IDs.size());
 	int toKeep = *it;
 
 	// try all neighbours
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
-		if (scanned.find(*it) == scanned.end()) {
-			connect_atom = (*(ref->atoms.find(*it))).second;
-			// discard fragment of different ID
-			if ((*(ref->atoms.find(*it))).second.ID == toKeep)
-				scan_recursive(ref, *it);
-			else if (connect_atom.ID == cur_atom.ID)
-				// maintain core scaffold
-				scan_recursive(ref, *it);
-		}
-}
+	    if (scanned.find(*it) == scanned.end())
+	    {
+		connect_atom = (*(ref->atoms.find(*it))).second;
+		// discard fragment of different ID
+		if ((*(ref->atoms.find(*it))).second.ID == toKeep)
+		    scan_recursive(ref, *it);
+		else if (connect_atom.ID == cur_atom.ID)
+		    // maintain core scaffold
+		    scan_recursive(ref, *it);
+	    }
+    }
 
-Ligand* Interaction::merge(string Filename1, string Filename2) {
+    Ligand* Interaction::merge(string Filename1, string Filename2)
+    {
 	Ligand* male = new Ligand();
 	male->LoadPDB(Filename1);
 	Ligand* female = new Ligand();
 	female->LoadPDB(Filename2);
 	return merge(male, female);
-}
+    }
 
-Ligand* Interaction::merge(Ligand *male, Ligand *female) {
+    Ligand* Interaction::merge(Ligand *male, Ligand *female)
+    {
 	// since index starts with 1, just add to it
 	int updateIndex, cascadeIndex = male->MaxIndex();
 	set<int> tempIndice;
 	ostringstream output;
 	// append molecule to another by cascading the index
-	for (map<int,atom>::iterator it = female->atoms.begin(); it != female->atoms.end(); ++it) {
-		atom toAdd = atom(it->second);
-		updateIndex = atoi(toAdd.PDBIndex.c_str());
-		updateIndex += cascadeIndex;
-		output.str(string());
-		output << updateIndex;
-		toAdd.PDBIndex = output.str();
-		tempIndice.clear();
-		for (set<int>::iterator iter = toAdd.IndexArray.begin(); iter != toAdd.IndexArray.end(); ++iter)
-			tempIndice.insert(*iter + cascadeIndex);
-		toAdd.IndexArray.clear();
-		for (set<int>::iterator iter = tempIndice.begin(); iter != tempIndice.end(); ++iter)
-			toAdd.IndexArray.insert(*iter);
-		male->atoms.insert(pair<int,atom>((it->first)+cascadeIndex,toAdd));
+	for (map<int, atom>::iterator it = female->atoms.begin(); it != female->atoms.end(); ++it)
+	{
+	    atom toAdd = atom(it->second);
+	    updateIndex = atoi(toAdd.PDBIndex.c_str());
+	    updateIndex += cascadeIndex;
+	    output.str(string());
+	    output << updateIndex;
+	    toAdd.PDBIndex = output.str();
+	    tempIndice.clear();
+	    for (set<int>::iterator iter = toAdd.IndexArray.begin(); iter != toAdd.IndexArray.end(); ++iter)
+		tempIndice.insert(*iter + cascadeIndex);
+	    toAdd.IndexArray.clear();
+	    for (set<int>::iterator iter = tempIndice.begin(); iter != tempIndice.end(); ++iter)
+		toAdd.IndexArray.insert(*iter);
+	    male->atoms.insert(pair<int, atom > ((it->first) + cascadeIndex, toAdd));
 	}
 
 	// initialise sets
@@ -210,61 +237,70 @@ Ligand* Interaction::merge(Ligand *male, Ligand *female) {
 	scanned.clear();
 
 	// obtain overlapping
-	map<int,atom>::iterator it1, it2;
+	map<int, atom>::iterator it1, it2;
 	atom *atom1, *atom2;
 	// prevent comparison of atom in same molecule
 	it1 = male->atoms.begin();
 	// there are cascadeIndex number of atoms in first molecule
-	while (it1 != male->atoms.end()) {
-		// move iterator to appended molecule
-		it2 = it1;
-		++it2;
-		// scan till the end, only cascadeIndex to the end number of atoms in second molecule
-		while (it2 != male->atoms.end()) {
-			// skip index that can be found in the first molecule
-			if (it2->first <= cascadeIndex) {
-				++it2;
-				continue;
-			}
-			atom1 = &it1->second;
-			atom2 = &it2->second;
-			// there could only be 1 equivalent atom
-			if (atom1->name == atom2->name && atom1->coordinates == atom2->coordinates) {
-				for (set<int>::iterator it = atom2->IndexArray.begin(); it != atom2->IndexArray.end(); ++it) {
-					atom1->IndexArray.insert(*it);
-					male->atoms[*it].IndexArray.insert(it1->first);
-				}
-				for (set<int>::iterator it = atom1->IndexArray.begin(); it != atom1->IndexArray.end(); ++it) {
-					atom2->IndexArray.insert(*it);
-					male->atoms[*it].IndexArray.insert(it2->first);
-				}
-				// register equivalent pair
-				overlap.insert(pair<int,int>(it1->first,it2->first));
-				overlap.insert(pair<int,int>(it2->first,it1->first));
-				// remove larger indexed one
-				toRemove.insert(it2->first);
-				break;
-			}
-			++it2;
+	while (it1 != male->atoms.end())
+	{
+	    // move iterator to appended molecule
+	    it2 = it1;
+	    ++it2;
+	    // scan till the end, only cascadeIndex to the end number of atoms in second molecule
+	    while (it2 != male->atoms.end())
+	    {
+		// skip index that can be found in the first molecule
+		if (it2->first <= cascadeIndex)
+		{
+		    ++it2;
+		    continue;
 		}
-		++it1;
+		atom1 = &it1->second;
+		atom2 = &it2->second;
+		// there could only be 1 equivalent atom
+		if (atom1->name == atom2->name && atom1->coordinates == atom2->coordinates)
+		{
+		    for (set<int>::iterator it = atom2->IndexArray.begin(); it != atom2->IndexArray.end(); ++it)
+		    {
+			atom1->IndexArray.insert(*it);
+			male->atoms[*it].IndexArray.insert(it1->first);
+		    }
+		    for (set<int>::iterator it = atom1->IndexArray.begin(); it != atom1->IndexArray.end(); ++it)
+		    {
+			atom2->IndexArray.insert(*it);
+			male->atoms[*it].IndexArray.insert(it2->first);
+		    }
+		    // register equivalent pair
+		    overlap.insert(pair<int, int>(it1->first, it2->first));
+		    overlap.insert(pair<int, int>(it2->first, it1->first));
+		    // remove larger indexed one
+		    toRemove.insert(it2->first);
+		    break;
+		}
+		++it2;
+	    }
+	    ++it1;
 	}
 
 	// select some atoms to keep
 	remove_invalid(male, male->MinIndex());
 
 	// removal phase
-	map<int,atom>::reverse_iterator r_it = male->atoms.rbegin();
-	while (r_it != male->atoms.rend()) {
-		if (scanned.find(r_it->first) == scanned.end()) {
-			r_it = male->DeleteAtom(r_it->first);
-			continue;
-		}
-		if (toRemove.find(r_it->first) != toRemove.end()) {
-			male->DeleteAtom(r_it->first);
-			continue;
-		}
-		++r_it;
+	map<int, atom>::reverse_iterator r_it = male->atoms.rbegin();
+	while (r_it != male->atoms.rend())
+	{
+	    if (scanned.find(r_it->first) == scanned.end())
+	    {
+		r_it = male->DeleteAtom(r_it->first);
+		continue;
+	    }
+	    if (toRemove.find(r_it->first) != toRemove.end())
+	    {
+		male->DeleteAtom(r_it->first);
+		continue;
+	    }
+	    ++r_it;
 	}
 
 #ifdef OBJECT_SPACE
@@ -275,49 +311,54 @@ Ligand* Interaction::merge(Ligand *male, Ligand *female) {
 #endif
 	delete female;
 	return male;
-}
+    }
 
-void Interaction::remove_invalid(Ligand *ref, int index) {
+    void Interaction::remove_invalid(Ligand *ref, int index)
+    {
 	scanned.insert(index);
 	// also get its counterpart
 	if (overlap.find(index) != overlap.end())
-		scanned.insert(overlap[index]);
+	    scanned.insert(overlap[index]);
 
 	set<int> IDs;
 	set<int>::iterator it;
 	atom cur_atom = ref->atoms[index];
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
-		if (scanned.find(*it) == scanned.end())
-			IDs.insert(ref->atoms[*it].ID);
+	    if (scanned.find(*it) == scanned.end())
+		IDs.insert(ref->atoms[*it].ID);
 
 	if (IDs.empty()) return;
 
 	int toKeep(cur_atom.ID), outgoingEdge(0);
 
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
-		// find not scanned neighbour
-		if (scanned.find(*it) == scanned.end())
-			if (overlap.find(index) != overlap.end() && overlap.find(*it) == overlap.end())
-				++outgoingEdge;
+	    // find not scanned neighbour
+	    if (scanned.find(*it) == scanned.end())
+		if (overlap.find(index) != overlap.end() && overlap.find(*it) == overlap.end())
+		    ++outgoingEdge;
 
 	// possible collision at the same bond, choose one to stay
-	if (IDs.size() > 1 && outgoingEdge > 1) {
-		it = IDs.begin();
-//		advance(it, generator_int()%IDs.size());
-		advance(it, 0%IDs.size());
-		toKeep = *it;
+	if (IDs.size() > 1 && outgoingEdge > 1)
+	{
+	    it = IDs.begin();
+	    //		advance(it, generator_int()%IDs.size());
+	    advance(it, 0 % IDs.size());
+	    toKeep = *it;
 	}
 
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
-		if (scanned.find(*it) == scanned.end()) {
-			// go to the one which won
-			if ((*(ref->atoms.find(*it))).second.ID == toKeep)
-				remove_invalid(ref, *it);
-			// if there is only one fragment, always adopt it
-			if (outgoingEdge == 1)
-				remove_invalid(ref, *it);
-			// maintain core scaffold
-			if ((*(ref->atoms.find(*it))).second.ID == cur_atom.ID)
-				remove_invalid(ref, *it);
-		}
+	    if (scanned.find(*it) == scanned.end())
+	    {
+		// go to the one which won
+		if ((*(ref->atoms.find(*it))).second.ID == toKeep)
+		    remove_invalid(ref, *it);
+		// if there is only one fragment, always adopt it
+		if (outgoingEdge == 1)
+		    remove_invalid(ref, *it);
+		// maintain core scaffold
+		if ((*(ref->atoms.find(*it))).second.ID == cur_atom.ID)
+		    remove_invalid(ref, *it);
+	    }
+    }
+
 }
