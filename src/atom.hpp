@@ -19,9 +19,9 @@
 #ifndef IGROW_ATOM_HPP
 #define IGROW_ATOM_HPP
 
-#include "vec.hpp"
-#include "common.hpp"
 #include <set>
+#include "common.hpp"
+#include "vec.hpp"
 
 namespace igrow
 {

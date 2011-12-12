@@ -28,9 +28,109 @@ using namespace std;
 
 namespace igrow
 {
-
     const fl ligand::pi = 3.14159265358979323846;
 
+    void ligand::load(string Filename)
+    {
+	ifstream in_file;
+	in_file.open(Filename.c_str());
+
+	bool connectData = false;
+	char buffer[512];
+	string oneLine;
+	int index, test;
+	char *context;
+	// read whole file
+	while (!in_file.eof())
+	{
+	    // char based line
+	    in_file.getline(buffer, 512);
+	    // string based line
+	    oneLine = string(buffer);
+	    if (oneLine.length() > 7)
+	    {
+
+		if (oneLine.substr(0, 5) == string("ATOM ") || oneLine.substr(0, 7) == string("HETATM "))
+		{
+		    atom toAdd;
+		    // invoke method to read the line
+		    toAdd.ReadPDBLine(oneLine);
+		    toAdd.ID = ID;
+		    // read index from file
+		    index = atoi(oneLine.substr(6, 6).c_str());
+		    atoms.insert(pair<int, atom > (index, toAdd));
+		}
+		else if (oneLine.substr(0, 7) == string("CONECT "))
+		{
+		    // there is connection data in this PDB file
+		    connectData = true;
+		    memset(buffer, ' ', 6);
+		    index = strtol(buffer, &context, 10);
+		    test = strtol(context, &context, 10);
+		    while (test != 0)
+		    {
+			atoms[index].IndexArray.insert(test);
+			test = strtol(context, &context, 10);
+		    }
+		}
+	    }
+	}
+	in_file.close();
+
+	// when there is no connection information, generate bonds
+	if (!connectData)
+	{
+	    CreateBonds();
+	}
+    }
+    
+
+    void ligand::save(string Filename)
+    {
+	ofstream out_file;
+	out_file.open(Filename.c_str(), ios::out);
+
+	string connectData;
+
+	// save coordinates
+	for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
+	    out_file << it->second.WritePDBLine(it->first) << endl;
+
+	// connect data
+	ostringstream output;
+	for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
+	{
+	    // append index
+	    output.str(string());
+	    output.fill(' ');
+	    output.width(5);
+	    output << right << it->first;
+	    connectData = "CONECT" + output.str();
+	    // append all connection data
+	    for (set<int>::iterator iter = it->second.IndexArray.begin(); iter != it->second.IndexArray.end(); ++iter)
+	    {
+		output.str(string());
+		output.fill(' ');
+		output.width(5);
+		output << *iter;
+		connectData += output.str();
+	    }
+	    // fill the line to 82 characters
+	    if (connectData.length() < 82)
+	    {
+		output.str(string());
+		output.fill(' ');
+		output.width(82);
+		output << left << connectData;
+	    }
+	    // write to file where there is something
+	    if (!(it->second.IndexArray.empty()))
+		out_file << output.str();
+	    out_file << endl;
+	}
+	out_file.close();
+    }
+    
     ligand* ligand::split(const ligand& ref)
     {
 	ligand ref_copy(ref);
@@ -125,27 +225,16 @@ namespace igrow
 	    // update connection
 	    atoms[indexToAdd].IndexArray.insert(*set_it);
 	}
-
-#ifdef OBJECT_SPACE
-	RotateLine(mole_axis, mole_angle);
-	//Translate(translation);
-	//child->translation = Vec3d(ref.translation);
-	child->mole_axis = Vec3d(ref.mole_axis);
-	child->mole_angle = ref.mole_angle;
-	child->RotateLine(child->mole_axis, child->mole_angle);
-	//child->Translate(child->translation);
-#endif
-
 	return child;
     }
 
     // add a fragment to the position of a randomly selected hydrogen
 
-    int ligand::mutate(string FilenameOfFragment)
+    void ligand::mutate(string FilenameOfFragment)
     {
 	// local molecule copy
 	ligand fragment;
-	fragment.LoadPDB(FilenameOfFragment);
+	fragment.load(FilenameOfFragment);
 
 	// select hydrogen
 	int count(0), connectIndex, fragHydrogen(-1), fragIndex, linkerHydrogen(-1);
@@ -298,8 +387,6 @@ namespace igrow
 	// at last connect the fragment and molecule at the selected position
 	atoms[connectIndex].IndexArray.insert(fragIndex + cascadeIndex);
 	atoms[fragIndex + cascadeIndex].IndexArray.insert(connectIndex);
-
-	return 0;
     }
 
     int ligand::IndexOfRandomHydrogen()
@@ -399,685 +486,6 @@ namespace igrow
 	// determine centre of gravity
 	Vec3d centre = CentreOfGravity();
 	Rotate(centre, EulerAngles);
-    }
-
-    int ligand::SavePDB(string Filename)
-    {
-	// try to open file, always overwrite
-	ofstream out_file;
-	out_file.open(Filename.c_str(), ios::out);
-	if (!out_file) return -1;
-
-	string connectData;
-	bool hasHeader = false;
-	// save comments
-	for (list<string>::iterator it = comments.begin(); it != comments.end(); ++it)
-	{
-	    if (!hasHeader)
-	    {
-		out_file << "HEADER    " << *it << endl;
-		hasHeader = true;
-	    }
-	    else
-	    {
-		out_file << "REMARK    " << *it << endl;
-	    }
-	}
-
-	// save coordinates
-	for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-	    out_file << it->second.WritePDBLine(it->first) << endl;
-
-	// connect data
-	ostringstream output;
-	for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-	{
-	    // append index
-	    output.str(string());
-	    output.fill(' ');
-	    output.width(5);
-	    output << right << it->first;
-	    connectData = "CONECT" + output.str();
-	    // append all connection data
-	    for (set<int>::iterator iter = it->second.IndexArray.begin(); iter != it->second.IndexArray.end(); ++iter)
-	    {
-		output.str(string());
-		output.fill(' ');
-		output.width(5);
-		output << *iter;
-		connectData += output.str();
-	    }
-	    // fill the line to 82 characters
-	    if (connectData.length() < 82)
-	    {
-		output.str(string());
-		output.fill(' ');
-		output.width(82);
-		output << left << connectData;
-	    }
-	    // write to file where there is something
-	    if (!(it->second.IndexArray.empty()))
-		out_file << output.str();
-	    out_file << endl;
-	}
-	/*// ID data
-	connectData = "REMARK     ID ";
-	for (map<int,Atom>::iterator it = atoms.begin(); it != atoms.end(); ++it) {
-		output.str(string());
-		output << left << it->first << " " << it->second.ID;
-		out_file << connectData << output.str();
-		out_file << endl;
-	}*/
-#ifdef OBJECT_SPACE
-	// orientation and translation
-	out_file << "REMARK     ROTX " << mole_axis.n[0] << endl;
-	out_file << "REMARK     ROTY " << mole_axis.n[1] << endl;
-	out_file << "REMARK     ROTZ " << mole_axis.n[2] << endl;
-	out_file << "REMARK     ANGLE " << mole_angle << endl;
-#endif
-
-	out_file.close();
-	return 0;
-    }
-
-#define LINE_LENGTH	512
-
-    int ligand::LoadPDB(string Filename)
-    {
-	// reset container
-	comments.clear();
-	scanned.clear();
-	overlap.clear();
-	atoms.clear();
-	toAddAtoms.clear();
-
-	// produce an ID for this molecule
-	//    unsigned int ID = generator_int();
-	unsigned int ID = 0;
-
-	ifstream in_file;
-	in_file.open(Filename.c_str());
-	if (!in_file) return -1;
-
-	bool connectData = false;
-	char buffer[LINE_LENGTH];
-	string oneLine;
-	int index, test;
-	char *context;
-	// read whole file
-	while (!in_file.eof())
-	{
-	    // char based line
-	    in_file.getline(buffer, LINE_LENGTH);
-	    // string based line
-	    oneLine = string(buffer);
-	    if (oneLine.length() > 7)
-	    {
-
-		if (oneLine.substr(0, 5) == string("ATOM ") || oneLine.substr(0, 7) == string("HETATM "))
-		{
-		    atom toAdd;
-		    // invoke method to read the line
-		    toAdd.ReadPDBLine(oneLine);
-		    toAdd.ID = ID;
-		    // read index from file
-		    index = atoi(oneLine.substr(6, 6).c_str());
-		    atoms.insert(pair<int, atom > (index, toAdd));
-		}
-		else if (oneLine.substr(0, 7) == string("CONECT "))
-		{
-		    // there is connection data in this PDB file
-		    connectData = true;
-		    memset(buffer, ' ', 6);
-		    index = strtol(buffer, &context, 10);
-		    test = strtol(context, &context, 10);
-		    while (test != 0)
-		    {
-			atoms[index].IndexArray.insert(test);
-			test = strtol(context, &context, 10);
-		    }
-		}
-		else if (oneLine.substr(0, 6) == string("HEADER"))
-		{
-		    comments.push_back(oneLine.substr(10));
-		}
-		else if (oneLine.substr(0, 7) == string("REMARK ") && oneLine.substr(10, 3) == "FIX")
-		{
-		    comments.push_back(oneLine.substr(10));
-		}
-
-		/*else if (oneLine.substr(0,7) == string("REMARK ")) {
-			// overwrite the ID generator if found
-			if (oneLine.substr(11, 3) == string("ID ")) {
-				memset(buffer, ' ', 14);
-				index = strtol(buffer, &context, 10);
-				ID = strtol(context, &context, 10);
-				atoms[index].ID = ID;
-			}
-		#ifdef OBJECT_SPACE
-			if (oneLine.substr(11,5) == string("ROTX "))
-				mole_axis.n[0] = atof(oneLine.substr(18).c_str());
-			if (oneLine.substr(11,5) == string("ROTY "))
-				mole_axis.n[1] = atof(oneLine.substr(18).c_str());
-			if (oneLine.substr(11,5) == string("ROTZ "))
-				mole_axis.n[2] = atof(oneLine.substr(18).c_str());
-			if (oneLine.substr(11,7) == string("ANGLE "))
-				mole_angle = atof(oneLine.substr(19).c_str());
-		#endif
-		}*/
-	    }
-	}
-	in_file.close();
-
-	// when there is no connection information, generate bonds
-	if (!connectData)
-	{
-	    CreateBonds();
-	}
-#ifdef OBJECT_SPACE
-	if (mole_axis == Vec3d())
-	{
-	    mole_axis.n[1] = 1;
-	    mole_angle = 0;
-	}
-#endif
-	return 0;
-    }
-
-    void ligand::AddHydrogen()
-    {
-	string carbon("C"), hydrogen("H"), nitrogen("N"), oxygen("O");
-
-	map<int, atom>::iterator it;
-	set<int>::iterator iter;
-
-	// need to guess where the hydrogen lies...
-	bond_library library;
-	int nextIndex, ring_count, bonds = 0;
-	Vec3d v1, v2, v3, normal, delta, delta2;
-	Mat4d rot;
-	// check whether there is aromatic structure in this molecule
-	list<int> ring;
-	set<int> elements_in_ring;
-	ring_count = DetectAromatic(ring);
-	if (ring_count)
-	{
-	    for (int i = 0; i != ring_count; ++i)
-	    {
-		DetectAromatic(ring, i);
-		for (list<int>::iterator list_it = ring.begin(); list_it != ring.end(); ++list_it)
-		    elements_in_ring.insert(*list_it);
-	    }
-	}
-	// consider backbone atoms only (C,N,O)
-	// loop through each atom to see if a hydrogen could be added
-	for (it = atoms.begin(); it != atoms.end(); ++it)
-	{
-	    bonds = 0;
-	    // template of a hydrogen
-	    atom toAdd;
-	    toAdd.element = hydrogen;
-	    toAdd.name = hydrogen + "  ";
-	    toAdd.Residue = it->second.Residue;
-	    nextIndex = MaxIndex() + 1;
-	    toAdd.PDBIndex = nextIndex;
-	    toAdd.ID = atoms.begin()->second.ID;
-	    toAdd.IndexArray.clear();
-	    // assume connection to the testing atom
-	    toAdd.IndexArray.insert(it->first);
-	    // get number of bonds
-	    for (iter = it->second.IndexArray.begin(); iter != it->second.IndexArray.end(); ++iter)
-		bonds += library.type(it->second.element, string(atoms[*iter].element), it->second.DistanceTo(atoms[*iter]));
-	    // it is part of aromatic ring, only one way to add hydrogen atoms
-	    if (elements_in_ring.find(it->first) != elements_in_ring.end())
-	    {
-		// already saturated in this configuration
-		if (it->second.IndexArray.size() > 2) continue;
-		iter = it->second.IndexArray.begin();
-		v1 = atoms[*iter].coordinates - it->second.coordinates;
-		++iter;
-		v2 = atoms[*iter].coordinates - it->second.coordinates;
-		normal = v2^v1;
-		double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-		angle = pi - angle / 2;
-		// maximise atoms apart
-		rot = rot.createRotation(angle, normal);
-		v3 = rot*v1;
-		v3.normalize();
-		delta = library.length(it->second.element, hydrogen) * v3;
-		toAdd.coordinates = it->second.coordinates + delta;
-		// try the opposite
-		rot = rot.createRotation(-angle, normal);
-		v3 = rot*v1;
-		v3.normalize();
-		delta2 = library.length(it->second.element, hydrogen) * v3;
-		v2.normalize();
-		// check orientation, maximise distance
-		if ((delta2 - v2).length2() > (delta - v2).length2())
-		    toAdd.coordinates = it->second.coordinates + delta2;
-		atoms.insert(pair<int, atom > (nextIndex, toAdd));
-		it->second.IndexArray.insert(nextIndex);
-		continue;
-	    }
-	    // testing on carbon atom
-	    if (it->second.element == carbon)
-	    {
-		// already saturated
-		if (it->second.IndexArray.size() == 4) continue;
-		// find out number of shared electron
-
-		// maximum electron sharing reached
-		if (bonds == 4) continue;
-		if (bonds == 3)
-		{
-		    // triple bond, add on the opposite
-		    if (it->second.IndexArray.size() == 1)
-		    {
-			// find displacement to move
-			v1 = atoms[*(it->second.IndexArray.begin())].coordinates - it->second.coordinates;
-			v1.normalize();
-			delta = library.length(carbon, hydrogen) * -v1;
-			// get it to place
-			toAdd.coordinates = it->second.coordinates + delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			// add back connection
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		    // one connected with single bond and the other with double bound
-		    if (it->second.IndexArray.size() == 2)
-		    {
-			iter = it->second.IndexArray.begin();
-			v1 = atoms[*iter].coordinates - it->second.coordinates;
-			++iter;
-			v2 = atoms[*iter].coordinates - it->second.coordinates;
-			normal = v2^v1;
-			double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-			angle = pi - angle / 2;
-			// atoms are 120 degrees apart on a plane
-			rot = rot.createRotation(angle, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta = library.length(carbon, hydrogen) * v3;
-			toAdd.coordinates = it->second.coordinates + delta;
-			// try the opposite
-			rot = rot.createRotation(-angle, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta2 = library.length(it->second.element, hydrogen) * v3;
-			v2.normalize();
-			// check orientation, maximise distance
-			if ((delta2 - v2).length2() > (delta - v2).length2())
-			    toAdd.coordinates = it->second.coordinates + delta2;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		    // all are connected through single bonds
-		    if (it->second.IndexArray.size() == 3)
-		    {
-			iter = it->second.IndexArray.begin();
-			v1 = atoms[*iter].coordinates - it->second.coordinates;
-			v1.normalize();
-			++iter;
-			v2 = atoms[*iter].coordinates - it->second.coordinates;
-			v2.normalize();
-			++iter;
-			v3 = atoms[*iter].coordinates - it->second.coordinates;
-			v3.normalize();
-			// average the 3 vectors to produce optimal direction
-			normal = (v1^v2) + (v2^v3) + (v3^v1);
-			normal.normalize();
-			delta = library.length(carbon, hydrogen) * normal;
-			toAdd.coordinates = it->second.coordinates + delta;
-			// check orientation
-			if ((it->second.coordinates - delta - atoms[*iter].coordinates).length2() > (toAdd.coordinates - atoms[*iter].coordinates).length2())
-			    toAdd.coordinates = it->second.coordinates - delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		}
-		if (bonds == 2)
-		{
-		    // connected through a double bond
-		    if (it->second.IndexArray.size() == 1)
-		    {
-			// extract connected atom and find a reference atom
-			atom nearAtom = atoms[*(it->second.IndexArray.begin())];
-			int refPoint = -1;
-			for (iter = nearAtom.IndexArray.begin(); iter != nearAtom.IndexArray.end(); ++iter)
-			{
-			    if ((*iter) != it->first)
-			    {
-				refPoint = *iter;
-				break;
-			    }
-			}
-			// calculate the normal to rotate
-			v1 = atoms[refPoint].coordinates - nearAtom.coordinates;
-			v2 = it->second.coordinates - nearAtom.coordinates;
-			normal = v2^v1;
-			// add a hydrogen to both +120 degree and -120 degree
-			// hydrogens lie parallel to the reference vector
-			rot = rot.createRotation(2 * pi / 3, normal);
-			v3 = rot*v2;
-			v3.normalize();
-			delta = library.length(carbon, hydrogen) * v3;
-			toAdd.coordinates = it->second.coordinates + delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-			toAdd.PDBIndex = ++nextIndex;
-			rot = rot.createRotation(-2 * pi / 3, normal);
-			v3 = rot*v2;
-			v3.normalize();
-			delta = library.length(carbon, hydrogen) * v3;
-			toAdd.coordinates = it->second.coordinates + delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		    // connected through two single bonds
-		    if (it->second.IndexArray.size() == 2)
-		    {
-			// find normal of two bonds
-			iter = it->second.IndexArray.begin();
-			v1 = atoms[*iter].coordinates - it->second.coordinates;
-			++iter;
-			v2 = atoms[*iter].coordinates - it->second.coordinates;
-			normal = v2^v1;
-			double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-			angle = pi - angle / 2;
-			// get vector by rotating 120 degrees around normal, outer side
-			rot = rot.createRotation(angle, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta = v3;
-			// try the opposite
-			rot = rot.createRotation(-angle, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta2 = v3;
-			// make fair comparison
-			v2.normalize();
-			// check orientation, maximise distance
-			if ((delta2 - v2).length2() > (delta - v2).length2())
-			{
-			    v3 = delta2;
-			}
-			else
-			{
-			    v3 = delta;
-			}
-			// find vector parallel to the vectors plane
-			normal = normal^v3;
-			// rotate vector up and down for 54.75 (half of 109.5) degrees to get placement
-			rot = rot.createRotation(54.75 / 180 * pi, normal);
-			v1 = rot*v3;
-			v1.normalize();
-			delta = library.length(carbon, hydrogen) * v1;
-			toAdd.coordinates = it->second.coordinates + delta;
-			// check orientation, maximise distance
-			if ((it->second.coordinates - delta - atoms[*iter].coordinates).length2() > (toAdd.coordinates - atoms[*iter].coordinates).length2())
-			    toAdd.coordinates = it->second.coordinates - delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-			toAdd.PDBIndex = ++nextIndex;
-			rot = rot.createRotation(-54.75 / 180 * pi, normal);
-			v2 = rot*v3;
-			v2.normalize();
-			delta = library.length(carbon, hydrogen) * v2;
-			toAdd.coordinates = it->second.coordinates + delta;
-			// check orientation, maximise distance
-			if ((it->second.coordinates - delta - atoms[*iter].coordinates).length2() > (toAdd.coordinates - atoms[*iter].coordinates).length2())
-			    toAdd.coordinates = it->second.coordinates - delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		}
-		if (bonds == 1)
-		{
-		    // need to add three hydrogens
-		    // extract connected atom and find a reference atom
-		    atom nearAtom = atoms[*(it->second.IndexArray.begin())];
-		    int refPoint = -1;
-		    for (iter = nearAtom.IndexArray.begin(); iter != nearAtom.IndexArray.end(); ++iter)
-		    {
-			if ((*iter) != it->first)
-			{
-			    refPoint = *iter;
-			    break;
-			}
-		    }
-		    if (refPoint == -1) continue;
-		    // calculate the normal to rotate
-		    v1 = atoms[refPoint].coordinates - nearAtom.coordinates;
-		    v2 = it->second.coordinates - nearAtom.coordinates;
-		    normal = -v2^v1;
-		    // produce 2 siblings, 120 degrees apart
-		    rot = rot.createRotation(2 * pi / 3, v2);
-		    v3 = rot*normal;
-		    rot = rot.createRotation(-2 * pi / 3, v2);
-		    delta = rot*normal;
-		    // rotate to correct orientation (19.5 degrees), produce 3
-		    rot = rot.createRotation(19.5 / 180 * pi, normal^v2);
-		    normal = rot*normal;
-		    normal.normalize();
-		    v1 = library.length(carbon, hydrogen) * normal;
-		    toAdd.coordinates = it->second.coordinates + v1;
-		    // check orientation
-		    if ((it->second.coordinates - v1 - nearAtom.coordinates).length2() > (toAdd.coordinates - nearAtom.coordinates).length2())
-			toAdd.coordinates = it->second.coordinates - v1;
-		    atoms.insert(pair<int, atom > (nextIndex, toAdd));
-		    it->second.IndexArray.insert(nextIndex);
-		    // second hydrogen
-		    toAdd.PDBIndex = ++nextIndex;
-		    rot = rot.createRotation(19.5 / 180 * pi, v3^v2);
-		    v3 = rot*v3;
-		    v3.normalize();
-		    v1 = library.length(carbon, hydrogen) * v3;
-		    toAdd.coordinates = it->second.coordinates + v1;
-		    // check orientation
-		    if ((it->second.coordinates - v1 - nearAtom.coordinates).length2() > (toAdd.coordinates - nearAtom.coordinates).length2())
-			toAdd.coordinates = it->second.coordinates - v1;
-		    atoms.insert(pair<int, atom > (nextIndex, toAdd));
-		    it->second.IndexArray.insert(nextIndex);
-		    // third hydrogen
-		    toAdd.PDBIndex = ++nextIndex;
-		    rot = rot.createRotation(19.5 / 180 * pi, delta^v2);
-		    delta = rot*delta;
-		    delta.normalize();
-		    v1 = library.length(carbon, hydrogen) * delta;
-		    toAdd.coordinates = it->second.coordinates + v1;
-		    // check orientation
-		    if ((it->second.coordinates - v1 - nearAtom.coordinates).length2() > (toAdd.coordinates - nearAtom.coordinates).length2())
-			toAdd.coordinates = it->second.coordinates - v1;
-		    atoms.insert(pair<int, atom > (nextIndex, toAdd));
-		    it->second.IndexArray.insert(nextIndex);
-		}
-	    }
-	    if (it->second.element == nitrogen)
-	    {
-		// saturated in a stable compound
-		if (it->second.IndexArray.size() >= 3) continue;
-		// find out number of shared electron
-		if (it->second.IndexArray.size() == 2)
-		{
-		    // SP2 orbital
-		    if (bonds == 3)
-		    {
-			iter = it->second.IndexArray.begin();
-			v1 = atoms[*iter].coordinates - it->second.coordinates;
-			++iter;
-			v2 = atoms[*iter].coordinates - it->second.coordinates;
-			normal = v2^v1;
-			double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-			angle = pi - angle / 2;
-			// rotate 120 degrees
-			rot = rot.createRotation(angle, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta = library.length(nitrogen, hydrogen) * v3;
-			toAdd.coordinates = it->second.coordinates + delta;
-			// try the opposite
-			rot = rot.createRotation(-angle, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta2 = library.length(it->second.element, hydrogen) * v3;
-			v2.normalize();
-			// check orientation, maximise distance
-			if ((delta2 - v2).length2() > (delta - v2).length2())
-			    toAdd.coordinates = it->second.coordinates + delta2;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		    // trigonal pyramid, 107 degrees among bonds
-		    if (bonds == 2)
-		    {
-			iter = it->second.IndexArray.begin();
-			v1 = atoms[*iter].coordinates - it->second.coordinates;
-			++iter;
-			v2 = atoms[*iter].coordinates - it->second.coordinates;
-			normal = v2^v1;
-			// project v1 along the expected vector/v1 plane
-			v3 = v1 * cos(107 / 180 * pi);
-			// project v1 along v2 onto normal/expected vector plane
-			delta = v1 * cos(53.5 / 180 * pi);
-			double angle = acos(v3.length2() / delta.length2());
-			rot = rot.createRotation(pi - angle, (normal^(v1 + v2)));
-			v3 = rot * (v1 + v2);
-			v3.normalize();
-			delta = library.length(nitrogen, hydrogen) * v3;
-			toAdd.coordinates = it->second.coordinates + delta;
-			// check orientation, maximise distance
-			if ((it->second.coordinates - delta - atoms[*iter].coordinates).length2() > (toAdd.coordinates - atoms[*iter].coordinates).length2())
-			    toAdd.coordinates = it->second.coordinates - delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		}
-		if (it->second.IndexArray.size() == 1)
-		{
-		    // triple bonded nitrogen does not link to hydrogen
-		    // SP2 orbital
-		    if (bonds == 2)
-		    {
-			iter = it->second.IndexArray.begin();
-			v1 = atoms[*iter].coordinates - it->second.coordinates;
-			++iter;
-			v2 = atoms[*iter].coordinates - it->second.coordinates;
-			normal = v2^v1;
-			// rotate 120 degrees
-			rot = rot.createRotation(2 * pi / 3, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta = library.length(nitrogen, hydrogen) * v3;
-			toAdd.coordinates = it->second.coordinates + delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-			// rotate -120 degrees
-			toAdd.PDBIndex = ++nextIndex;
-			rot = rot.createRotation(-2 * pi / 3, normal);
-			v3 = rot*v1;
-			v3.normalize();
-			delta = library.length(nitrogen, hydrogen) * v3;
-			toAdd.coordinates = it->second.coordinates + delta;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		    // trigonal pyramid, 107 degrees among bonds
-		    if (bonds == 1)
-		    {
-			atom nearAtom = atoms[*(it->second.IndexArray.begin())];
-			// pick another point to make reference vector
-			int refPoint = -1;
-			for (iter = nearAtom.IndexArray.begin(); iter != nearAtom.IndexArray.end(); ++iter)
-			{
-			    if ((*iter) != it->first)
-			    {
-				refPoint = *iter;
-				break;
-			    }
-			}
-			// calculate the normal to rotate
-			v1 = atoms[refPoint].coordinates - nearAtom.coordinates;
-			v2 = it->second.coordinates - nearAtom.coordinates;
-			normal = v2^v1;
-			// add a hydrogen to 107 degree
-			rot = rot.createRotation(107 / 180 * pi, normal);
-			v3 = rot*v2;
-			v3.normalize();
-			delta = library.length(nitrogen, hydrogen) * v3;
-			v1 = delta;
-			// make trigonal pyramid
-			v2 = -v2;
-			normal = v2^v1;
-			// project v1 along the expected vector/v1 plane
-			v3 = v1 * cos(107 / 180 * pi);
-			// project v1 along v2 onto normal/expected vector plane
-			delta = v1 * cos(53.5 / 180 * pi);
-			double angle = acos(v3.length2() / delta.length2());
-			rot = rot.createRotation(pi - angle, (normal^(v1 + v2)));
-			v3 = rot * (v1 + v2);
-			v3.normalize();
-			delta = library.length(nitrogen, hydrogen) * v3;
-			// when connected atom is SP2, maximize distance from the plane
-			if (nearAtom.isSP2())
-			{
-			    // project onto the rotation plane
-			    rot = rot.createRotation(17 / 180 * pi, (v1^v2));
-			    v3 = rot*v1;
-			    rot = rot.createRotation(17 / 180 * pi, (delta^v2));
-			    normal = rot*delta;
-			    // get angle from dot product
-			    angle = acos((v3 * normal) / sqrt(v3.length2() * normal.length2()));
-			    // rotate both vector to appropiate new position
-			    rot = rot.createRotation((pi - angle) / 2, v2);
-			    v1 = rot*v1;
-			    delta = rot*delta;
-			}
-			else if (nearAtom.IndexArray.size() == 4)
-			{
-			    toAdd.coordinates = it->second.coordinates + v1;
-			    angle = DihedralAngle(toAdd, it->second, nearAtom, atoms[refPoint]);
-			    rot = rot.createRotation(pi / 3 - angle, v2);
-			    v1 = rot*v1;
-			    delta = rot*delta;
-			}
-			else if (nearAtom.IndexArray.size() == 3)
-			{
-			    toAdd.coordinates = it->second.coordinates + v1;
-			    angle = DihedralAngle(toAdd, it->second, nearAtom, atoms[refPoint]);
-			    rot = rot.createRotation(-angle, v2);
-			    v1 = rot*v1;
-			    delta = rot*delta;
-			}
-			// add atoms to the map
-			toAdd.coordinates = it->second.coordinates + v1;
-			// check orientation
-			if ((it->second.coordinates - v1 - nearAtom.coordinates).length2() > (toAdd.coordinates - nearAtom.coordinates).length2())
-			    toAdd.coordinates = it->second.coordinates - v1;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-			toAdd.PDBIndex = ++nextIndex;
-			toAdd.coordinates = it->second.coordinates + delta;
-			// check orientation
-			if ((it->second.coordinates - v1 - nearAtom.coordinates).length2() > (toAdd.coordinates - nearAtom.coordinates).length2())
-			    toAdd.coordinates = it->second.coordinates - v1;
-			atoms.insert(pair<int, atom > (nextIndex, toAdd));
-			it->second.IndexArray.insert(nextIndex);
-		    }
-		}
-	    }
-	    if (it->second.element == oxygen)
-	    {
-		// should have saturated already
-		if (it->second.IndexArray.size() >= 2) continue;
-		// carboxyal group, linear on opposite side
-		v1 = atoms[*(it->second.IndexArray.begin())].coordinates - it->second.coordinates;
-		v1.normalize();
-		delta = library.length(oxygen, hydrogen) * -v1;
-		toAdd.coordinates = it->second.coordinates + delta;
-		atoms.insert(pair<int, atom > (nextIndex, toAdd));
-		it->second.IndexArray.insert(nextIndex);
-	    }
-	}
     }
 
     int ligand::DetectAromatic(list<int>& ring, int index)
@@ -1584,7 +992,7 @@ namespace igrow
     {
 	// local molecule copy
 	ligand fragment;
-	fragment.LoadPDB(FilenameOfFragment);
+	fragment.load(FilenameOfFragment);
 
 	// test if ring joining is successful, 0 is returned if successfully joined
 	if (JoinRing(fragment) == 0) return 2;

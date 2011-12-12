@@ -19,11 +19,10 @@
 #ifndef IGROW_LIGAND_HPP
 #define IGROW_LIGAND_HPP
 
-#include "atom.hpp"
 #include <map>
 #include <list>
 #include <set>
-#include <vector>
+#include "atom.hpp"
 
 namespace igrow
 {
@@ -35,13 +34,15 @@ namespace igrow
         
         // a collection of atoms indicated by their indice
         std::map<int, atom> atoms;
-        // a list of comments on this molecule produced
-        std::list<std::string> comments;
-
+        int ID;
+        // load information of a PDB file in the form of a molecule
+        void load(std::string Filename);        
+        // produce a PDB file based on this molecule
+        void save(std::string Filename);
         // break the molecule into two while retaining the atoms indicated by the reference
         ligand* split(const ligand& ref);
         // add a fragment to the molecule by replacing a hydrogen in the original structure
-        int mutate(std::string FilenameOfFragment);
+        void mutate(std::string FilenameOfFragment);
         // check whether all the atoms are no less than a certain threshold distance
         bool hasBadBonds();
         // not implemented
@@ -72,10 +73,6 @@ namespace igrow
         void Rotate(int index, Vec3d EulerAngles);
         // rotation based on centre
         void Rotate(Vec3d EulerAngles);
-        // produce a PDB file based on this molecule
-        int SavePDB(std::string Filename);
-        // load information of a PDB file in the form of a molecule
-        int LoadPDB(std::string Filename);
         // add missing hydrogen based on some chemical rules (distance and orientation) when the PDB file is not complete
         void AddHydrogen();
         // method detect whether there is an aromatic ring in the structure, return number of rings and the first ring in argument
