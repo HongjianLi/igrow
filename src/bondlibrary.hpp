@@ -24,11 +24,12 @@
 namespace igrow
 {
 
-#define BADBOND_THRESHOLD	0.06
-
     class bond_library
     {
     public:
+
+        static const fl BADBOND_THRESHOLD;
+        
         // enumeration of bond types
 
         enum BOND_TYPE
@@ -37,15 +38,21 @@ namespace igrow
             DOUBLE_BOND = 2,
             TRIPLE_BOND = 3,
         };
+
         // return the bond length between 2 given element
         double length(std::string element1, std::string element2);
+
         // an unused function
         bool badBond(std::string element1, std::string element2, double test_length);
+
         // determine type of bond using atomic distance
         BOND_TYPE type(std::string element1, std::string element2, double test_length);
+        
         // return the molecular weight of an element
         double weight(std::string element);
+        
         // todo: add a method by taking 2 atoms
+        
     private:
         // private methods in determining bond length
         inline double checkHydrogen(std::string element);

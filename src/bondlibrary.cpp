@@ -22,6 +22,8 @@ using namespace std;
 
 namespace igrow
 {
+    
+    const fl bond_library::BADBOND_THRESHOLD = 0.06;
 
     double bond_library::length(string element1, string element2)
     {

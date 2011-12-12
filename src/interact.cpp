@@ -26,16 +26,16 @@ namespace igrow
 
     // overloaded method to accept file name
 
-    Ligand* Interaction::mate(string Filename1, string Filename2)
+    ligand* Interaction::mate(string Filename1, string Filename2)
     {
-	Ligand* male = new Ligand();
+	ligand* male = new ligand();
 	male->LoadPDB(Filename1);
-	Ligand* female = new Ligand();
+	ligand* female = new ligand();
 	female->LoadPDB(Filename2);
 	return mate(male, female);
     }
 
-    Ligand* Interaction::mate(Ligand *male, Ligand *female)
+    ligand* Interaction::mate(ligand *male, ligand *female)
     {
 	// since index starts with 1, just add to it
 	int updateIndex, cascadeIndex = male->MaxIndex();
@@ -140,7 +140,7 @@ namespace igrow
 
     // traverse the molecule graph
 
-    void Interaction::scan_recursive(Ligand* ref, int index)
+    void Interaction::scan_recursive(ligand* ref, int index)
     {
 	scanned.insert(index);
 	// make its counterpart scanned, prevent double counting
@@ -197,16 +197,16 @@ namespace igrow
 	    }
     }
 
-    Ligand* Interaction::merge(string Filename1, string Filename2)
+    ligand* Interaction::merge(string Filename1, string Filename2)
     {
-	Ligand* male = new Ligand();
+	ligand* male = new ligand();
 	male->LoadPDB(Filename1);
-	Ligand* female = new Ligand();
+	ligand* female = new ligand();
 	female->LoadPDB(Filename2);
 	return merge(male, female);
     }
 
-    Ligand* Interaction::merge(Ligand *male, Ligand *female)
+    ligand* Interaction::merge(ligand *male, ligand *female)
     {
 	// since index starts with 1, just add to it
 	int updateIndex, cascadeIndex = male->MaxIndex();
@@ -313,7 +313,7 @@ namespace igrow
 	return male;
     }
 
-    void Interaction::remove_invalid(Ligand *ref, int index)
+    void Interaction::remove_invalid(ligand *ref, int index)
     {
 	scanned.insert(index);
 	// also get its counterpart

@@ -27,25 +27,19 @@
 
 namespace igrow
 {
-
-    class Ligand
+    // Represents a ligand.
+    class ligand
     {
     public:
-        static const double pi;
+        static const fl pi;
+        
         // a collection of atoms indicated by their indice
         std::map<int, atom> atoms;
         // a list of comments on this molecule produced
         std::list<std::string> comments;
-        // decided whether to create bonds when no bond information is found
-        bool SkipConnectGenerate;
-        // record transition information between world space and local space
-        double mole_angle;
-        Vec3d mole_axis;
-
-        Ligand();
 
         // break the molecule into two while retaining the atoms indicated by the reference
-        Ligand* split(const Ligand& ref);
+        ligand* split(const ligand& ref);
         // add a fragment to the molecule by replacing a hydrogen in the original structure
         int mutate(std::string FilenameOfFragment);
         // check whether all the atoms are no less than a certain threshold distance
@@ -59,9 +53,9 @@ namespace igrow
         // remove atom of index and its connection, return an iterator for further process
         std::map<int, atom>::reverse_iterator DeleteAtom(int index);
         // a distance between two molecules given by the sum of minimum distance of each atom
-        double MolecularDistance(Ligand& other);
+        double MolecularDistance(ligand& other);
         // measuring distance between conformation, supported by RMSD
-        double IntraMolecularDistance(Ligand& other);
+        double IntraMolecularDistance(ligand& other);
         // obtain the index of one hydrogen of this molecule
         int IndexOfRandomHydrogen();
         // move atom of index to origin along with its connected atoms
@@ -126,11 +120,11 @@ namespace igrow
         // splitting fragment in 2 smaller parts
         int replace_bond(std::pair<int, int> bond);
         // scan the fragment from the start index and stop on the end index and return the fragment to target
-        void split_fragment(Ligand& target, int start, int end);
+        void split_fragment(ligand& target, int start, int end);
         // internal method to check number of heteroatom in a ring
         inline bool checkHeteroAtom(std::list<int>& candidate);
         // determine whether both molecules consist ring structure that can be joined
-        int JoinRing(Ligand& ref);
+        int JoinRing(ligand& ref);
     };
 
 }

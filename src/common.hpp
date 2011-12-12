@@ -19,15 +19,22 @@
 #ifndef IGROW_COMMON_HPP
 #define IGROW_COMMON_HPP
 
+#include <stdexcept>
+#include <cmath>
+#include <vector>
 #include <string>
-#include <iostream>
-#include <set>
-#include "vec.hpp"
-#include "bondlibrary.hpp"
+#include <boost/assert.hpp>
 
 namespace igrow
 {
+	// These classes are widely used across the entire program.
+	using std::runtime_error;
+	using std::vector;
+	using std::string;
 
+	/// igrow uses double precision floating point computation by default.
+	/// This could possible be demoted to single precision for better performance.
+	typedef double fl;
 }
 
 #endif

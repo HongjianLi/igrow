@@ -16,21 +16,19 @@
 
 */
 
-#include "common.hpp"
-#include "interact.hpp"
-
 #include <boost/lexical_cast.hpp>
 #include <boost/random.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
-#include <boost/filesystem/operations.hpp>
+//#include <boost/filesystem/operations.hpp>
 #include <boost/process/child.hpp>
 #include <boost/process/context.hpp>
 #include <boost/process/operations.hpp>
 #include "seed.hpp"
 #include "file.hpp"
 #include "tee.hpp"
+#include "interact.hpp"
 
 using namespace std;
 
@@ -250,7 +248,7 @@ main(int argc, char* argv[])
 	    create_directory(generation_folder_path);
 
 	    // Parse and dump the initial ligand.
-	    Ligand initial_lig;
+	    ligand initial_lig;
 	    initial_lig.LoadPDB(initial_ligand_path.string());
 	    initial_lig.SavePDB((generation_folder_path / "ligand1.pdb").string());
 
@@ -259,7 +257,7 @@ main(int argc, char* argv[])
 	    {
 		for (size_t num_trials = 0; true;)
 		{
-		    Ligand lig;
+		    ligand lig;
 		    lig.LoadPDB(initial_ligand_path.string());
 //		    string fragment_name = fragments.ReturnRandomFileName();
 //		    lig.mutate(fragments.path + fragment_name);

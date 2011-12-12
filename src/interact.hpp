@@ -28,24 +28,27 @@ namespace igrow
 
     class Interaction
     {
-        // set of atoms that have been visited
-        std::set<int> scanned;
-        // pairs of atoms that are considered to be equal in terms of type and position
-        std::map<int, int> overlap;
     public:
 
-
-        Ligand* mate(std::string Filename1, std::string Filename2);
+        ligand* mate(std::string Filename1, std::string Filename2);
         // selectively combine two molecules to produce a new one
-        Ligand* mate(Ligand* male, Ligand* female);
-        Ligand* merge(std::string Filename1, std::string Filename2);
+        ligand* mate(ligand* male, ligand* female);
+        ligand* merge(std::string Filename1, std::string Filename2);
         // maximally merge two molecules to produce a new one
-        Ligand* merge(Ligand* male, Ligand* female);
+        ligand* merge(ligand* male, ligand* female);
+
     protected:
         // traverse the molecule and decide which atom to select
-        void scan_recursive(Ligand* ref, int index);
+        void scan_recursive(ligand* ref, int index);
         // traverse the molecule to find out which atom to be removed
-        void remove_invalid(Ligand* ref, int index);
+        void remove_invalid(ligand* ref, int index);
+        
+    private:
+        // set of atoms that have been visited
+        std::set<int> scanned;
+        
+        // pairs of atoms that are considered to be equal in terms of type and position
+        std::map<int, int> overlap;
     };
 
 }

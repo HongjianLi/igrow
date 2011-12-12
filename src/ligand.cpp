@@ -18,6 +18,7 @@
 
 #include "common.hpp"
 #include "ligand.hpp"
+#include "bondlibrary.hpp"
 #include "mat.hpp"
 #include <cfloat>
 #include <sstream>
@@ -28,19 +29,12 @@ using namespace std;
 namespace igrow
 {
 
-    const double Ligand::pi = 3.14159265358979323846;
+    const fl ligand::pi = 3.14159265358979323846;
 
-    // default to create bond when not found
-
-    Ligand::Ligand()
+    ligand* ligand::split(const ligand& ref)
     {
-	SkipConnectGenerate = false;
-    }
-
-    Ligand* Ligand::split(const Ligand& ref)
-    {
-	Ligand ref_copy(ref);
-	Ligand* child = new Ligand();
+	ligand ref_copy(ref);
+	ligand* child = new ligand();
 
 	// to detect whether it is a ring structure
 	list<int> ring;
@@ -147,10 +141,10 @@ namespace igrow
 
     // add a fragment to the position of a randomly selected hydrogen
 
-    int Ligand::mutate(string FilenameOfFragment)
+    int ligand::mutate(string FilenameOfFragment)
     {
 	// local molecule copy
-	Ligand fragment;
+	ligand fragment;
 	fragment.LoadPDB(FilenameOfFragment);
 
 	// select hydrogen
@@ -308,7 +302,7 @@ namespace igrow
 	return 0;
     }
 
-    int Ligand::IndexOfRandomHydrogen()
+    int ligand::IndexOfRandomHydrogen()
     {
 	set<int> index_of_hydrogen;
 	set<int>::iterator it;
@@ -329,7 +323,7 @@ namespace igrow
 	return *it;
     }
 
-    void Ligand::Translate(int index, Vec3d origin)
+    void ligand::Translate(int index, Vec3d origin)
     {
 	// calculate real displacement to move
 	Vec3d delta = origin - atoms[index].coordinates;
@@ -338,7 +332,7 @@ namespace igrow
 	    it->second.coordinates = it->second.coordinates + delta;
     }
 
-    void Ligand::Translate(Vec3d origin)
+    void ligand::Translate(Vec3d origin)
     {
 	// determine centre of gravity
 	Vec3d centre = CentreOfGravity();
@@ -347,7 +341,7 @@ namespace igrow
 	    it->second.coordinates = it->second.coordinates + delta;
     }
 
-    void Ligand::RotateLine(Vec3d v1, Vec3d v2, int index, double radian)
+    void ligand::RotateLine(Vec3d v1, Vec3d v2, int index, double radian)
     {
 	Vec3d location, delta = atoms[index].coordinates;
 	Mat4d rot;
@@ -366,7 +360,7 @@ namespace igrow
 
     // same method by calculating normal beforehand
 
-    void Ligand::RotateLine(Vec3d normal, int index, double radian)
+    void ligand::RotateLine(Vec3d normal, int index, double radian)
     {
 	Vec3d location, delta = atoms[index].coordinates;
 	Mat4d rot;
@@ -379,7 +373,7 @@ namespace igrow
 	}
     }
 
-    void Ligand::RotateLine(Vec3d normal, double radian)
+    void ligand::RotateLine(Vec3d normal, double radian)
     {
 	Vec3d location, delta = CentreOfGravity();
 	Mat4d rot;
@@ -394,20 +388,20 @@ namespace igrow
 
     // centre of rotation given by indexed atom
 
-    void Ligand::Rotate(int index, Vec3d EulerAngles)
+    void ligand::Rotate(int index, Vec3d EulerAngles)
     {
 	Vec3d centre = atoms[index].coordinates;
 	Rotate(centre, EulerAngles);
     }
 
-    void Ligand::Rotate(Vec3d EulerAngles)
+    void ligand::Rotate(Vec3d EulerAngles)
     {
 	// determine centre of gravity
 	Vec3d centre = CentreOfGravity();
 	Rotate(centre, EulerAngles);
     }
 
-    int Ligand::SavePDB(string Filename)
+    int ligand::SavePDB(string Filename)
     {
 	// try to open file, always overwrite
 	ofstream out_file;
@@ -488,7 +482,7 @@ namespace igrow
 
 #define LINE_LENGTH	512
 
-    int Ligand::LoadPDB(string Filename)
+    int ligand::LoadPDB(string Filename)
     {
 	// reset container
 	comments.clear();
@@ -576,7 +570,7 @@ namespace igrow
 	in_file.close();
 
 	// when there is no connection information, generate bonds
-	if (!connectData && !SkipConnectGenerate)
+	if (!connectData)
 	{
 	    CreateBonds();
 	}
@@ -590,7 +584,7 @@ namespace igrow
 	return 0;
     }
 
-    void Ligand::AddHydrogen()
+    void ligand::AddHydrogen()
     {
 	string carbon("C"), hydrogen("H"), nitrogen("N"), oxygen("O");
 
@@ -1086,7 +1080,7 @@ namespace igrow
 	}
     }
 
-    int Ligand::DetectAromatic(list<int>& ring, int index)
+    int ligand::DetectAromatic(list<int>& ring, int index)
     {
 	string carbon("C");
 	int ring_count = 0;
@@ -1384,7 +1378,7 @@ namespace igrow
 	return vector_of_rings.size();
     }
 
-    int Ligand::DetectRing(list<int>& ring, int index)
+    int ligand::DetectRing(list<int>& ring, int index)
     {
 	int ring_count = 0;
 	// copy feasible atoms from the molecule, work till none is left
@@ -1586,10 +1580,10 @@ namespace igrow
 	return vector_of_rings.size();
     }
 
-    int Ligand::synthesis(string FilenameOfFragment)
+    int ligand::synthesis(string FilenameOfFragment)
     {
 	// local molecule copy
-	Ligand fragment;
+	ligand fragment;
 	fragment.LoadPDB(FilenameOfFragment);
 
 	// test if ring joining is successful, 0 is returned if successfully joined
@@ -1812,7 +1806,7 @@ namespace igrow
 	return 0;
     }
 
-    bool Ligand::valid()
+    bool ligand::valid()
     {
 	if (atoms.begin()->first == 0)
 	    atoms.erase(atoms.begin());
@@ -1825,7 +1819,7 @@ namespace igrow
 	return true;
     }
 
-    double Ligand::mwt()
+    double ligand::mwt()
     {
 	double MW(0);
 	bond_library library;
@@ -1838,7 +1832,7 @@ namespace igrow
 
     // protected methods
 
-    bool Ligand::hasBadBonds()
+    bool ligand::hasBadBonds()
     {
 	bool badContact(false), badLength(false);
 	double dist;
@@ -1876,7 +1870,7 @@ namespace igrow
 
     // as it is a map, largest indexed element is at the back
 
-    int Ligand::MaxIndex()
+    int ligand::MaxIndex()
     {
 	map<int, atom>::reverse_iterator rit;
 	rit = atoms.rbegin();
@@ -1885,7 +1879,7 @@ namespace igrow
 
     // as it is a map, smallest indexed element is at the front
 
-    int Ligand::MinIndex()
+    int ligand::MinIndex()
     {
 	map<int, atom>::iterator it;
 	it = atoms.begin();
@@ -1894,7 +1888,7 @@ namespace igrow
 
     // will invalidate iterator, return updated one
 
-    map<int, atom>::reverse_iterator Ligand::DeleteAtom(int index)
+    map<int, atom>::reverse_iterator ligand::DeleteAtom(int index)
     {
 	// find iterator to the atom using index
 	map<int, atom>::iterator it = atoms.find(index);
@@ -1915,7 +1909,7 @@ namespace igrow
 
     // total minimum distance for all atoms, quadratic
 
-    double Ligand::MolecularDistance(Ligand &other)
+    double ligand::MolecularDistance(ligand &other)
     {
 	double min, dist, total_dist = 0;
 	map<int, atom>::iterator it1, it2;
@@ -1935,7 +1929,7 @@ namespace igrow
 
     // intramolecular distance, dRMSD quadratic
 
-    double Ligand::IntraMolecularDistance(Ligand &other)
+    double ligand::IntraMolecularDistance(ligand &other)
     {
 	// needs to work on same number of atoms
 	//if (atoms.size() != other.atoms.size()) return DBL_MAX;
@@ -2024,7 +2018,7 @@ namespace igrow
 
     // in radian, angle between 2 planes (a1-a2-a3, a2-a3-a4) with respect to vector a2-a3
 
-    double Ligand::DihedralAngle(atom a1, atom a2, atom a3, atom a4)
+    double ligand::DihedralAngle(atom a1, atom a2, atom a3, atom a4)
     {
 	Vec3d v1 = a2.coordinates - a1.coordinates;
 	Vec3d v2 = a3.coordinates - a2.coordinates;
@@ -2034,7 +2028,7 @@ namespace igrow
 
     // angle between v1-v2-v3
 
-    double Ligand::Angle(Vec3d v1, Vec3d v2, Vec3d v3)
+    double ligand::Angle(Vec3d v1, Vec3d v2, Vec3d v3)
     {
 	Vec3d b1 = v1 - v2;
 	Vec3d b2 = v3 - v2;
@@ -2043,7 +2037,7 @@ namespace igrow
 
     // each atom contributes a weight based on molecular weight
 
-    Vec3d Ligand::CentreOfGravity()
+    Vec3d ligand::CentreOfGravity()
     {
 	double total_weight = 0;
 	Vec3d centre = Vec3d();
@@ -2059,7 +2053,7 @@ namespace igrow
 
     // produce bond based on molecular distance when connection data is not available
 
-    void Ligand::CreateBonds()
+    void ligand::CreateBonds()
     {
 	int i = 0;
 	map<int, atom>::iterator it1, it2;
@@ -2087,7 +2081,7 @@ namespace igrow
 
     // traverse molecule to determine some parts to retain
 
-    void Ligand::scan_recursive(int index)
+    void ligand::scan_recursive(int index)
     {
 	// since the ring is stored in a static vector, can be retrieved after computing once
 	list<int> ring;
@@ -2195,7 +2189,7 @@ namespace igrow
 
     // produce rotation matrix
 
-    void Ligand::Rotate(Vec3d centre, Vec3d EulerAngles)
+    void ligand::Rotate(Vec3d centre, Vec3d EulerAngles)
     {
 	// produce rotation matrix
 	Vec3d location;
@@ -2231,7 +2225,7 @@ namespace igrow
 	}
     }
 
-    void Ligand::traverse_ring(list<int>& possible_ring, map<int, atom>& possible_list, int index)
+    void ligand::traverse_ring(list<int>& possible_ring, map<int, atom>& possible_list, int index)
     {
 	atom* cur_atom = &atoms[index];
 	bool flag;
@@ -2255,7 +2249,7 @@ namespace igrow
 	}
     }
 
-    int Ligand::split_ring(list<int>& input, list<int>& output, int index)
+    int ligand::split_ring(list<int>& input, list<int>& output, int index)
     {
 	// ring information are stored in this method
 	static vector<list<int> > rings;
@@ -2374,7 +2368,7 @@ namespace igrow
 	return rings.size();
     }
 
-    void Ligand::merge_list(set<int>& connect, vector<list<int> >& rings, list<int>& input, int limit)
+    void ligand::merge_list(set<int>& connect, vector<list<int> >& rings, list<int>& input, int limit)
     {
 	unsigned int count, ref_index;
 	set<int>::iterator set_it;
@@ -2474,9 +2468,9 @@ namespace igrow
 
     // assume a double bond is reacted into a single bond
 
-    int Ligand::replace_bond(pair<int, int> bond)
+    int ligand::replace_bond(pair<int, int> bond)
     {
-	Ligand frag1, frag2, frag3, frag4;
+	ligand frag1, frag2, frag3, frag4;
 	int connect1(-1), connect2(-1), connect3(-1), connect4(-1), nextIndex = MaxIndex() + 1;
 	atom* cur_atom;
 	Vec3d v1, v2, v3, normal, delta, bond_vector;
@@ -2687,7 +2681,7 @@ namespace igrow
 
     // recursively trace all atoms in the branch
 
-    void Ligand::split_fragment(Ligand& target, int start, int end)
+    void ligand::split_fragment(ligand& target, int start, int end)
     {
 	atom a = atoms[start];
 	if (!(target.atoms.insert(pair<int, atom > (start, a))).second)
@@ -2697,7 +2691,7 @@ namespace igrow
 		split_fragment(target, *it, end);
     }
 
-    inline bool Ligand::checkHeteroAtom(list<int>& candidate)
+    inline bool ligand::checkHeteroAtom(list<int>& candidate)
     {
 	// ensure the whole thing is connected
 	bool flag = true;
@@ -2727,7 +2721,7 @@ namespace igrow
 
     // determine whether both molecules consist ring structure that can be joined
 
-    int Ligand::JoinRing(Ligand& ref)
+    int ligand::JoinRing(ligand& ref)
     {
 	int ligandRingCount, fragmentRingCount, count(0), step(0);
 	list<int> ring;
