@@ -40,9 +40,6 @@ public:
 	// a unique ID representing the ligand which could help distinguish in some operations
 	int ID;
 
-	atom();
-	virtual ~atom();
-
 	// planarize surroundings when this atom is found in this orbital
 	bool isSP2();
 	// the Euclidean distance to another atom

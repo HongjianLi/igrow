@@ -23,13 +23,6 @@
 
 using namespace std;
 
-atom::atom() {
-}
-
-atom::~atom() {
-	IndexArray.clear();
-}
-
 bool atom::isSP2() {
 	bool flag(false);
 	string carbon("C");
