@@ -23,7 +23,7 @@
 #include <sstream>
 #include <fstream>
 
-const double M_PI = 3.14159265358979323846;
+const double Ligand::pi = 3.14159265358979323846;
 
 using namespace std;
 
@@ -220,26 +220,26 @@ int Ligand::mutate(string FilenameOfFragment)
         dist = MolecularDistance(fragment);
         best_angles.insert(pair<double, double>(dist, -dihedral));
         // try the opposite
-        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, M_PI);
+        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, pi);
         dist = MolecularDistance(fragment);
-        best_angles.insert(pair<double, double>(dist, M_PI - dihedral));
+        best_angles.insert(pair<double, double>(dist, pi - dihedral));
         // try the other set of orientations
-        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -M_PI + 2 * dihedral);
+        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -pi + 2 * dihedral);
         dist = MolecularDistance(fragment);
         best_angles.insert(pair<double, double>(dist, dihedral));
-        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, M_PI);
+        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, pi);
         dist = MolecularDistance(fragment);
-        best_angles.insert(pair<double, double>(dist, M_PI + dihedral));
-        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -M_PI - dihedral);
+        best_angles.insert(pair<double, double>(dist, pi + dihedral));
+        fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -pi - dihedral);
         fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, best_angles.rbegin()->second); // maximize intra-molecular distance
     }
         // minimise hinderance for SP3 and SP bond
     else {
         // Rotating fragment around connecting bond to minimize steric hindrance...
-        double BadContact, BestContact(0), BestAngle(0), Angle(0), delta(M_PI / 25);
+        double BadContact, BestContact(0), BestAngle(0), Angle(0), delta(pi / 25);
         Vec3d normal = connectAtom.coordinates - fragConnectAtom->coordinates;
         // try a whole circle with definite steps
-        while (Angle < 2 * M_PI) {
+        while (Angle < 2 * pi) {
             Angle += delta;
             if (normal == Vec3d()) break; // impossible, useless
             fragment.RotateLine(normal, fragIndex, delta);
@@ -607,7 +607,7 @@ void Ligand::AddHydrogen()
             v2 = atoms[*iter].coordinates - it->second.coordinates;
             normal = v2^v1;
             double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-            angle = M_PI - angle / 2;
+            angle = pi - angle / 2;
             // maximise atoms apart
             rot = rot.createRotation(angle, normal);
             v3 = rot*v1;
@@ -656,7 +656,7 @@ void Ligand::AddHydrogen()
                     v2 = atoms[*iter].coordinates - it->second.coordinates;
                     normal = v2^v1;
                     double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-                    angle = M_PI - angle / 2;
+                    angle = pi - angle / 2;
                     // atoms are 120 degrees apart on a plane
                     rot = rot.createRotation(angle, normal);
                     v3 = rot*v1;
@@ -716,7 +716,7 @@ void Ligand::AddHydrogen()
                     normal = v2^v1;
                     // add a hydrogen to both +120 degree and -120 degree
                     // hydrogens lie parallel to the reference vector
-                    rot = rot.createRotation(2 * M_PI / 3, normal);
+                    rot = rot.createRotation(2 * pi / 3, normal);
                     v3 = rot*v2;
                     v3.normalize();
                     delta = library.length(carbon, hydrogen) * v3;
@@ -724,7 +724,7 @@ void Ligand::AddHydrogen()
                     atoms.insert(pair<int, atom > (nextIndex, toAdd));
                     it->second.IndexArray.insert(nextIndex);
                     toAdd.PDBIndex = ++nextIndex;
-                    rot = rot.createRotation(-2 * M_PI / 3, normal);
+                    rot = rot.createRotation(-2 * pi / 3, normal);
                     v3 = rot*v2;
                     v3.normalize();
                     delta = library.length(carbon, hydrogen) * v3;
@@ -741,7 +741,7 @@ void Ligand::AddHydrogen()
                     v2 = atoms[*iter].coordinates - it->second.coordinates;
                     normal = v2^v1;
                     double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-                    angle = M_PI - angle / 2;
+                    angle = pi - angle / 2;
                     // get vector by rotating 120 degrees around normal, outer side
                     rot = rot.createRotation(angle, normal);
                     v3 = rot*v1;
@@ -764,7 +764,7 @@ void Ligand::AddHydrogen()
                     // find vector parallel to the vectors plane
                     normal = normal^v3;
                     // rotate vector up and down for 54.75 (half of 109.5) degrees to get placement
-                    rot = rot.createRotation(54.75 / 180 * M_PI, normal);
+                    rot = rot.createRotation(54.75 / 180 * pi, normal);
                     v1 = rot*v3;
                     v1.normalize();
                     delta = library.length(carbon, hydrogen) * v1;
@@ -775,7 +775,7 @@ void Ligand::AddHydrogen()
                     atoms.insert(pair<int, atom > (nextIndex, toAdd));
                     it->second.IndexArray.insert(nextIndex);
                     toAdd.PDBIndex = ++nextIndex;
-                    rot = rot.createRotation(-54.75 / 180 * M_PI, normal);
+                    rot = rot.createRotation(-54.75 / 180 * pi, normal);
                     v2 = rot*v3;
                     v2.normalize();
                     delta = library.length(carbon, hydrogen) * v2;
@@ -804,12 +804,12 @@ void Ligand::AddHydrogen()
                 v2 = it->second.coordinates - nearAtom.coordinates;
                 normal = -v2^v1;
                 // produce 2 siblings, 120 degrees apart
-                rot = rot.createRotation(2 * M_PI / 3, v2);
+                rot = rot.createRotation(2 * pi / 3, v2);
                 v3 = rot*normal;
-                rot = rot.createRotation(-2 * M_PI / 3, v2);
+                rot = rot.createRotation(-2 * pi / 3, v2);
                 delta = rot*normal;
                 // rotate to correct orientation (19.5 degrees), produce 3
-                rot = rot.createRotation(19.5 / 180 * M_PI, normal^v2);
+                rot = rot.createRotation(19.5 / 180 * pi, normal^v2);
                 normal = rot*normal;
                 normal.normalize();
                 v1 = library.length(carbon, hydrogen) * normal;
@@ -821,7 +821,7 @@ void Ligand::AddHydrogen()
                 it->second.IndexArray.insert(nextIndex);
                 // second hydrogen
                 toAdd.PDBIndex = ++nextIndex;
-                rot = rot.createRotation(19.5 / 180 * M_PI, v3^v2);
+                rot = rot.createRotation(19.5 / 180 * pi, v3^v2);
                 v3 = rot*v3;
                 v3.normalize();
                 v1 = library.length(carbon, hydrogen) * v3;
@@ -833,7 +833,7 @@ void Ligand::AddHydrogen()
                 it->second.IndexArray.insert(nextIndex);
                 // third hydrogen
                 toAdd.PDBIndex = ++nextIndex;
-                rot = rot.createRotation(19.5 / 180 * M_PI, delta^v2);
+                rot = rot.createRotation(19.5 / 180 * pi, delta^v2);
                 delta = rot*delta;
                 delta.normalize();
                 v1 = library.length(carbon, hydrogen) * delta;
@@ -858,7 +858,7 @@ void Ligand::AddHydrogen()
                     v2 = atoms[*iter].coordinates - it->second.coordinates;
                     normal = v2^v1;
                     double angle = acos(v1 * v2 / sqrt(v1.length2() * v2.length2()));
-                    angle = M_PI - angle / 2;
+                    angle = pi - angle / 2;
                     // rotate 120 degrees
                     rot = rot.createRotation(angle, normal);
                     v3 = rot*v1;
@@ -885,11 +885,11 @@ void Ligand::AddHydrogen()
                     v2 = atoms[*iter].coordinates - it->second.coordinates;
                     normal = v2^v1;
                     // project v1 along the expected vector/v1 plane
-                    v3 = v1 * cos(107 / 180 * M_PI);
+                    v3 = v1 * cos(107 / 180 * pi);
                     // project v1 along v2 onto normal/expected vector plane
-                    delta = v1 * cos(53.5 / 180 * M_PI);
+                    delta = v1 * cos(53.5 / 180 * pi);
                     double angle = acos(v3.length2() / delta.length2());
-                    rot = rot.createRotation(M_PI - angle, (normal^(v1 + v2)));
+                    rot = rot.createRotation(pi - angle, (normal^(v1 + v2)));
                     v3 = rot * (v1 + v2);
                     v3.normalize();
                     delta = library.length(nitrogen, hydrogen) * v3;
@@ -911,7 +911,7 @@ void Ligand::AddHydrogen()
                     v2 = atoms[*iter].coordinates - it->second.coordinates;
                     normal = v2^v1;
                     // rotate 120 degrees
-                    rot = rot.createRotation(2 * M_PI / 3, normal);
+                    rot = rot.createRotation(2 * pi / 3, normal);
                     v3 = rot*v1;
                     v3.normalize();
                     delta = library.length(nitrogen, hydrogen) * v3;
@@ -920,7 +920,7 @@ void Ligand::AddHydrogen()
                     it->second.IndexArray.insert(nextIndex);
                     // rotate -120 degrees
                     toAdd.PDBIndex = ++nextIndex;
-                    rot = rot.createRotation(-2 * M_PI / 3, normal);
+                    rot = rot.createRotation(-2 * pi / 3, normal);
                     v3 = rot*v1;
                     v3.normalize();
                     delta = library.length(nitrogen, hydrogen) * v3;
@@ -944,7 +944,7 @@ void Ligand::AddHydrogen()
                     v2 = it->second.coordinates - nearAtom.coordinates;
                     normal = v2^v1;
                     // add a hydrogen to 107 degree
-                    rot = rot.createRotation(107 / 180 * M_PI, normal);
+                    rot = rot.createRotation(107 / 180 * pi, normal);
                     v3 = rot*v2;
                     v3.normalize();
                     delta = library.length(nitrogen, hydrogen) * v3;
@@ -953,32 +953,32 @@ void Ligand::AddHydrogen()
                     v2 = -v2;
                     normal = v2^v1;
                     // project v1 along the expected vector/v1 plane
-                    v3 = v1 * cos(107 / 180 * M_PI);
+                    v3 = v1 * cos(107 / 180 * pi);
                     // project v1 along v2 onto normal/expected vector plane
-                    delta = v1 * cos(53.5 / 180 * M_PI);
+                    delta = v1 * cos(53.5 / 180 * pi);
                     double angle = acos(v3.length2() / delta.length2());
-                    rot = rot.createRotation(M_PI - angle, (normal^(v1 + v2)));
+                    rot = rot.createRotation(pi - angle, (normal^(v1 + v2)));
                     v3 = rot * (v1 + v2);
                     v3.normalize();
                     delta = library.length(nitrogen, hydrogen) * v3;
                     // when connected atom is SP2, maximize distance from the plane
                     if (nearAtom.isSP2()) {
                         // project onto the rotation plane
-                        rot = rot.createRotation(17 / 180 * M_PI, (v1^v2));
+                        rot = rot.createRotation(17 / 180 * pi, (v1^v2));
                         v3 = rot*v1;
-                        rot = rot.createRotation(17 / 180 * M_PI, (delta^v2));
+                        rot = rot.createRotation(17 / 180 * pi, (delta^v2));
                         normal = rot*delta;
                         // get angle from dot product
                         angle = acos((v3 * normal) / sqrt(v3.length2() * normal.length2()));
                         // rotate both vector to appropiate new position
-                        rot = rot.createRotation((M_PI - angle) / 2, v2);
+                        rot = rot.createRotation((pi - angle) / 2, v2);
                         v1 = rot*v1;
                         delta = rot*delta;
                     }
                     else if (nearAtom.IndexArray.size() == 4) {
                         toAdd.coordinates = it->second.coordinates + v1;
                         angle = DihedralAngle(toAdd, it->second, nearAtom, atoms[refPoint]);
-                        rot = rot.createRotation(M_PI / 3 - angle, v2);
+                        rot = rot.createRotation(pi / 3 - angle, v2);
                         v1 = rot*v1;
                         delta = rot*delta;
                     }
@@ -1610,10 +1610,10 @@ int Ligand::synthesis(string FilenameOfFragment)
 
     // minimise hinderance for SP3 and SP bond
     // Rotate fragment around connecting bond to minimize steric hindrance...
-    double BadContact, BestContact(0), BestAngle(0), Angle(0), step(M_PI / 25);
+    double BadContact, BestContact(0), BestAngle(0), Angle(0), step(pi / 25);
     normal = connectAtom.coordinates - fragConnectAtom->coordinates;
     // try a whole circle with definite steps
-    while (Angle < 2 * M_PI) {
+    while (Angle < 2 * pi) {
         Angle += step;
         if (normal == Vec3d()) break;
         fragment.RotateLine(normal, fragIndex, step);
@@ -2343,25 +2343,25 @@ int Ligand::replace_bond(pair<int, int> bond)
     normal = -v2^v1;
     if (normal == Vec3d()) return -1;
     // produce 2 siblings, 120 degrees apart
-    rot = rot.createRotation(2 * M_PI / 3, v2);
+    rot = rot.createRotation(2 * pi / 3, v2);
     v3 = rot*normal;
-    rot = rot.createRotation(-2 * M_PI / 3, v2);
+    rot = rot.createRotation(-2 * pi / 3, v2);
     delta = rot*normal;
     // rotate to correct orientation (19.5 degrees), produce 3
-    rot = rot.createRotation(19.5 / 180 * M_PI, normal^v2);
+    rot = rot.createRotation(19.5 / 180 * pi, normal^v2);
     normal = rot*normal;
     normal.normalize();
     // calculate the new delta to the fragment
     v1 = library.length(cur_atom->element, atoms[connect1].element) * normal;
     frag1.Translate(connect1, cur_atom->coordinates + v1);
     // second bond
-    rot = rot.createRotation(19.5 / 180 * M_PI, v3^v2);
+    rot = rot.createRotation(19.5 / 180 * pi, v3^v2);
     v3 = rot*v3;
     v3.normalize();
     v1 = library.length(cur_atom->element, atoms[connect2].element) * v3;
     frag2.Translate(connect2, cur_atom->coordinates + v1);
     // third bond (hydrogen)
-    rot = rot.createRotation(19.5 / 180 * M_PI, delta^v2);
+    rot = rot.createRotation(19.5 / 180 * pi, delta^v2);
     delta = rot*delta;
     delta.normalize();
     v1 = library.length(cur_atom->element, hydrogen) * delta;
@@ -2386,25 +2386,25 @@ int Ligand::replace_bond(pair<int, int> bond)
     v2 = cur_atom->coordinates - nearAtom.coordinates;
     normal = -v2^v1;
     // produce 2 siblings, 120 degrees apart
-    rot = rot.createRotation(2 * M_PI / 3, v2);
+    rot = rot.createRotation(2 * pi / 3, v2);
     v3 = rot*normal;
-    rot = rot.createRotation(-2 * M_PI / 3, v2);
+    rot = rot.createRotation(-2 * pi / 3, v2);
     delta = rot*normal;
     // rotate to correct orientation (19.5 degrees), produce 3
-    rot = rot.createRotation(19.5 / 180 * M_PI, normal^v2);
+    rot = rot.createRotation(19.5 / 180 * pi, normal^v2);
     normal = rot*normal;
     normal.normalize();
     // calculate the new delta to the fragment
     v1 = library.length(cur_atom->element, atoms[connect3].element) * normal;
     frag3.Translate(connect3, cur_atom->coordinates + v1);
     // second bond
-    rot = rot.createRotation(19.5 / 180 * M_PI, v3^v2);
+    rot = rot.createRotation(19.5 / 180 * pi, v3^v2);
     v3 = rot*v3;
     v3.normalize();
     v1 = library.length(cur_atom->element, atoms[connect4].element) * v3;
     frag4.Translate(connect4, cur_atom->coordinates + v1);
     // third bond (hydrogen)
-    rot = rot.createRotation(19.5 / 180 * M_PI, delta^v2);
+    rot = rot.createRotation(19.5 / 180 * pi, delta^v2);
     delta = rot*delta;
     delta.normalize();
     v1 = library.length(cur_atom->element, hydrogen) * delta;
@@ -2459,11 +2459,11 @@ int Ligand::replace_bond(pair<int, int> bond)
     angle = DihedralAngle(side1[connect1], side1[bond.first], side2[bond.second], side2[connect3]);
     frag1.atoms = side1;
     frag2.atoms = side2;
-    frag2.RotateLine(bond_vector, bond.second, angle + M_PI / 3);
+    frag2.RotateLine(bond_vector, bond.second, angle + pi / 3);
     nextIndex = 0;
     max_dist = 0;
     for (int i = 0; i != 3; ++i) {
-        frag2.RotateLine(bond_vector, bond.second, 2 * M_PI / 3);
+        frag2.RotateLine(bond_vector, bond.second, 2 * pi / 3);
         dist = frag1.MolecularDistance(frag2);
         if (dist > max_dist) {
             nextIndex = i;
@@ -2471,7 +2471,7 @@ int Ligand::replace_bond(pair<int, int> bond)
         }
     }
     atoms.clear();
-    frag2.RotateLine(bond_vector, bond.second, 2 * M_PI / 3 * nextIndex + M_PI / 3);
+    frag2.RotateLine(bond_vector, bond.second, 2 * pi / 3 * nextIndex + pi / 3);
     for (map<int, atom>::iterator it = frag1.atoms.begin(); it != frag1.atoms.end(); ++it)
         atoms.insert(*it);
     for (map<int, atom>::iterator it = frag2.atoms.begin(); it != frag2.atoms.end(); ++it)
@@ -2720,16 +2720,16 @@ int Ligand::JoinRing(Ligand& ref)
     ref.RotateLine(v1, edgeFragment.first, -angle);
     dist = MolecularDistance(ref);
     best_angles.insert(pair<double, double>(dist, -angle));
-    ref.RotateLine(v1, edgeFragment.first, M_PI);
+    ref.RotateLine(v1, edgeFragment.first, pi);
     dist = MolecularDistance(ref);
-    best_angles.insert(pair<double, double>(dist, M_PI - angle));
-    ref.RotateLine(v1, edgeFragment.first, -M_PI + 2 * angle);
+    best_angles.insert(pair<double, double>(dist, pi - angle));
+    ref.RotateLine(v1, edgeFragment.first, -pi + 2 * angle);
     dist = MolecularDistance(ref);
     best_angles.insert(pair<double, double>(dist, angle));
-    ref.RotateLine(v1, edgeFragment.first, M_PI);
+    ref.RotateLine(v1, edgeFragment.first, pi);
     dist = MolecularDistance(ref);
-    best_angles.insert(pair<double, double>(dist, M_PI + angle));
-    ref.RotateLine(v1, edgeFragment.first, -M_PI - angle);
+    best_angles.insert(pair<double, double>(dist, pi + angle));
+    ref.RotateLine(v1, edgeFragment.first, -pi - angle);
     ref.RotateLine(v1, edgeFragment.first, best_angles.rbegin()->second);
 
     // redirect atom index to ligand

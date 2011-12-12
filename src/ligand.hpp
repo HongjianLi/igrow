@@ -27,6 +27,7 @@
 
 class Ligand {
 public:
+    static const double pi;
 	// a collection of atoms indicated by their indice
 	std::map<int, atom> atoms;
 	// a list of comments on this molecule produced
