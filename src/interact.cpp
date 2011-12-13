@@ -19,10 +19,12 @@
 #include "interact.hpp"
 #include <sstream>
 
-using namespace std;
-
 namespace igrow
 {
+	using std::pair;
+	using std::map;
+	using std::set;
+	using std::ostringstream;
 
     // overloaded method to accept file name
 
