@@ -16,6 +16,7 @@
 
  */
 
+#include <boost/filesystem/operations.hpp>
 #include "common.hpp"
 #include "ligand.hpp"
 #include "bondlibrary.hpp"
@@ -24,10 +25,17 @@
 #include <sstream>
 #include <fstream>
 
-using namespace std;
-
 namespace igrow
 {
+        using std::map;
+        using std::pair;        
+	using std::list;
+	using std::set;
+	using std::multiset;
+	using std::ifstream;
+	using std::ofstream;
+	using std::ostringstream;
+    
     const fl ligand::pi = 3.14159265358979323846;
 
     void ligand::load(string Filename)
@@ -88,13 +96,13 @@ namespace igrow
     void ligand::save(string Filename)
     {
 	ofstream out_file;
-	out_file.open(Filename.c_str(), ios::out);
+	out_file.open(Filename.c_str(), std::ios::out);
 
 	string connectData;
 
 	// save coordinates
 	for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-	    out_file << it->second.WritePDBLine(it->first) << endl;
+	    out_file << it->second.WritePDBLine(it->first) << std::endl;
 
 	// connect data
 	ostringstream output;
@@ -104,7 +112,7 @@ namespace igrow
 	    output.str(string());
 	    output.fill(' ');
 	    output.width(5);
-	    output << right << it->first;
+	    output << std::right << it->first;
 	    connectData = "CONECT" + output.str();
 	    // append all connection data
 	    for (set<int>::iterator iter = it->second.IndexArray.begin(); iter != it->second.IndexArray.end(); ++iter)
@@ -121,12 +129,12 @@ namespace igrow
 		output.str(string());
 		output.fill(' ');
 		output.width(82);
-		output << left << connectData;
+		output << std::left << connectData;
 	    }
 	    // write to file where there is something
 	    if (!(it->second.IndexArray.empty()))
 		out_file << output.str();
-	    out_file << endl;
+	    out_file << std::endl;
 	}
 	out_file.close();
     }
@@ -607,7 +615,7 @@ namespace igrow
 	    /*cout << "The traversed ring has elements: ";
 	    for (list_it = possible_ring.begin(); list_it != possible_ring.end(); ++list_it)
 		    cout << *list_it << " ";
-	    cout << endl;*/
+	    cout << std::endl;*/
 	    // debug end
 	    // initialise parameters
 	    vector_of_normal.clear();
@@ -1706,7 +1714,7 @@ namespace igrow
 	    rings.push_back(input);
 	    return 1;
 	}
-	//cout << "Connections detected 2: " << connect2.size() << " 3: " << connect3.size() << " >4: " << connect4.size() << endl;
+	//cout << "Connections detected 2: " << connect2.size() << " 3: " << connect3.size() << " >4: " << connect4.size() << std::endl;
 
 	// connect all 2-connected edges
 	while (!connect2.empty())
@@ -1914,19 +1922,19 @@ namespace igrow
 	if (frag1.atoms.size() + frag2.atoms.size() + frag3.atoms.size() + frag4.atoms.size() > atoms.size())
 	    return -1;
 
-	/*cout << "There 4 fragments are:" << endl;
+	/*cout << "There 4 fragments are:" << std::endl;
 	for (map<int,Atom>::iterator it = frag1.atoms.begin(); it != frag1.atoms.end(); ++it)
 		cout << it->first << " ";
-	cout << endl;
+	cout << std::endl;
 	for (map<int,Atom>::iterator it = frag2.atoms.begin(); it != frag2.atoms.end(); ++it)
 		cout << it->first << " ";
-	cout << endl;
+	cout << std::endl;
 	for (map<int,Atom>::iterator it = frag3.atoms.begin(); it != frag3.atoms.end(); ++it)
 		cout << it->first << " ";
-	cout << endl;
+	cout << std::endl;
 	for (map<int,Atom>::iterator it = frag4.atoms.begin(); it != frag4.atoms.end(); ++it)
 		cout << it->first << " ";
-	cout << endl;*/
+	cout << std::endl;*/
 
 	// adjust bond length to reflect single bond characteristic
 	bond_vector = atoms[bond.second].coordinates - atoms[bond.first].coordinates;

@@ -17,6 +17,7 @@
  */
 
 #include <boost/lexical_cast.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/random.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
@@ -29,8 +30,6 @@
 #include "file.hpp"
 #include "tee.hpp"
 #include "interact.hpp"
-
-using namespace std;
 
 // Choose the appropriate Mersenne Twister engine for random number generation on 32-bit or 64-bit platform.
 #if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(__amd64__) || defined(_M_X64) || defined(_M_AMD64)
@@ -244,8 +243,8 @@ main(int argc, char* argv[])
 	mt19937eng eng(seed);
 
 	// Scan the fragment folder to obtain a list of fragments.
-	vector<path> fragments;
-	fragments.reserve(100);
+	vector<path> fragment_paths;
+	fragment_paths.reserve(100);
 	{
 	    using namespace boost::filesystem;
 	    const directory_iterator end_dir_iter; // A default constructed directory_iterator acts as the end iterator.
@@ -255,11 +254,13 @@ main(int argc, char* argv[])
 		if (!is_regular_file(dir_iter->status())) continue;
 
 		// Save the fragment path.
-		fragments.push_back(dir_iter->path());
+		fragment_paths.push_back(dir_iter->path());
 	    }
 	}
-	const size_t num_fragments = fragments.size();
+	const size_t num_fragments = fragment_paths.size();
 	log << num_fragments << " fragments found in the fragment folder " << fragment_folder_path.string() << '\n';
+	using namespace boost;
+	ptr_vector<ligand> fragments(num_fragments);
 
 	// Initialize process context.
 	using namespace boost::process;
@@ -285,7 +286,6 @@ main(int argc, char* argv[])
 	// Initialize csv file for dumping statistics.
 	ofile csv(csv_path);
 	
-	using namespace boost;
 	for (size_t current_generation = 1; current_generation <= num_generations; ++current_generation)
 	{
 	    log << "Running generation " << current_generation << '\n';
@@ -352,11 +352,20 @@ main(int argc, char* argv[])
 		create_child(find_executable_in_path("vina"), vina_args, ctx).wait();
 	    }
 
-	    // Parse log
+	    // Parse docking log.
 	    for (size_t i = 1; i <= population_size; ++i)
 	    {
-		ifile docking_log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
-		
+		ifile log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
+		log.seekg(1177);
+		string line;
+		while (getline(log, line))
+		{
+		    if (line[3] == '1')
+		    {
+			const size_t start = line.find_first_not_of(' ', 8);
+			const fl free_energy = lexical_cast<fl>(line.substr(start, 17 - start));
+		    }
+		}
 	    }	    
 
 	    // Sort ligands in ascending order of predicted free energy
