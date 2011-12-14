@@ -40,31 +40,31 @@ namespace igrow
         };
 
         // return the bond length between 2 given element
-        double length(std::string element1, std::string element2);
+        double length(string element1, string element2);
 
         // an unused function
-        bool badBond(std::string element1, std::string element2, double test_length);
+        bool badBond(string element1, string element2, double test_length);
 
         // determine type of bond using atomic distance
-        BOND_TYPE type(std::string element1, std::string element2, double test_length);
+        BOND_TYPE type(string element1, string element2, double test_length);
         
         // return the molecular weight of an element
-        double weight(std::string element);
+        double weight(string element);
         
         // todo: add a method by taking 2 atoms
         
     private:
         // private methods in determining bond length
-        inline double checkHydrogen(std::string element);
-        inline double checkCarbon(std::string element);
-        inline double checkNitrogen(std::string element);
-        inline double checkOxygen(std::string element);
-        inline double checkFlorine(std::string element);
-        inline double checkSulphur(std::string element);
-        inline double checkPhosphorus(std::string element);
-        inline double checkChlorine(std::string element);
-        inline double checkBromine(std::string element);
-        inline double checkIodine(std::string element);
+        inline double checkHydrogen(string element);
+        inline double checkCarbon(string element);
+        inline double checkNitrogen(string element);
+        inline double checkOxygen(string element);
+        inline double checkFlorine(string element);
+        inline double checkSulphur(string element);
+        inline double checkPhosphorus(string element);
+        inline double checkChlorine(string element);
+        inline double checkBromine(string element);
+        inline double checkIodine(string element);
     };
 
 }

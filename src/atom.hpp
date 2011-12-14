@@ -25,8 +25,9 @@
 
 namespace igrow
 {
-    // Represents an atom.
+	using std::set;
 
+    // Represents an atom.
     class atom
     {
     public:
@@ -34,19 +35,19 @@ namespace igrow
         Vec3d coordinates;
         
         // the type of atom as in a periodic table
-        std::string element;
+        string element;
         
         // the name of an atom indicated by the atom type and a number, following the standard of IUPAC
-        std::string name;
+        string name;
         
         // the index of connected atoms, given by PDB index
         std::set<int> IndexArray;
         
         // the index read from the PDB file
-        std::string PDBIndex;
+        string PDBIndex;
         
-        // the residue this atom belongs tp
-        std::string Residue;
+        // the residue this atom belongs tO
+        string Residue;
         
         // a unique ID representing the ligand which could help distinguish in some operations
         int ID;
@@ -58,10 +59,10 @@ namespace igrow
         double DistanceTo(atom &other);
         
         // parser to read a PDB line stated ATOM or HETATM
-        void ReadPDBLine(std::string Line);
+        void ReadPDBLine(string Line);
         
         // write the information of this atom in the PDB format
-        std::string WritePDBLine(int index);
+        string WritePDBLine(int index);
     };
 
 }

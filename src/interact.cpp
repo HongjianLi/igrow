@@ -21,28 +21,14 @@
 
 namespace igrow
 {
-<<<<<<< HEAD
     using std::pair;
     using std::map;
     using std::set;
     using std::ostringstream;
-=======
 	using std::pair;
 	using std::map;
 	using std::set;
 	using std::ostringstream;
->>>>>>> e1ba431c27cb57afa618350167302a323da2dd28
-
-    // overloaded method to accept file name
-
-    ligand Interaction::mate(const path& file1, const path& file2)
-    {
-	ligand male;
-	male.load(file1);
-	ligand female;
-	female.load(file2);
-	return mate(male, female);
-    }
 
     ligand Interaction::mate(ligand male, ligand female)
     {
@@ -203,15 +189,6 @@ namespace igrow
 		    // maintain core scaffold
 		    scan_recursive(ref, *it);
 	    }
-    }
-
-    ligand Interaction::merge(const path& file1, const path& file2)
-    {
-	ligand male;
-	male.load(file1);
-	ligand female;
-	female.load(file2);
-	return merge(male, female);
     }
 
     ligand Interaction::merge(ligand male, ligand female)

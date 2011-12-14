@@ -19,8 +19,6 @@
 #ifndef IGROW_COMMON_HPP
 #define IGROW_COMMON_HPP
 
-#include <stdexcept>
-#include <cmath>
 #include <vector>
 #include <string>
 #include <boost/assert.hpp>

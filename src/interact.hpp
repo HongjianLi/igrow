@@ -32,10 +32,7 @@ namespace igrow
     {
     public:
 
-        ligand mate(const path& file1, const path& file2);
-        // selectively combine two molecules to produce a new one
         ligand mate(ligand male, ligand female);
-        ligand merge(const path& file1, const path& file2);
         // maximally merge two molecules to produce a new one
         ligand merge(ligand male, ligand female);
 
