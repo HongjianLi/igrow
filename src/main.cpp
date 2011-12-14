@@ -22,7 +22,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
-//#include <boost/filesystem/operations.hpp>
 #include <boost/process/child.hpp>
 #include <boost/process/context.hpp>
 #include <boost/process/operations.hpp>
@@ -310,19 +309,19 @@ main(int argc, char* argv[])
 		// Parse and dump the initial ligand.
 		ligand initial_lig;
 		initial_lig.load(initial_ligand_path.string());
-		initial_lig.save((current_pdb_folder_path / "1.pdb").string());
+		initial_lig.save(current_pdb_folder_path / "1.pdb");
 
 		// Create mutants in parallel.
 		for (size_t i = 1; i != population_size; ++i)
 		{
 		    ligand lig;
-		    lig.load(initial_ligand_path.string());
+//		    lig.load(initial_ligand_path.string());
 		    //		    string fragment_name = fragments.ReturnRandomFileName();
 		    //		    lig.mutate(fragments.path + fragment_name);
 
 		    if (lig.valid())
 		    {
-			lig.save((current_pdb_folder_path / (lexical_cast<string > (i + 1) + ".pdb")).string());
+			lig.save(current_pdb_folder_path / (lexical_cast<string > (i + 1) + ".pdb"));
 		    }
 		}
 	    }

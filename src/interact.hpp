@@ -19,21 +19,23 @@
 #ifndef IGROW_INTERACT_HPP
 #define IGROW_INTERACT_HPP
 
+#include <boost/filesystem/path.hpp>
 #include "common.hpp"
 #include "ligand.hpp"
 #include <map>
 
 namespace igrow
 {
+    using boost::filesystem::path;
 
     class Interaction
     {
     public:
 
-        ligand* mate(std::string Filename1, std::string Filename2);
+        ligand* mate(const path& file1, const path& file2);
         // selectively combine two molecules to produce a new one
         ligand* mate(ligand* male, ligand* female);
-        ligand* merge(std::string Filename1, std::string Filename2);
+        ligand* merge(const path& file1, const path& file2);
         // maximally merge two molecules to produce a new one
         ligand* merge(ligand* male, ligand* female);
 

@@ -27,21 +27,21 @@
 
 namespace igrow
 {
-        using std::map;
-        using std::pair;        
-	using std::list;
-	using std::set;
-	using std::multiset;
-	using std::ifstream;
-	using std::ofstream;
-	using std::ostringstream;
-    
+    using std::map;
+    using std::pair;
+    using std::list;
+    using std::set;
+    using std::multiset;
+    using std::ifstream;
+    using std::ofstream;
+    using std::ostringstream;
+
     const fl ligand::pi = 3.14159265358979323846;
 
-    void ligand::load(string Filename)
+    void ligand::load(const path& file)
     {
 	ifstream in_file;
-	in_file.open(Filename.c_str());
+	in_file.open(file.string());
 
 	bool connectData = false;
 	char buffer[512];
@@ -88,15 +88,35 @@ namespace igrow
 	// when there is no connection information, generate bonds
 	if (!connectData)
 	{
-	    CreateBonds();
+	    int i = 0;
+	    map<int, atom>::iterator it1, it2;
+	    double dist;
+	    bond_library library;
+	    for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
+	    {
+		++i;
+		it2 = atoms.begin();
+		advance(it2, i);
+		while (it2 != atoms.end())
+		{
+		    dist = it1->second.DistanceTo(it2->second);
+		    if (dist < library.length(it1->second.element, it2->second.element)*1.2)
+		    {
+			it1->second.IndexArray.insert(it2->first);
+			it2->second.IndexArray.insert(it1->first);
+		    }
+		    ++it2;
+		}
+		// skip last
+		if (i == atoms.size() - 1) break;
+	    }
 	}
     }
-    
 
-    void ligand::save(string Filename)
+    void ligand::save(const path& file)
     {
 	ofstream out_file;
-	out_file.open(Filename.c_str(), std::ios::out);
+	out_file.open(file.string(), std::ios::out);
 
 	string connectData;
 
@@ -138,7 +158,7 @@ namespace igrow
 	}
 	out_file.close();
     }
-    
+
     ligand* ligand::split(const ligand& ref)
     {
 	ligand ref_copy(ref);
@@ -238,11 +258,11 @@ namespace igrow
 
     // add a fragment to the position of a randomly selected hydrogen
 
-    void ligand::mutate(string FilenameOfFragment)
+    void ligand::mutate(const path& file)
     {
 	// local molecule copy
 	ligand fragment;
-	fragment.load(FilenameOfFragment);
+	fragment.load(file);
 
 	// select hydrogen
 	int count(0), connectIndex, fragHydrogen(-1), fragIndex, linkerHydrogen(-1);
@@ -996,11 +1016,11 @@ namespace igrow
 	return vector_of_rings.size();
     }
 
-    int ligand::synthesis(string FilenameOfFragment)
+    int ligand::synthesis(path const& file)
     {
 	// local molecule copy
 	ligand fragment;
-	fragment.load(FilenameOfFragment);
+	fragment.load(file);
 
 	// test if ring joining is successful, 0 is returned if successfully joined
 	if (JoinRing(fragment) == 0) return 2;
@@ -1465,34 +1485,6 @@ namespace igrow
 	}
 	centre = centre / (atoms.size() * total_weight);
 	return centre;
-    }
-
-    // produce bond based on molecular distance when connection data is not available
-
-    void ligand::CreateBonds()
-    {
-	int i = 0;
-	map<int, atom>::iterator it1, it2;
-	double dist;
-	bond_library library;
-	for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
-	{
-	    ++i;
-	    it2 = atoms.begin();
-	    advance(it2, i);
-	    while (it2 != atoms.end())
-	    {
-		dist = it1->second.DistanceTo(it2->second);
-		if (dist < library.length(it1->second.element, it2->second.element)*1.2)
-		{
-		    it1->second.IndexArray.insert(it2->first);
-		    it2->second.IndexArray.insert(it1->first);
-		}
-		++it2;
-	    }
-	    // skip last
-	    if (i == atoms.size() - 1) break;
-	}
     }
 
     // traverse molecule to determine some parts to retain

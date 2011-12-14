@@ -26,12 +26,12 @@ namespace igrow
 
     // overloaded method to accept file name
 
-    ligand* Interaction::mate(string Filename1, string Filename2)
+    ligand* Interaction::mate(const path& file1, const path& file2)
     {
 	ligand* male = new ligand();
-	male->load(Filename1);
+	male->load(file1);
 	ligand* female = new ligand();
-	female->load(Filename2);
+	female->load(file2);
 	return mate(male, female);
     }
 
@@ -197,12 +197,12 @@ namespace igrow
 	    }
     }
 
-    ligand* Interaction::merge(string Filename1, string Filename2)
+    ligand* Interaction::merge(const path& file1, const path& file2)
     {
 	ligand* male = new ligand();
-	male->load(Filename1);
+	male->load(file1);
 	ligand* female = new ligand();
-	female->load(Filename2);
+	female->load(file2);
 	return merge(male, female);
     }
 

@@ -19,6 +19,8 @@
 #ifndef IGROW_LIGAND_HPP
 #define IGROW_LIGAND_HPP
 
+#include <boost/filesystem/path.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <map>
 #include <list>
 #include <set>
@@ -26,6 +28,8 @@
 
 namespace igrow
 {
+    using boost::filesystem::path;
+    
     // Represents a ligand.
     class ligand
     {
@@ -36,13 +40,13 @@ namespace igrow
         std::map<int, atom> atoms;
         int ID;
         // load information of a PDB file in the form of a molecule
-        void load(std::string Filename);        
+        void load(const path& file);
         // produce a PDB file based on this molecule
-        void save(std::string Filename);
+        void save(const path& file);
         // break the molecule into two while retaining the atoms indicated by the reference
         ligand* split(const ligand& ref);
         // add a fragment to the molecule by replacing a hydrogen in the original structure
-        void mutate(std::string FilenameOfFragment);
+        void mutate(const path& file);
         // check whether all the atoms are no less than a certain threshold distance
         bool hasBadBonds();
         // not implemented
@@ -80,7 +84,7 @@ namespace igrow
         // detect whether there is a ring structure in the molecule
         int DetectRing(std::list<int>& ring, int index = -1);
         // follow more strictly with the chemical rules, the resulting ligand would be more likely feasible
-        int synthesis(std::string FilenameOfFragment);
+        int synthesis(const path& file);
         // returns true if the ligand is valid.
         bool valid();
         // returns the molecular weight
@@ -102,8 +106,6 @@ namespace igrow
         // return the coordinates of the molecule centre, taking the weight of each atom equally
         // todo: improve it using molecular weight
         Vec3d CentreOfGravity();
-        // create bonds using coordinates by finding the most probable connected positions
-        void CreateBonds();
         // method to tranverse an atom, decide which part to retain
         void scan_recursive(int index);
         // private method to handle Euler angles based rotation
