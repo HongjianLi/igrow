@@ -16,14 +16,16 @@
 
  */
 
-#include <boost/filesystem/operations.hpp>
+#include <cfloat>
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+#include <boost/lexical_cast.hpp>
 #include "common.hpp"
 #include "ligand.hpp"
 #include "bondlibrary.hpp"
 #include "mat.hpp"
-#include <cfloat>
-#include <sstream>
-#include <fstream>
+#include "file.hpp"
 
 namespace igrow
 {
@@ -32,58 +34,47 @@ namespace igrow
     using std::list;
     using std::set;
     using std::multiset;
-    using std::ifstream;
-    using std::ofstream;
     using std::ostringstream;
+    using namespace boost;
 
     const fl ligand::pi = 3.14159265358979323846;
 
+    /// Parses right-justified 1-based [i, j] of str into generic type T lexically.
+    /// This conversion does not apply to left-justified values.
+    template<typename T>
+    T right_cast(const string& str, const size_t i, const size_t j)
+    {
+	    const size_t start = str.find_first_not_of(' ', i - 1);
+	    return lexical_cast<T>(str.substr(start, j - start));
+    }
+		
     void ligand::load(const path& file)
     {
-	ifstream in_file;
-	in_file.open(file.string());
-
 	bool connectData = false;
-	char buffer[512];
-	string oneLine;
-	int index, test;
-	char *context;
-	// read whole file
-	while (!in_file.eof())
+	string line;
+	ifile in(file);
+	while (getline(in, line))
 	{
-	    // char based line
-	    in_file.getline(buffer, 512);
-	    // string based line
-	    oneLine = string(buffer);
-	    if (oneLine.length() > 7)
+	    const string record = line.substr(0, 6);
+	    if ((record == "ATOM  ") || record == string("HETATM"))
 	    {
-
-		if (oneLine.substr(0, 5) == string("ATOM ") || oneLine.substr(0, 7) == string("HETATM "))
-		{
-		    atom toAdd;
-		    // invoke method to read the line
-		    toAdd.ReadPDBLine(oneLine);
-		    toAdd.ID = ID;
-		    // read index from file
-		    index = atoi(oneLine.substr(6, 6).c_str());
-		    atoms.insert(pair<int, atom > (index, toAdd));
-		}
-		else if (oneLine.substr(0, 7) == string("CONECT "))
-		{
-		    // there is connection data in this PDB file
-		    connectData = true;
-		    memset(buffer, ' ', 6);
-		    index = strtol(buffer, &context, 10);
-		    test = strtol(context, &context, 10);
-		    while (test != 0)
-		    {
-			atoms[index].IndexArray.insert(test);
-			test = strtol(context, &context, 10);
-		    }
-		}
+		atom a;
+		a.ReadPDBLine(line);
+		a.ID = ID;
+		// read index from file
+		atoms.insert(pair<int, atom > (right_cast<int>(line, 6, 10), a));
+	    }
+	    else if (record == "CONECT")
+	    {
+		connectData = true;
+		const int index = right_cast<int>(line, 6, 10);
+		atoms[index].IndexArray.insert(right_cast<int>(line, 11, 15));		
+		if (line[20] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 16, 20));
+		if (line[25] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 21, 25));
+		if (line[30] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 26, 30));
 	    }
 	}
-	in_file.close();
+	in.close();
 
 	// when there is no connection information, generate bonds
 	if (!connectData)
@@ -115,54 +106,28 @@ namespace igrow
 
     void ligand::save(const path& file)
     {
-	ofstream out_file;
-	out_file.open(file.string(), std::ios::out);
-
-	string connectData;
-
-	// save coordinates
+	ofstream out(file);	
 	for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-	    out_file << it->second.WritePDBLine(it->first) << std::endl;
+	    out << it->second.WritePDBLine(it->first) << std::endl;
 
 	// connect data
-	ostringstream output;
 	for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
 	{
-	    // append index
-	    output.str(string());
-	    output.fill(' ');
-	    output.width(5);
-	    output << std::right << it->first;
-	    connectData = "CONECT" + output.str();
-	    // append all connection data
+	    if (it->second.IndexArray.empty()) continue;
+	    out << "CONECT" << std::setw(5) << it->first;
 	    for (set<int>::iterator iter = it->second.IndexArray.begin(); iter != it->second.IndexArray.end(); ++iter)
 	    {
-		output.str(string());
-		output.fill(' ');
-		output.width(5);
-		output << *iter;
-		connectData += output.str();
+		out << std::setw(5) << *iter;
 	    }
-	    // fill the line to 82 characters
-	    if (connectData.length() < 82)
-	    {
-		output.str(string());
-		output.fill(' ');
-		output.width(82);
-		output << std::left << connectData;
-	    }
-	    // write to file where there is something
-	    if (!(it->second.IndexArray.empty()))
-		out_file << output.str();
-	    out_file << std::endl;
+	    out << std::endl;
 	}
-	out_file.close();
+	out.close();
     }
 
-    ligand* ligand::split(const ligand& ref)
+    ligand ligand::split(const ligand& ref)
     {
 	ligand ref_copy(ref);
-	ligand* child = new ligand();
+	ligand child;
 
 	// to detect whether it is a ring structure
 	list<int> ring;
@@ -187,7 +152,7 @@ namespace igrow
 
 	// make a copy for the child
 	for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
-	    child->atoms.insert(pair<int, atom > (it1->first, atom(it1->second)));
+	    child.atoms.insert(pair<int, atom > (it1->first, atom(it1->second)));
 
 	// start from the end
 	map<int, atom>::reverse_iterator r_iter = atoms.rbegin();
@@ -203,15 +168,15 @@ namespace igrow
 		if (toAddAtoms.find(r_iter->first) != toAddAtoms.end())
 		    toAddchild.insert(r_iter->first);
 		// delete the atom from the child
-		child->DeleteAtom(r_iter->first);
+		child.DeleteAtom(r_iter->first);
 		/*if (toAddAtoms.find(pendingIndex) != toAddAtoms.end()) {
 			// retrieve corresponding hydrogen atom
 			atomH = toAddAtoms[pendingIndex];
-			child->atoms.insert(pair<int,Atom>(pendingIndex,atomH));
+			child.atoms.insert(pair<int,Atom>(pendingIndex,atomH));
 			// get its connected atom index
 			indexToAdd = *(atomH.IndexArray.begin());
 			// update connection
-			child->atoms[indexToAdd].IndexArray.insert(pendingIndex);
+			child.atoms[indexToAdd].IndexArray.insert(pendingIndex);
 		}*/
 		// atoms to be deleted in this group
 	    }
@@ -237,11 +202,11 @@ namespace igrow
 	{
 	    // retrieve corresponding hydrogen atom
 	    atomH = toAddAtoms[*set_it];
-	    child->atoms.insert(pair<int, atom > (*set_it, atomH));
+	    child.atoms.insert(pair<int, atom > (*set_it, atomH));
 	    // get its connected atom index
 	    indexToAdd = *(atomH.IndexArray.begin());
 	    // update connection
-	    child->atoms[indexToAdd].IndexArray.insert(*set_it);
+	    child.atoms[indexToAdd].IndexArray.insert(*set_it);
 	}
 	for (set<int>::iterator set_it = toAddparent.begin(); set_it != toAddparent.end(); ++set_it)
 	{

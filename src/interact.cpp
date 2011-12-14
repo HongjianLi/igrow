@@ -19,30 +19,32 @@
 #include "interact.hpp"
 #include <sstream>
 
-using namespace std;
-
 namespace igrow
 {
+    using std::pair;
+    using std::map;
+    using std::set;
+    using std::ostringstream;
 
     // overloaded method to accept file name
 
-    ligand* Interaction::mate(const path& file1, const path& file2)
+    ligand Interaction::mate(const path& file1, const path& file2)
     {
-	ligand* male = new ligand();
-	male->load(file1);
-	ligand* female = new ligand();
-	female->load(file2);
+	ligand male;
+	male.load(file1);
+	ligand female;
+	female.load(file2);
 	return mate(male, female);
     }
 
-    ligand* Interaction::mate(ligand *male, ligand *female)
+    ligand Interaction::mate(ligand male, ligand female)
     {
 	// since index starts with 1, just add to it
-	int updateIndex, cascadeIndex = male->MaxIndex();
+	int updateIndex, cascadeIndex = male.MaxIndex();
 	set<int> tempIndice;
 	ostringstream output;
 	// append molecule to another by cascading the index
-	for (map<int, atom>::iterator it = female->atoms.begin(); it != female->atoms.end(); ++it)
+	for (map<int, atom>::iterator it = female.atoms.begin(); it != female.atoms.end(); ++it)
 	{
 	    atom toAdd = atom(it->second);
 	    updateIndex = atoi(toAdd.PDBIndex.c_str());
@@ -56,7 +58,7 @@ namespace igrow
 	    toAdd.IndexArray.clear();
 	    for (set<int>::iterator iter = tempIndice.begin(); iter != tempIndice.end(); ++iter)
 		toAdd.IndexArray.insert(*iter);
-	    male->atoms.insert(pair<int, atom > (updateIndex, toAdd));
+	    male.atoms.insert(pair<int, atom > (updateIndex, toAdd));
 	}
 
 	// initialise sets
@@ -69,15 +71,15 @@ namespace igrow
 	map<int, atom>::iterator it1, it2;
 	atom *atom1, *atom2;
 	// prevent comparison of atom in same molecule
-	it1 = male->atoms.begin();
+	it1 = male.atoms.begin();
 	// there are cascadeIndex number of atoms in first molecule
-	while (it1 != male->atoms.end())
+	while (it1 != male.atoms.end())
 	{
 	    // move iterator to appended molecule
 	    it2 = it1;
 	    ++it2;
 	    // scan till the end, only cascadeIndex to the end number of atoms in second molecule
-	    while (it2 != male->atoms.end())
+	    while (it2 != male.atoms.end())
 	    {
 		// skip index that can be found in the first molecule
 		if (it2->first <= cascadeIndex)
@@ -93,12 +95,12 @@ namespace igrow
 		    for (set<int>::iterator it = atom2->IndexArray.begin(); it != atom2->IndexArray.end(); ++it)
 		    {
 			atom1->IndexArray.insert(*it);
-			male->atoms[*it].IndexArray.insert(it1->first);
+			male.atoms[*it].IndexArray.insert(it1->first);
 		    }
 		    for (set<int>::iterator it = atom1->IndexArray.begin(); it != atom1->IndexArray.end(); ++it)
 		    {
 			atom2->IndexArray.insert(*it);
-			male->atoms[*it].IndexArray.insert(it2->first);
+			male.atoms[*it].IndexArray.insert(it2->first);
 		    }
 		    // register equivalent pair
 		    overlap.insert(pair<int, int>(it1->first, it2->first));
@@ -113,34 +115,33 @@ namespace igrow
 	}
 
 	// select some atoms to keep
-	scan_recursive(male, male->MinIndex());
+	scan_recursive(male, male.MinIndex());
 
 	// removal step
-	map<int, atom>::reverse_iterator r_it = male->atoms.rbegin();
-	while (r_it != male->atoms.rend())
+	map<int, atom>::reverse_iterator r_it = male.atoms.rbegin();
+	while (r_it != male.atoms.rend())
 	{
 	    // atom not scanned
 	    if (scanned.find(r_it->first) == scanned.end())
 	    {
-		r_it = male->DeleteAtom(r_it->first);
+		r_it = male.DeleteAtom(r_it->first);
 		// repeated atom
 	    }
 	    else if (toRemove.find(r_it->first) != toRemove.end())
 	    {
-		r_it = male->DeleteAtom(r_it->first);
+		r_it = male.DeleteAtom(r_it->first);
 	    }
 	    else
 	    {
 		++r_it;
 	    }
 	}
-	delete female;
 	return male;
     }
 
     // traverse the molecule graph
 
-    void Interaction::scan_recursive(ligand* ref, int index)
+    void Interaction::scan_recursive(ligand ref, int index)
     {
 	scanned.insert(index);
 	// make its counterpart scanned, prevent double counting
@@ -150,7 +151,7 @@ namespace igrow
 	set<int> IDs;
 	set<int>::iterator it;
 	IDs.clear();
-	atom connect_atom, cur_atom = ref->atoms[index];
+	atom connect_atom, cur_atom = ref.atoms[index];
 	int outgoingEdge(0);
 
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
@@ -164,7 +165,7 @@ namespace igrow
 	    for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
 		if (scanned.find(*it) == scanned.end())
 		{
-		    connect_atom = (*(ref->atoms.find(*it))).second;
+		    connect_atom = (*(ref.atoms.find(*it))).second;
 		    if (connect_atom.ID == cur_atom.ID)
 			scan_recursive(ref, *it);
 		}
@@ -174,7 +175,7 @@ namespace igrow
 	// find possible IDs from connected atoms
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
 	    if (scanned.find(*it) == scanned.end())
-		IDs.insert(ref->atoms[*it].ID);
+		IDs.insert(ref.atoms[*it].ID);
 
 	if (IDs.empty()) return;
 
@@ -187,9 +188,9 @@ namespace igrow
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
 	    if (scanned.find(*it) == scanned.end())
 	    {
-		connect_atom = (*(ref->atoms.find(*it))).second;
+		connect_atom = (*(ref.atoms.find(*it))).second;
 		// discard fragment of different ID
-		if ((*(ref->atoms.find(*it))).second.ID == toKeep)
+		if ((*(ref.atoms.find(*it))).second.ID == toKeep)
 		    scan_recursive(ref, *it);
 		else if (connect_atom.ID == cur_atom.ID)
 		    // maintain core scaffold
@@ -197,23 +198,23 @@ namespace igrow
 	    }
     }
 
-    ligand* Interaction::merge(const path& file1, const path& file2)
+    ligand Interaction::merge(const path& file1, const path& file2)
     {
-	ligand* male = new ligand();
-	male->load(file1);
-	ligand* female = new ligand();
-	female->load(file2);
+	ligand male;
+	male.load(file1);
+	ligand female;
+	female.load(file2);
 	return merge(male, female);
     }
 
-    ligand* Interaction::merge(ligand *male, ligand *female)
+    ligand Interaction::merge(ligand male, ligand female)
     {
 	// since index starts with 1, just add to it
-	int updateIndex, cascadeIndex = male->MaxIndex();
+	int updateIndex, cascadeIndex = male.MaxIndex();
 	set<int> tempIndice;
 	ostringstream output;
 	// append molecule to another by cascading the index
-	for (map<int, atom>::iterator it = female->atoms.begin(); it != female->atoms.end(); ++it)
+	for (map<int, atom>::iterator it = female.atoms.begin(); it != female.atoms.end(); ++it)
 	{
 	    atom toAdd = atom(it->second);
 	    updateIndex = atoi(toAdd.PDBIndex.c_str());
@@ -227,7 +228,7 @@ namespace igrow
 	    toAdd.IndexArray.clear();
 	    for (set<int>::iterator iter = tempIndice.begin(); iter != tempIndice.end(); ++iter)
 		toAdd.IndexArray.insert(*iter);
-	    male->atoms.insert(pair<int, atom > ((it->first) + cascadeIndex, toAdd));
+	    male.atoms.insert(pair<int, atom > ((it->first) + cascadeIndex, toAdd));
 	}
 
 	// initialise sets
@@ -240,15 +241,15 @@ namespace igrow
 	map<int, atom>::iterator it1, it2;
 	atom *atom1, *atom2;
 	// prevent comparison of atom in same molecule
-	it1 = male->atoms.begin();
+	it1 = male.atoms.begin();
 	// there are cascadeIndex number of atoms in first molecule
-	while (it1 != male->atoms.end())
+	while (it1 != male.atoms.end())
 	{
 	    // move iterator to appended molecule
 	    it2 = it1;
 	    ++it2;
 	    // scan till the end, only cascadeIndex to the end number of atoms in second molecule
-	    while (it2 != male->atoms.end())
+	    while (it2 != male.atoms.end())
 	    {
 		// skip index that can be found in the first molecule
 		if (it2->first <= cascadeIndex)
@@ -264,12 +265,12 @@ namespace igrow
 		    for (set<int>::iterator it = atom2->IndexArray.begin(); it != atom2->IndexArray.end(); ++it)
 		    {
 			atom1->IndexArray.insert(*it);
-			male->atoms[*it].IndexArray.insert(it1->first);
+			male.atoms[*it].IndexArray.insert(it1->first);
 		    }
 		    for (set<int>::iterator it = atom1->IndexArray.begin(); it != atom1->IndexArray.end(); ++it)
 		    {
 			atom2->IndexArray.insert(*it);
-			male->atoms[*it].IndexArray.insert(it2->first);
+			male.atoms[*it].IndexArray.insert(it2->first);
 		    }
 		    // register equivalent pair
 		    overlap.insert(pair<int, int>(it1->first, it2->first));
@@ -284,36 +285,28 @@ namespace igrow
 	}
 
 	// select some atoms to keep
-	remove_invalid(male, male->MinIndex());
+	remove_invalid(male, male.MinIndex());
 
 	// removal phase
-	map<int, atom>::reverse_iterator r_it = male->atoms.rbegin();
-	while (r_it != male->atoms.rend())
+	map<int, atom>::reverse_iterator r_it = male.atoms.rbegin();
+	while (r_it != male.atoms.rend())
 	{
 	    if (scanned.find(r_it->first) == scanned.end())
 	    {
-		r_it = male->DeleteAtom(r_it->first);
+		r_it = male.DeleteAtom(r_it->first);
 		continue;
 	    }
 	    if (toRemove.find(r_it->first) != toRemove.end())
 	    {
-		male->DeleteAtom(r_it->first);
+		male.DeleteAtom(r_it->first);
 		continue;
 	    }
 	    ++r_it;
 	}
-
-#ifdef OBJECT_SPACE
-	male->RotateLine(male->mole_axis, -male->mole_angle);
-	female->RotateLine(female->mole_axis, -female->mole_angle);
-	//male->Translate(male->translation);
-	//female->Translate(female->translation);
-#endif
-	delete female;
 	return male;
     }
 
-    void Interaction::remove_invalid(ligand *ref, int index)
+    void Interaction::remove_invalid(ligand ref, int index)
     {
 	scanned.insert(index);
 	// also get its counterpart
@@ -322,10 +315,10 @@ namespace igrow
 
 	set<int> IDs;
 	set<int>::iterator it;
-	atom cur_atom = ref->atoms[index];
+	atom cur_atom = ref.atoms[index];
 	for (it = cur_atom.IndexArray.begin(); it != cur_atom.IndexArray.end(); ++it)
 	    if (scanned.find(*it) == scanned.end())
-		IDs.insert(ref->atoms[*it].ID);
+		IDs.insert(ref.atoms[*it].ID);
 
 	if (IDs.empty()) return;
 
@@ -350,13 +343,13 @@ namespace igrow
 	    if (scanned.find(*it) == scanned.end())
 	    {
 		// go to the one which won
-		if ((*(ref->atoms.find(*it))).second.ID == toKeep)
+		if ((*(ref.atoms.find(*it))).second.ID == toKeep)
 		    remove_invalid(ref, *it);
 		// if there is only one fragment, always adopt it
 		if (outgoingEdge == 1)
 		    remove_invalid(ref, *it);
 		// maintain core scaffold
-		if ((*(ref->atoms.find(*it))).second.ID == cur_atom.ID)
+		if ((*(ref.atoms.find(*it))).second.ID == cur_atom.ID)
 		    remove_invalid(ref, *it);
 	    }
     }

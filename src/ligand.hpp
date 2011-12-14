@@ -44,7 +44,7 @@ namespace igrow
         // produce a PDB file based on this molecule
         void save(const path& file);
         // break the molecule into two while retaining the atoms indicated by the reference
-        ligand* split(const ligand& ref);
+        ligand split(const ligand& ref);
         // add a fragment to the molecule by replacing a hydrogen in the original structure
         void mutate(const path& file);
         // check whether all the atoms are no less than a certain threshold distance

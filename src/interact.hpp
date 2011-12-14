@@ -32,18 +32,18 @@ namespace igrow
     {
     public:
 
-        ligand* mate(const path& file1, const path& file2);
+        ligand mate(const path& file1, const path& file2);
         // selectively combine two molecules to produce a new one
-        ligand* mate(ligand* male, ligand* female);
-        ligand* merge(const path& file1, const path& file2);
+        ligand mate(ligand male, ligand female);
+        ligand merge(const path& file1, const path& file2);
         // maximally merge two molecules to produce a new one
-        ligand* merge(ligand* male, ligand* female);
+        ligand merge(ligand male, ligand female);
 
     protected:
         // traverse the molecule and decide which atom to select
-        void scan_recursive(ligand* ref, int index);
+        void scan_recursive(ligand ref, int index);
         // traverse the molecule to find out which atom to be removed
-        void remove_invalid(ligand* ref, int index);
+        void remove_invalid(ligand ref, int index);
         
     private:
         // set of atoms that have been visited
