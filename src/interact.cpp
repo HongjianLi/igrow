@@ -21,10 +21,17 @@
 
 namespace igrow
 {
+<<<<<<< HEAD
     using std::pair;
     using std::map;
     using std::set;
     using std::ostringstream;
+=======
+	using std::pair;
+	using std::map;
+	using std::set;
+	using std::ostringstream;
+>>>>>>> e1ba431c27cb57afa618350167302a323da2dd28
 
     // overloaded method to accept file name
 
