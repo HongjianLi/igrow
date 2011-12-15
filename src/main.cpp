@@ -301,11 +301,12 @@ main(int argc, char* argv[])
 		prepare_ligand4_args[3] = "-o";
 
 		// Initialize arguments to idock.
-		vector<string> idock_args(6);
+		vector<string> idock_args(8);
 		idock_args[0] = "--config";
 		idock_args[1] = docking_config_path.string();
 		idock_args[2] = "--ligand_folder";
 		idock_args[4] = "--output_folder";
+		idock_args[6] = "--log";
 
 		// Initialize arguments to Vina.
 		vector<string> vina_args(8);
@@ -383,11 +384,12 @@ main(int argc, char* argv[])
 				// Invoke idock.
 				idock_args[3] = current_pdbqt_folder_path.string();
 				idock_args[5] = current_output_folder_path.string();
+				idock_args[7] = (current_log_folder_path / path("log")).string();
 				create_child(docking_program_path.string(), idock_args, ctx).wait();
 
 				// Parse idock log.
-				ifile log(current_generation_folder_path / path("log"));
-				log.seekg(100);
+				ifile log(current_log_folder_path / path("log"));
+				log.seekg(10);
 				string line;
 				while (getline(log, line))
 				{
