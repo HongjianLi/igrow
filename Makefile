@@ -1,4 +1,4 @@
-CC = g++ -O3 -DNDEBUG -std=gnu++0x
+CC = g++ -static -O3 -DNDEBUG -std=gnu++0x
 
 ifeq ($(TOOLSET), clang)
   CC = clang++ -static -O3 -DNDEBUG -std=gnu++11
@@ -14,3 +14,4 @@ obj/%.o : src/%.cpp
 
 clean:
 	rm -f bin/igrow obj/*.o
+

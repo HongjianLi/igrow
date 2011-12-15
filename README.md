@@ -37,7 +37,7 @@ Unsupported operating systems and compilers
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The Boost libraries required by igrow are `System`, `Thread`, `Filesystem`, and `Program Options`.
+igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The Boost libraries required by igrow are `System`, `Thread`, `Filesystem`, and `Program Options`. [Boost.Process], an unofficial library, is also required by igrow. It must be downloaded and extracted to the Boost distribution tree.
 
 ### Compilation on Linux
 
@@ -113,7 +113,7 @@ Change Log
 Contact Author
 --------------
 
-Jacky Lee (JackyLeeHongJian@Gmail.com)
+[Jacky Lee] (JackyLeeHongJian@Gmail.com)
 
 
 Logo
@@ -131,6 +131,8 @@ Red grape is chosen as the logo for igrow because it is one of the author's favo
 [Apache License 2.0]: http://www.apache.org/licenses/LICENSE-2.0.html
 [C++11]: http://en.wikipedia.org/wiki/C++11
 [Boost C++ Libraries]: http://www.boost.org
+[Boost.Process]: www.highscore.de/boost/gsoc2010/process.zip
 [doxygen]: http://www.doxygen.org
+[Jacky Lee]: http://www.cse.cuhk.edu.hk/~hjli
 [Open Clip Art]: http://www.openclipart.org
 

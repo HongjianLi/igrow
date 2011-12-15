@@ -16,15 +16,12 @@
 
  */
 
-#include "atom.hpp"
 #include <sstream>
 #include <iomanip>
-#include <stdio.h>
+#include "atom.hpp"
 
 namespace igrow
 {
-	using std::ostringstream;
-
 	bool atom::isSP2() const
 	{
 		return ((element == "C") && (IndexArray.size() == 3));
@@ -92,20 +89,20 @@ namespace igrow
 
 	string atom::WritePDBLine(int index)
 	{
-		string Line("ATOM ");
+		string line("ATOM ");
 		// use stream to collect numerous information
-		ostringstream buffer;
+		std::ostringstream buffer;
 		buffer.str(string());
 		// fill space and append index to std::right, taking up 6 slots
 		buffer << std::setfill(' ') << std::setw(6);
 		buffer << std::right << index;
-		Line += buffer.str();
+		line += buffer.str();
 		buffer.str(string());
 		// append name to std::right, taking up 5 slots
 		buffer << std::setfill(' ') << std::setw(5);
 		buffer << std::right << name;
-		Line += buffer.str();
-		Line += Residue;
+		line += buffer.str();
+		line += Residue;
 		buffer.str(string());
 		// set float precision to 2 decimal places, x-coordinate takes up 18 slots
 		buffer << std::setfill(' ') << std::setw(18);
@@ -118,7 +115,7 @@ namespace igrow
 			buffer.precision(3);
 		if (abs(coordinates.n[0]) < 0.001) coordinates.n[0] = 0;*/
 		buffer << std::fixed << std::right << coordinates.n[0];
-		Line += buffer.str();
+		line += buffer.str();
 		buffer.str(string());
 		// y-coordinate takes up 8 slots
 		buffer << std::setfill(' ') << std::setw(8);
@@ -128,7 +125,7 @@ namespace igrow
 			buffer.precision(3);
 		if (abs(coordinates.n[1]) < 0.001) coordinates.n[1] = 0;*/
 		buffer << std::fixed << std::right << coordinates.n[1];
-		Line += buffer.str();
+		line += buffer.str();
 		buffer.str(string());
 		// z-coordinate takes up 8 slots
 		buffer << std::setfill(' ') << std::setw(8);
@@ -138,7 +135,7 @@ namespace igrow
 			buffer.precision(3);
 		if (abs(coordinates.n[2]) < 0.001) coordinates.n[2] = 0;*/
 		buffer << std::fixed << std::right << coordinates.n[2];
-		Line += buffer.str();
+		line += buffer.str();
 		buffer.str(string());
 		// append element type that takes up 24 slots
 		buffer << std::setfill(' ') << std::setw(24);
@@ -147,8 +144,8 @@ namespace igrow
 			buffer << std::right << "  ";
 		else
 			buffer << std::right << " ";
-		Line += buffer.str();
-		return Line;
+		line += buffer.str();
+		return line;
 	}
 
 }

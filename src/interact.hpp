@@ -19,10 +19,7 @@
 #ifndef IGROW_INTERACT_HPP
 #define IGROW_INTERACT_HPP
 
-#include <boost/filesystem/path.hpp>
-#include "common.hpp"
 #include "ligand.hpp"
-#include <map>
 
 namespace igrow
 {
