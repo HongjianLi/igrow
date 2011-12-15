@@ -345,14 +345,14 @@ main(int argc, char* argv[])
 			{
 				// Parse and dump the initial ligand.
 				ligand initial_lig;
-				initial_lig.load(initial_ligand_path.string());
+				initial_lig.load(initial_ligand_path);
 				initial_lig.save(current_pdb_folder_path / "1.pdb");
 
 				// Create mutants in parallel.
 				for (size_t i = 1; i != population_size; ++i)
 				{
 					ligand lig;
-					//		    lig.load(initial_ligand_path);
+					lig.load(initial_ligand_path);
 					//		    string fragment_name = fragments.ReturnRandomFileName();
 					//		    lig.mutate(fragments.path + fragment_name);
 
