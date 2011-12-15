@@ -232,7 +232,7 @@ namespace igrow
 	// select hydrogen
 	int count(0), connectIndex, fragHydrogen(-1), fragIndex, linkerHydrogen(-1);
 	// atom copy and atom reference
-	atom curHydrogen, connectAtom, *fragHydrogenAtom, *fragConnectAtom;
+	atom curHydrogen, *fragHydrogenAtom, *fragConnectAtom;
 	string element1, element2;
 	Vec3d delta;
 
@@ -241,7 +241,7 @@ namespace igrow
 	curHydrogen = atoms[linkerHydrogen];
 	// hydrogen has only 1 connection, get the first index in array
 	connectIndex = *(curHydrogen.IndexArray.begin());
-	connectAtom = atoms[connectIndex];
+	const atom connectAtom = atoms[connectIndex];
 	// do the same on the fragment, there must be so hydrogen in the library...
 	fragHydrogen = fragment.IndexOfRandomHydrogen();
 	// these atoms would be updated, get reference instead of copying

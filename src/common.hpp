@@ -26,7 +26,6 @@
 namespace igrow
 {
 	// These classes are widely used across the entire program.
-	using std::runtime_error;
 	using std::vector;
 	using std::string;
 
