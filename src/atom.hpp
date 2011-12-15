@@ -69,9 +69,6 @@ namespace igrow
 
 		// the Euclidean distance to another atom
 		double DistanceTo(const atom& other) const;
-
-		// parser to read a PDB line stated ATOM or HETATM
-		void ReadPDBLine(const string& line);
 	};
 
 }

@@ -50,8 +50,29 @@ namespace igrow
 			if ((record == "ATOM  ") || record == string("HETATM"))
 			{
 				atom a;
-				a.ReadPDBLine(line);
+
+				// Parse atom serial number.
+				const size_t start = line.find_first_not_of(' ', 6);
+				a.PDBIndex = line.substr(start, 11 - start);
+
+				// Parse atom name.
+				a.name = line.substr(13, 3);
+
+				// Parse residue name.
+				a.Residue = line.substr(16, 4);
+				if (a.Residue == "    ") a.Residue = " MOL";
+
+				// Parse X,Y,Z coordinates.
+				a.coordinates.n[0] = right_cast<int>(line, 31, 38);
+				a.coordinates.n[1] = right_cast<int>(line, 39, 46);
+				a.coordinates.n[2] = right_cast<int>(line, 47, 54);
+
+				// Parse element symbol.
+				if (line[76] != ' ') a.element = toupper(line[76]);
+				a.element += toupper(line[77]);
+
 				a.ID = ID;
+
 				// read index from file
 				atoms.insert(pair<int, atom > (right_cast<int>(line, 7, 11), a));
 			}
