@@ -7,7 +7,7 @@ igrow is a multithreaded structure-based [drug design] tool for computational dr
 Features
 --------
 
-* igrow is inspired by [AutoGrow]. It can use [AutoDock Vina] or [idock] as backend docking engine.
+* igrow is inspired by [AutoGrow]. It uses either [idock] or [AutoDock Vina] as backend docking engine.
 
 
 Supported operating systems and compilers
@@ -79,7 +79,7 @@ To display a full list of available options, simply run the program without argu
 
 The `examples` folder contains several use cases. One can supply the options from command line arguments
 
-    igrow --fragment_folder ~/igrow/fragments --initial_ligand ~/igrow/examples/2ZD1/ZINC01019824.pdb --python ~/MGLTools/bin/python2.5 --prepare_ligand4 ~/MGLTools/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.pyo --vina_cfg ~/igrow/examples/2ZD1/vina.cfg
+    igrow --fragment_folder ~/igrow/fragments --initial_ligand ~/igrow/examples/2ZD1/ZINC01019824.pdb --python ~/MGLTools/bin/python2.5 --prepare_ligand4 ~/MGLTools/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.pyo --docking_program ~/idock/bin/idock --docking_config ~/igrow/examples/2ZD1/idock.cfg
 
 Or one can instruct igrow to load the options from a configuration file
 
