@@ -47,7 +47,7 @@ namespace igrow
 		while (getline(in, line))
 		{
 			const string record = line.substr(0, 6);
-			if ((record == "ATOM  ") || record == string("HETATM"))
+			if ((record == "ATOM  ") || (record == "HETATM"))
 			{
 				atom a;
 
@@ -74,7 +74,7 @@ namespace igrow
 				a.ID = ID;
 
 				// read index from file
-				atoms.insert(pair<int, atom > (right_cast<int>(line, 7, 11), a));
+				atoms.insert(pair<int, atom > (lexical_cast<int>(a.PDBIndex), a));
 			}
 			else if (record == "CONECT")
 			{
@@ -88,6 +88,7 @@ namespace igrow
 		}
 		in.close();
 
+		// TODO: Rewrite bond generation.
 		// when there is no connection information, generate bonds
 		if (!connectData)
 		{
