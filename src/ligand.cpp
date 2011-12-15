@@ -53,16 +53,16 @@ namespace igrow
 				a.ReadPDBLine(line);
 				a.ID = ID;
 				// read index from file
-				atoms.insert(pair<int, atom > (right_cast<int>(line, 6, 10), a));
+				atoms.insert(pair<int, atom > (right_cast<int>(line, 7, 11), a));
 			}
 			else if (record == "CONECT")
 			{
 				connectData = true;
-				const int index = right_cast<int>(line, 6, 10);
-				atoms[index].IndexArray.insert(right_cast<int>(line, 11, 15));
-				if (line[20] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 16, 20));
-				if (line[25] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 21, 25));
-				if (line[30] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 26, 30));
+				const int index = right_cast<int>(line, 7, 11);
+				atoms[index].IndexArray.insert(right_cast<int>(line, 12, 16));
+				if (line[20] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 17, 21));
+				if (line[25] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 22, 26));
+				if (line[30] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 27, 31));
 			}
 		}
 		in.close();
