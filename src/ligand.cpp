@@ -98,8 +98,29 @@ namespace igrow
 	void ligand::save(const path& file)
 	{
 		ofstream out(file);
+		out.precision(3);
 		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-			out << it->second.WritePDBLine(it->first) << std::endl;
+		{
+			const atom& a = it->second;			
+			out << "ATOM  "
+				<< std::setw(5) << it->first
+				<< ' ' << a.name
+				<< a.Residue
+				<< std::setw(10) << ' '
+				<< std::setw(8) << a.coordinates.n[0]
+				<< std::setw(8) << a.coordinates.n[2]
+				<< std::setw(8) << a.coordinates.n[2]
+				<< std::setw(22) << ' ';
+			if (a.element.size() == 2)
+			{
+				out << a.element;
+			}
+			else
+			{
+				out << ' ' << a.element;
+			}
+			out << "  \n";
+		}
 
 		// connect data
 		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)

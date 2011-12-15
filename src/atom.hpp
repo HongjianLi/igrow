@@ -72,9 +72,6 @@ namespace igrow
 
 		// parser to read a PDB line stated ATOM or HETATM
 		void ReadPDBLine(const string& line);
-
-		// write the information of this atom in the PDB format
-		string WritePDBLine(int index);
 	};
 
 }
