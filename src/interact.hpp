@@ -23,12 +23,9 @@
 
 namespace igrow
 {
-    using boost::filesystem::path;
-
     class Interaction
     {
     public:
-
         ligand mate(ligand male, ligand female);
         // maximally merge two molecules to produce a new one
         ligand merge(ligand male, ligand female);
@@ -41,12 +38,10 @@ namespace igrow
         
     private:
         // set of atoms that have been visited
-        std::set<int> scanned;
-        
+        std::set<int> scanned;        
         // pairs of atoms that are considered to be equal in terms of type and position
         std::map<int, int> overlap;
     };
-
 }
 
 #endif

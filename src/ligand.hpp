@@ -19,10 +19,10 @@
 #ifndef IGROW_LIGAND_HPP
 #define IGROW_LIGAND_HPP
 
-#include <boost/filesystem/path.hpp>
 #include <map>
 #include <list>
 #include <set>
+#include <boost/filesystem/path.hpp>
 #include "atom.hpp"
 
 namespace igrow

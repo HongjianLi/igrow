@@ -42,9 +42,10 @@ main(int argc, char* argv[])
 	std::cout << "igrow 1.0\n";
 
 	using namespace igrow;
-	path fragment_folder_path, initial_ligand_path, python_path, prepare_ligand4_path, vina_cfg_path, output_folder_path, log_path, csv_path;
+	path fragment_folder_path, initial_ligand_path, python_path, prepare_ligand4_path, docking_program_path, docking_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_generations, num_elitists, num_mutants, num_children, max_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp;
+	bool idock;
 
 	// Process program options.
 	{
@@ -53,8 +54,8 @@ main(int argc, char* argv[])
 
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
-		const path default_log_path = "log";
-		const path default_csv_path = "statistics.csv";
+		const path default_log_path = "log.txt";
+		const path default_csv_path = "log.csv";
 		const unsigned int concurrency = boost::thread::hardware_concurrency();
 		const unsigned int default_num_threads = concurrency ? concurrency : 1;
 		const size_t default_seed = random_seed();
@@ -72,16 +73,17 @@ main(int argc, char* argv[])
 		input_options.add_options()
 			("fragment_folder", value<path > (&fragment_folder_path)->required(), "folder of fragments in PDB format")
 			("initial_ligand", value<path > (&initial_ligand_path)->required(), "initial ligand in PDB format")
-			("python", value<path > (&python_path)->required(), "python executable")
-			("prepare_ligand4", value<path > (&prepare_ligand4_path)->required(), "prepare_ligand4 python script")
-			("vina_cfg", value<path > (&vina_cfg_path)->required(), "configuration file for Vina")
+			("python", value<path > (&python_path)->required(), "path to python executable")
+			("prepare_ligand4", value<path > (&prepare_ligand4_path)->required(), "path to prepare_ligand4 script")
+			("docking_program", value<path > (&docking_program_path)->required(), "path to idock or vina executable")
+			("docking_config", value<path > (&docking_config_path)->required(), "path to idock or vina configuration file")
 			;
 
 		options_description output_options("output (optional)");
 		output_options.add_options()
 			("output_folder", value<path > (&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
-			("log", value<path > (&log_path)->default_value(default_log_path), "log file")
-			("csv", value<path > (&csv_path)->default_value(default_csv_path), "statistics file in CSV format")
+			("log", value<path > (&log_path)->default_value(default_log_path), "log file in plain text")
+			("csv", value<path > (&csv_path)->default_value(default_csv_path), "log file in CSV format")
 			;
 
 		options_description miscellaneous_options("options (optional)");
@@ -177,15 +179,43 @@ main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Validate Vina configuration file.
-		if (!exists(vina_cfg_path))
+		// Validate docking program.
+		if (!exists(docking_program_path))
 		{
-			cerr << "Vina configuration file " << vina_cfg_path << " does not exist\n";
+			cerr << "Docking program " << docking_program_path << " does not exist\n";
 			return 1;
 		}
-		if (!is_regular_file(vina_cfg_path))
+		if (!is_regular_file(docking_program_path))
 		{
-			cerr << "Vina configuration file " << vina_cfg_path << " is not a regular file\n";
+			cerr << "Docking program " << docking_program_path << " is not a regular file\n";
+			return 1;
+		}
+
+		// Determine if the docking program is idock or vina.
+		const string docking_program = docking_program_path.stem().string();
+		if (docking_program == "idock")
+		{
+			idock = true;
+		}
+		else if (docking_program == "vina")
+		{
+			idock = false;
+		}
+		else
+		{
+			cerr << "Docking program must be either idock or vina\n";
+			return 1;
+		}
+
+		// Validate docking configuration file.
+		if (!exists(docking_config_path))
+		{
+			cerr << "Docking configuration file " << docking_config_path << " does not exist\n";
+			return 1;
+		}
+		if (!is_regular_file(docking_config_path))
+		{
+			cerr << "Docking configuration file " << docking_config_path << " is not a regular file\n";
 			return 1;
 		}
 
@@ -270,10 +300,17 @@ main(int argc, char* argv[])
 		prepare_ligand4_args[1] = "-l";
 		prepare_ligand4_args[3] = "-o";
 
+		// Initialize arguments to idock.
+		vector<string> idock_args(6);
+		idock_args[0] = "--config";
+		idock_args[1] = docking_config_path.string();
+		idock_args[2] = "--ligand_folder";
+		idock_args[4] = "--output_folder";
+
 		// Initialize arguments to Vina.
 		vector<string> vina_args(8);
 		vina_args[0] = "--config";
-		vina_args[1] = vina_cfg_path.string();
+		vina_args[1] = docking_config_path.string();
 		vina_args[2] = "--ligand";
 		vina_args[4] = "--out";
 		vina_args[6] = "--log";
@@ -314,7 +351,7 @@ main(int argc, char* argv[])
 				for (size_t i = 1; i != population_size; ++i)
 				{
 					ligand lig;
-					//		    lig.load(initial_ligand_path.string());
+					//		    lig.load(initial_ligand_path);
 					//		    string fragment_name = fragments.ReturnRandomFileName();
 					//		    lig.mutate(fragments.path + fragment_name);
 
@@ -328,12 +365,11 @@ main(int argc, char* argv[])
 			{
 				const path previous_generation_folder_path(output_folder_path / path(lexical_cast<string > (current_generation - 1)));
 				//	    Interaction interact;
-				//	    Ligand* child = interact.mate(m1, m2);
-				//	    if (child->valid());
+				//	    Ligand child = interact.mate(m1, m2);
+				//	    if (child.valid());
 			}
 
 			// Convert ligands to PDBQT format by calling prepare_ligand4 python script.
-
 			for (size_t i = 1; i <= population_size; ++i)
 			{
 				prepare_ligand4_args[2] = (current_pdb_folder_path / path(lexical_cast<string > (i) + ".pdb")).string();
@@ -341,28 +377,49 @@ main(int argc, char* argv[])
 				create_child(python_path.string(), prepare_ligand4_args, ctx).wait();
 			}
 
-			// Dock ligands to predict their free energy by calling AutoDock Vina.
-			for (size_t i = 1; i <= population_size; ++i)
+			// Call either idock or vina to dock ligands to predict their free energy and then parse the docking log.
+			if (idock)
 			{
-				vina_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-				vina_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-				vina_args[7] = (current_log_folder_path / path(lexical_cast<string > (i) + ".log")).string();
-				create_child(find_executable_in_path("vina"), vina_args, ctx).wait();
-			}
+				// Invoke idock.
+				idock_args[3] = current_pdbqt_folder_path.string();
+				idock_args[5] = current_output_folder_path.string();
+				create_child(docking_program_path.string(), vina_args, ctx).wait();
 
-			// Parse docking log.
-			for (size_t i = 1; i <= population_size; ++i)
-			{
-				ifile log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
-				log.seekg(1177);
+				// Parse idock log.
+				ifile log(current_generation_folder_path / path("log"));
+				log.seekg(100);
 				string line;
 				while (getline(log, line))
 				{
-					if (line[3] == '1')
+				}
+				log.close();
+			}
+			else
+			{
+				// Invoke vina.
+				for (size_t i = 1; i <= population_size; ++i)
+				{
+					vina_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					vina_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					vina_args[7] = (current_log_folder_path / path(lexical_cast<string > (i) + ".log")).string();
+					create_child(docking_program_path.string(), vina_args, ctx).wait();
+				}
+
+				// Parse vina log.
+				for (size_t i = 1; i <= population_size; ++i)
+				{
+					ifile log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
+					log.seekg(1177);
+					string line;
+					while (getline(log, line))
 					{
-						const size_t start = line.find_first_not_of(' ', 8);
-						const fl free_energy = lexical_cast<fl > (line.substr(start, 17 - start));
+						if (line[3] == '1')
+						{
+							const size_t start = line.find_first_not_of(' ', 8);
+							const fl free_energy = lexical_cast<fl > (line.substr(start, 17 - start));
+						}
 					}
+					log.close();
 				}
 			}
 

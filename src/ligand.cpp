@@ -1260,18 +1260,14 @@ namespace igrow
 
 	int ligand::MaxIndex()
 	{
-		map<int, atom>::reverse_iterator rit;
-		rit = atoms.rbegin();
-		return rit->first;
+		return atoms.rbegin()->first;
 	}
 
 	// as it is a map, smallest indexed element is at the front
 
 	int ligand::MinIndex()
 	{
-		map<int, atom>::iterator it;
-		it = atoms.begin();
-		return it->first;
+		return atoms.begin()->first;
 	}
 
 	// will invalidate iterator, return updated one

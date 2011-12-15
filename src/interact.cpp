@@ -52,7 +52,6 @@ namespace igrow
 
 		// initialise sets
 		set<int> toRemove;
-		toRemove.clear();
 		overlap.clear();
 		scanned.clear();
 
@@ -213,7 +212,6 @@ namespace igrow
 
 		// initialise sets
 		set<int> toRemove;
-		toRemove.clear();
 		overlap.clear();
 		scanned.clear();
 
