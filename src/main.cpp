@@ -71,8 +71,8 @@ main(int argc, char* argv[])
 
 		options_description input_options("input (required)");
 		input_options.add_options()
-			("fragment_folder", value<path > (&fragment_folder_path)->required(), "folder of fragments in PDB format")
-			("initial_ligand", value<path > (&initial_ligand_path)->required(), "initial ligand in PDB format")
+			("fragment_folder", value<path > (&fragment_folder_path)->required(), "path to folder of fragments in PDB format")
+			("initial_ligand", value<path > (&initial_ligand_path)->required(), "path to initial ligand in PDB format")
 			("python", value<path > (&python_path)->required(), "path to python executable")
 			("prepare_ligand4", value<path > (&prepare_ligand4_path)->required(), "path to prepare_ligand4 script")
 			("docking_program", value<path > (&docking_program_path)->required(), "path to idock or vina executable")
