@@ -43,32 +43,38 @@ namespace igrow
 	class atom
 	{
 	public:
+		// the index read from the PDB file
+		string PDBIndex;
+
+		// the name of an atom indicated by the atom type and a number, following the standard of IUPAC
+		string name;
+
+		// the residue this atom belongs tO
+		string Residue;
+
 		// 3D coordinates
 		Vec3d coordinates;
 
 		// the type of atom as in a periodic table
 		string element;
 
-		// the name of an atom indicated by the atom type and a number, following the standard of IUPAC
-		string name;
-
 		// the index of connected atoms, given by PDB index
 		set<int> IndexArray;
-
-		// the index read from the PDB file
-		string PDBIndex;
-
-		// the residue this atom belongs tO
-		string Residue;
 
 		// a unique ID representing the ligand which could help distinguish in some operations
 		int ID;
 
 		// planarize surroundings when this atom is found in this orbital
-		bool isSP2() const;
+		bool isSP2() const
+		{
+			return ((element == "C") && (IndexArray.size() == 3));
+		}
 
 		// the Euclidean distance to another atom
-		double DistanceTo(const atom& other) const;
+		double DistanceTo(const atom& other) const
+		{
+			return (coordinates - other.coordinates).length();
+		}
 	};
 
 }

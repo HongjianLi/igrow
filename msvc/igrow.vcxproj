@@ -31,7 +31,6 @@
     <ClInclude Include="..\src\vec.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\atom.cpp" />
     <ClCompile Include="..\src\bondlibrary.cpp" />
     <ClCompile Include="..\src\interact.cpp" />
     <ClCompile Include="..\src\ligand.cpp" />
