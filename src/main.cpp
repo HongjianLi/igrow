@@ -383,7 +383,7 @@ main(int argc, char* argv[])
 				// Invoke idock.
 				idock_args[3] = current_pdbqt_folder_path.string();
 				idock_args[5] = current_output_folder_path.string();
-				create_child(docking_program_path.string(), vina_args, ctx).wait();
+				create_child(docking_program_path.string(), idock_args, ctx).wait();
 
 				// Parse idock log.
 				ifile log(current_generation_folder_path / path("log"));
