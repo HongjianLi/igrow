@@ -301,10 +301,12 @@ main(int argc, char* argv[])
 		prepare_ligand4_args[3] = "-o";
 
 		// Initialize arguments to idock or vina.
-		vector<string> docking_args(8);
+		vector<string> docking_args(10);
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
 		docking_args[6] = "--log";
+		docking_args[8] = "--seed";
+		docking_args[9] = lexical_cast<string>(seed);
 		if (idock)
 		{
 			docking_args[2] = "--ligand_folder";
@@ -382,6 +384,7 @@ main(int argc, char* argv[])
 			if (idock)
 			{
 				// Invoke idock.
+				log << "Calling idock to dock " << population_size << " ligands\n";
 				docking_args[3] = current_pdbqt_folder_path.string();
 				docking_args[5] = current_output_folder_path.string();
 				docking_args[7] = (current_log_folder_path / path("log")).string();
@@ -405,6 +408,7 @@ main(int argc, char* argv[])
 			else
 			{
 				// Invoke vina.
+				log << "Calling vina to dock " << population_size << " ligands\n";
 				for (size_t i = 1; i <= population_size; ++i)
 				{
 					docking_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
