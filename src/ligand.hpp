@@ -20,7 +20,6 @@
 #define IGROW_LIGAND_HPP
 
 #include <map>
-#include <list>
 #include <set>
 #include <boost/filesystem/path.hpp>
 #include "atom.hpp"
@@ -41,7 +40,12 @@ namespace igrow
 		// a collection of atoms indicated by their indice
 		map<int, atom> atoms;
 		int ID;
-		// load information of a PDB file in the form of a molecule
+		
+		size_t num_hb_donors; ///< Number of hydrogen bond donors.
+		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
+		fl mw; ///< Molecular weight.		
+		fl logp; ///< LogP.
+		
 		void load(const path& file);
 		// produce a PDB file based on this molecule
 		void save(const path& file);

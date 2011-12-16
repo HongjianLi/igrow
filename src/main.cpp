@@ -408,7 +408,7 @@ main(int argc, char* argv[])
 				for (size_t i = 1; i <= population_size; ++i)
 				{
 					docking_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-					dockingvina_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					docking_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
 					docking_args[7] = (current_log_folder_path / path(lexical_cast<string > (i) + ".log")).string();
 					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
