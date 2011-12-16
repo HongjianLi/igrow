@@ -63,9 +63,9 @@ namespace igrow
 				if (a.Residue == "    ") a.Residue = " MOL";
 
 				// Parse X,Y,Z coordinates.
-				a.coordinates.n[0] = right_cast<int>(line, 31, 38);
-				a.coordinates.n[1] = right_cast<int>(line, 39, 46);
-				a.coordinates.n[2] = right_cast<int>(line, 47, 54);
+				a.coordinates.n[0] = right_cast<fl>(line, 31, 38);
+				a.coordinates.n[1] = right_cast<fl>(line, 39, 46);
+				a.coordinates.n[2] = right_cast<fl>(line, 47, 54);
 
 				// Parse element symbol.
 				if (line[76] != ' ') a.element = toupper(line[76]);
@@ -119,18 +119,20 @@ namespace igrow
 
 	void ligand::save(const path& file)
 	{
+		using namespace std;
 		ofstream out(file);
-		out.precision(3);
+		out.setf(ios::fixed, ios::floatfield);
+		out << setprecision(3);
 		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
 		{
 			const atom& a = it->second;			
 			out << "ATOM  "
 				<< std::setw(5) << it->first
-				<< ' ' << a.name
+				<< "  " << a.name
 				<< a.Residue
 				<< std::setw(10) << ' '
 				<< std::setw(8) << a.coordinates.n[0]
-				<< std::setw(8) << a.coordinates.n[2]
+				<< std::setw(8) << a.coordinates.n[1]
 				<< std::setw(8) << a.coordinates.n[2]
 				<< std::setw(22) << ' ';
 			if (a.element.size() == 2)

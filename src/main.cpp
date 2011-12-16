@@ -300,21 +300,21 @@ main(int argc, char* argv[])
 		prepare_ligand4_args[1] = "-l";
 		prepare_ligand4_args[3] = "-o";
 
-		// Initialize arguments to idock.
-		vector<string> idock_args(8);
-		idock_args[0] = "--config";
-		idock_args[1] = docking_config_path.string();
-		idock_args[2] = "--ligand_folder";
-		idock_args[4] = "--output_folder";
-		idock_args[6] = "--log";
-
-		// Initialize arguments to Vina.
-		vector<string> vina_args(8);
-		vina_args[0] = "--config";
-		vina_args[1] = docking_config_path.string();
-		vina_args[2] = "--ligand";
-		vina_args[4] = "--out";
-		vina_args[6] = "--log";
+		// Initialize arguments to idock or vina.
+		vector<string> docking_args(8);
+		docking_args[0] = "--config";
+		docking_args[1] = docking_config_path.string();
+		docking_args[6] = "--log";
+		if (idock)
+		{
+			docking_args[2] = "--ligand_folder";
+			docking_args[4] = "--output_folder";			
+		}
+		else
+		{
+			docking_args[2] = "--ligand";
+			docking_args[4] = "--out";
+		}
 
 		// The number of ligands is equal to the number of elitists plus mutants plus children.
 		const size_t population_size = num_elitists + num_mutants + num_children;
@@ -382,17 +382,23 @@ main(int argc, char* argv[])
 			if (idock)
 			{
 				// Invoke idock.
-				idock_args[3] = current_pdbqt_folder_path.string();
-				idock_args[5] = current_output_folder_path.string();
-				idock_args[7] = (current_log_folder_path / path("log")).string();
-				create_child(docking_program_path.string(), idock_args, ctx).wait();
+				docking_args[3] = current_pdbqt_folder_path.string();
+				docking_args[5] = current_output_folder_path.string();
+				docking_args[7] = (current_log_folder_path / path("log")).string();
+				create_child(docking_program_path.string(), docking_args, ctx).wait();
 
 				// Parse idock log.
 				ifile log(current_log_folder_path / path("log"));
-				log.seekg(10);
+				log.seekg(103);
 				string line;
 				while (getline(log, line))
 				{
+					if (line[0] == ' ') break; //   index |       ligand |   progress | conf | top 5 conf free energy in kcal/mol
+				}
+				while (getline(log, line))
+				{
+					const size_t ligand_id = right_cast<size_t>(line, 11, 22);
+					const fl free_energy = right_cast<fl>(line, 46, 51);
 				}
 				log.close();
 			}
@@ -401,10 +407,10 @@ main(int argc, char* argv[])
 				// Invoke vina.
 				for (size_t i = 1; i <= population_size; ++i)
 				{
-					vina_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-					vina_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-					vina_args[7] = (current_log_folder_path / path(lexical_cast<string > (i) + ".log")).string();
-					create_child(docking_program_path.string(), vina_args, ctx).wait();
+					docking_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					dockingvina_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					docking_args[7] = (current_log_folder_path / path(lexical_cast<string > (i) + ".log")).string();
+					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
 
 				// Parse vina log.
