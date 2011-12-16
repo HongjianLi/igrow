@@ -45,10 +45,11 @@ namespace igrow
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
 		fl mw; ///< Molecular weight.		
 		fl logp; ///< LogP.
+		fl free_energy; ///< Predicted free energy obtained by external docking.
 		
 		void load(const path& file);
-		// produce a PDB file based on this molecule
 		void save(const path& file);
+		
 		// break the molecule into two while retaining the atoms indicated by the reference
 		ligand split(const ligand& ref);
 		// add a fragment to the molecule by replacing a hydrogen in the original structure
