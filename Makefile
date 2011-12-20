@@ -14,4 +14,3 @@ obj/%.o: src/%.cpp
 
 clean:
 	rm -f bin/igrow obj/*.o
-
