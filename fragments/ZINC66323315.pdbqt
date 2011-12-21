@@ -1,0 +1,35 @@
+REMARK  3 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C1_1  and  C2_2 
+REMARK    2  A    between atoms: C4_4  and  N3_11 
+REMARK    3  A    between atoms: C5_5  and  C7_8 
+REMARK       I    between atoms: C7_8  and  N2_10 
+ROOT
+ATOM      1  C2  <0> d           0.011  -0.009   0.142  0.00  0.00    -0.042 A 
+ATOM      2  C3  <0> d          -0.005  -0.570  -1.121  0.00  0.00    -0.048 A 
+ATOM      3  C4  <0> d           0.005  -1.962  -1.230  0.00  0.00     0.061 A 
+ATOM      4  C5  <0> d           0.032  -2.731  -0.059  0.00  0.00     0.149 A 
+ATOM      5  N1  <0> d           0.047  -2.143   1.132  0.00  0.00    -0.253 NA
+ATOM      6  C6  <0> d           0.043  -0.835   1.256  0.00  0.00     0.009 A 
+ATOM      7  H4  <0> d          -0.026   0.053  -2.003  0.00  0.00     0.087 H 
+ATOM      8  H5  <0> d           0.060  -0.396   2.243  0.00  0.00     0.115 H 
+ENDROOT
+BRANCH   4   9
+ATOM      9  C7  <0> d           0.042  -4.206  -0.150  0.00  0.00     0.270 C 
+ATOM     10  O1  <0> d           0.131  -4.747  -1.234  0.00  0.00    -0.266 OA
+ATOM     11  N2  <0> d          -0.046  -4.950   0.970  0.00  0.00    -0.365 N 
+ATOM     12  H6  <0> d          -0.117  -4.518   1.836  0.00  0.00     0.159 HD
+ATOM     13  H7  <0> d          -0.039  -5.919   0.910  0.00  0.00     0.159 HD
+ENDBRANCH   4   9
+BRANCH   3  14
+ATOM     14  N3  <0> d          -0.011  -2.573  -2.476  0.00  0.00    -0.397 N 
+ATOM     15  H8  <0> d          -0.109  -2.036  -3.278  0.00  0.00     0.156 HD
+ATOM     16  H9  <0> d           0.075  -3.537  -2.545  0.00  0.00     0.156 HD
+ENDBRANCH   3  14
+BRANCH   1  17
+ATOM     17  C1  <0> d           0.002   1.489   0.307  0.00  0.00    -0.050 C 
+ATOM     18  H1  <0> d           1.026   1.859   0.325  0.00  0.00     0.033 H 
+ATOM     19  H2  <0> d          -0.534   1.943  -0.526  0.00  0.00     0.033 H 
+ATOM     20  H3  <0> d          -0.495   1.748   1.243  0.00  0.00     0.033 H 
+ENDBRANCH   1  17
+TORSDOF 3

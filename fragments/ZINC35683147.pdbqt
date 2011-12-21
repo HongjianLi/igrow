@@ -1,0 +1,40 @@
+REMARK  5 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C1_1  and  O1_2 
+REMARK    2  A    between atoms: O1_2  and  C2_3 
+REMARK    3  A    between atoms: C4_5  and  O2_10 
+REMARK    4  A    between atoms: C5_8  and  N3_9 
+REMARK    5  A    between atoms: O2_10  and  C6_11 
+ROOT
+ATOM      1  C2  <0> d          -1.200  -0.637   0.010  0.00  0.00     0.119 A 
+ATOM      2  C3  <0> d          -2.389   0.081   0.019  0.00  0.00     0.006 A 
+ATOM      3  C4  <0> d          -3.583  -0.635   0.028  0.00  0.00     0.188 A 
+ATOM      4  N1  <0> d          -3.560  -1.956   0.026  0.00  0.00    -0.123 NA
+ATOM      5  N2  <0> d          -2.464  -2.624   0.017  0.00  0.00    -0.127 NA
+ATOM      6  C5  <0> d          -1.281  -2.036   0.003  0.00  0.00     0.177 A 
+ATOM      7  H4  <0> d          -2.387   1.161   0.021  0.00  0.00     0.094 H 
+ENDROOT
+BRANCH   1   8
+ATOM      8  O1  <0> d           0.002  -0.004   0.002  0.00  0.00    -0.352 OA
+BRANCH   8   9
+ATOM      9  C1  <0> d          -0.017   1.425   0.010  0.00  0.00     0.011 C 
+ATOM     10  H1  <0> d           1.005   1.802   0.002  0.00  0.00     0.067 H 
+ATOM     11  H2  <0> d          -0.544   1.786  -0.873  0.00  0.00     0.067 H 
+ATOM     12  H3  <0> d          -0.527   1.776   0.907  0.00  0.00     0.067 H 
+ENDBRANCH   8   9
+ENDBRANCH   1   8
+BRANCH   6  13
+ATOM     13  N3  <0> d          -0.116  -2.805  -0.012  0.00  0.00    -0.380 N 
+ATOM     14  H5  <0> d           0.751  -2.371  -0.018  0.00  0.00     0.158 HD
+ATOM     15  H6  <0> d          -0.174  -3.773  -0.017  0.00  0.00     0.158 HD
+ENDBRANCH   6  13
+BRANCH   3  16
+ATOM     16  O2  <0> d          -4.770   0.024   0.037  0.00  0.00    -0.338 OA
+BRANCH  16  17
+ATOM     17  C6  <0> d          -5.955  -0.774   0.045  0.00  0.00     0.012 C 
+ATOM     18  H7  <0> d          -5.976  -1.402  -0.846  0.00  0.00     0.067 H 
+ATOM     19  H8  <0> d          -5.963  -1.405   0.934  0.00  0.00     0.067 H 
+ATOM     20  H9  <0> d          -6.831  -0.125   0.052  0.00  0.00     0.067 H 
+ENDBRANCH  16  17
+ENDBRANCH   3  16
+TORSDOF 5

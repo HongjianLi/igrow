@@ -1,0 +1,37 @@
+REMARK  4 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C2_2  and  C3_3 
+REMARK    2  A    between atoms: C3_3  and  C4_4 
+REMARK    3  A    between atoms: C4_4  and  C5_6 
+REMARK    4  A    between atoms: C4_4  and  O1_12 
+ROOT
+ATOM      1  C1  <0> d           0.018  -1.178  -0.004  0.00  0.00    -0.154 C 
+ATOM      2  C2  <0> d           0.002  -0.004   0.002  0.00  0.00    -0.115 C 
+ATOM      3  H2  <0> d           0.032  -2.228  -0.010  0.00  0.00     0.166 H 
+ENDROOT
+BRANCH   2   4
+ATOM      4  C3  <0> d          -0.018   1.468   0.010  0.00  0.00     0.019 C 
+ATOM      5  H3  <0> d          -0.545   1.829  -0.873  0.00  0.00     0.056 H 
+ATOM      6  H4  <0> d          -0.528   1.819   0.907  0.00  0.00     0.056 H 
+BRANCH   4   7
+ATOM      7  C4  <0> d           1.417   1.997  -0.001  0.00  0.00     0.087 C 
+ATOM      8  H1  <0> d           1.970   1.566   0.834  0.00  0.00     0.094 H 
+BRANCH   7   9
+ATOM      9  C5  <0> d           1.400   3.498   0.131  0.00  0.00     0.063 A 
+ATOM     10  N1  <0> d           0.698   4.220  -0.721  0.00  0.00    -0.263 NA
+ATOM     11  C9  <0> d           0.649   5.535  -0.640  0.00  0.00     0.003 A 
+ATOM     12  C8  <0> d           1.348   6.210   0.343  0.00  0.00    -0.066 A 
+ATOM     13  H8  <0> d           0.060   6.092  -1.354  0.00  0.00     0.114 H 
+ATOM     14  C7  <0> d           2.102   5.485   1.254  0.00  0.00    -0.080 A 
+ATOM     15  H7  <0> d           1.307   7.287   0.401  0.00  0.00     0.085 H 
+ATOM     16  C6  <0> d           2.124   4.104   1.141  0.00  0.00    -0.057 A 
+ATOM     17  H6  <0> d           2.658   5.986   2.033  0.00  0.00     0.083 H 
+ATOM     18  H5  <0> d           2.700   3.508   1.834  0.00  0.00     0.086 H 
+ENDBRANCH   7   9
+BRANCH   7  19
+ATOM     19  O1  <0> d           2.050   1.635  -1.230  0.00  0.00    -0.389 OA
+ATOM     20  H9  <0> d           1.610   1.985  -2.017  0.00  0.00     0.210 HD
+ENDBRANCH   7  19
+ENDBRANCH   4   7
+ENDBRANCH   2   4
+TORSDOF 4

@@ -1,0 +1,31 @@
+REMARK  3 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C1_1  and  C2_2 
+REMARK    2  A    between atoms: C3_3  and  C6_8 
+REMARK    3  A    between atoms: C6_8  and  O1_9 
+ROOT
+ATOM      1  C2  <0> d           0.002  -0.004   0.002  0.00  0.00     0.057 A 
+ATOM      2  C3  <0> d           0.006  -0.689  -1.200  0.00  0.00     0.081 A 
+ATOM      3  N1  <0> d           0.024  -2.010  -1.207  0.00  0.00    -0.260 NA
+ATOM      4  C4  <0> d           0.039  -2.677  -0.067  0.00  0.00     0.019 A 
+ATOM      5  C5  <0> d           0.035  -1.992   1.135  0.00  0.00     0.019 A 
+ATOM      6  N2  <0> d           0.022  -0.671   1.143  0.00  0.00    -0.262 NA
+ATOM      7  H4  <0> d           0.054  -3.757  -0.072  0.00  0.00     0.117 H 
+ATOM      8  H5  <0> d           0.047  -2.537   2.068  0.00  0.00     0.117 H 
+ENDROOT
+BRANCH   2   9
+ATOM      9  C6  <0> d          -0.012   0.071  -2.501  0.00  0.00     0.058 C 
+ATOM     10  H6  <0> d          -0.521  -0.521  -3.261  0.00  0.00     0.083 H 
+ATOM     11  H7  <0> d          -0.538   1.015  -2.363  0.00  0.00     0.083 H 
+BRANCH   9  12
+ATOM     12  O1  <0> d           1.330   0.331  -2.919  0.00  0.00    -0.395 OA
+ATOM     13  H8  <0> d           1.395   0.818  -3.752  0.00  0.00     0.209 HD
+ENDBRANCH   9  12
+ENDBRANCH   2   9
+BRANCH   1  14
+ATOM     14  C1  <0> d          -0.018   1.503   0.010  0.00  0.00    -0.034 C 
+ATOM     15  H1  <0> d           1.004   1.880   0.003  0.00  0.00     0.035 H 
+ATOM     16  H2  <0> d          -0.545   1.864  -0.873  0.00  0.00     0.035 H 
+ATOM     17  H3  <0> d          -0.529   1.854   0.907  0.00  0.00     0.035 H 
+ENDBRANCH   1  14
+TORSDOF 3

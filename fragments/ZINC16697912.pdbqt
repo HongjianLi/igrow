@@ -1,0 +1,38 @@
+REMARK  4 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C1_1  and  C2_2 
+REMARK    2  A    between atoms: C2_2  and  C3_3 
+REMARK    3  A    between atoms: C5_5  and  O3_10 
+REMARK    4  A    between atoms: O3_10  and  C8_11 
+ROOT
+ATOM      1  C3  <0> d          -2.143   1.058   1.278  0.00  0.00     0.059 A 
+ATOM      2  C4  <0> d          -2.405  -0.130   1.855  0.00  0.00    -0.022 A 
+ATOM      3  C5  <0> d          -3.728  -0.624   1.873  0.00  0.00     0.076 A 
+ATOM      4  C6  <0> d          -4.727   0.129   1.282  0.00  0.00     0.022 A 
+ATOM      5  C7  <0> d          -4.390   1.354   0.693  0.00  0.00     0.290 A 
+ATOM      6  O1  <0> d          -5.255   2.034   0.166  0.00  0.00    -0.260 OA
+ATOM      7  O2  <0> d          -3.116   1.782   0.707  0.00  0.00    -0.280 OA
+ATOM      8  H6  <0> d          -1.607  -0.701   2.306  0.00  0.00     0.091 H 
+ATOM      9  H7  <0> d          -5.748  -0.222   1.275  0.00  0.00     0.097 H 
+ENDROOT
+BRANCH   1  10
+ATOM     10  C2  <0> d          -0.729   1.579   1.267  0.00  0.00    -0.024 C 
+ATOM     11  H4  <0> d          -0.202   1.218   2.150  0.00  0.00     0.042 H 
+ATOM     12  H5  <0> d          -0.744   2.669   1.273  0.00  0.00     0.042 H 
+BRANCH  10  13
+ATOM     13  C1  <0> d          -0.013   1.086   0.008  0.00  0.00    -0.071 C 
+ATOM     14  H1  <0> d           0.002  -0.004   0.002  0.00  0.00     0.028 H 
+ATOM     15  H2  <0> d           1.010   1.463   0.000  0.00  0.00     0.028 H 
+ATOM     16  H3  <0> d          -0.540   1.447  -0.875  0.00  0.00     0.028 H 
+ENDBRANCH  10  13
+ENDBRANCH   1  10
+BRANCH   3  17
+ATOM     17  O3  <0> d          -4.013  -1.814   2.453  0.00  0.00    -0.356 OA
+BRANCH  17  18
+ATOM     18  C8  <0> d          -5.376  -2.241   2.421  0.00  0.00     0.010 C 
+ATOM     19  H8  <0> d          -5.704  -2.334   1.386  0.00  0.00     0.066 H 
+ATOM     20  H9  <0> d          -5.466  -3.207   2.919  0.00  0.00     0.066 H 
+ATOM     21  H10 <0> d          -5.999  -1.509   2.935  0.00  0.00     0.066 H 
+ENDBRANCH  17  18
+ENDBRANCH   3  17
+TORSDOF 4

@@ -1,0 +1,35 @@
+REMARK  3 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C1_1  and  N1_2 
+REMARK       I    between atoms: N1_2  and  C2_3 
+REMARK    2  A    between atoms: C2_3  and  O2_5 
+REMARK    3  A    between atoms: O2_5  and  C3_6 
+ROOT
+ATOM      1  C3  <0> d          -0.068   3.842   0.014  0.00  0.00     0.081 A 
+ATOM      2  C4  <0> d           1.128   3.146   0.108  0.00  0.00    -0.050 A 
+ATOM      3  C5  <0> d           1.126   1.765   0.092  0.00  0.00    -0.080 A 
+ATOM      4  C6  <0> d          -0.068   1.076  -0.018  0.00  0.00    -0.083 A 
+ATOM      5  C7  <0> d          -1.261   1.767  -0.117  0.00  0.00    -0.080 A 
+ATOM      6  C8  <0> d          -1.265   3.148  -0.096  0.00  0.00    -0.050 A 
+ATOM      7  H5  <0> d           2.061   3.684   0.194  0.00  0.00     0.087 H 
+ATOM      8  H6  <0> d           2.057   1.223   0.166  0.00  0.00     0.083 H 
+ATOM      9  H7  <0> d          -0.068  -0.004  -0.030  0.00  0.00     0.083 H 
+ATOM     10  H8  <0> d          -2.192   1.226  -0.207  0.00  0.00     0.083 H 
+ATOM     11  H9  <0> d          -2.197   3.688  -0.170  0.00  0.00     0.087 H 
+ENDROOT
+BRANCH   1  12
+ATOM     12  O2  <0> d          -0.069   5.201   0.029  0.00  0.00    -0.262 OA
+BRANCH  12  13
+ATOM     13  C2  <0> d          -0.574   5.801   1.124  0.00  0.00     0.365 C 
+ATOM     14  N1  <0> d          -0.714   7.141   1.155  0.00  0.00    -0.341 N 
+ATOM     15  H4  <0> d          -0.417   7.745   0.285  0.00  0.00     0.164 HD
+ATOM     16  O1  <0> d          -0.902   5.133   2.085  0.00  0.00    -0.238 OA
+BRANCH  14  17
+ATOM     17  C1  <0> d          -1.264   7.793   2.346  0.00  0.00    -0.016 C 
+ATOM     18  H1  <0> d          -1.302   8.880   2.184  0.00  0.00     0.056 H 
+ATOM     19  H2  <0> d          -0.623   7.573   3.212  0.00  0.00     0.056 H 
+ATOM     20  H3  <0> d          -2.279   7.414   2.536  0.00  0.00     0.056 H 
+ENDBRANCH  14  17
+ENDBRANCH  12  13
+ENDBRANCH   1  12
+TORSDOF 3

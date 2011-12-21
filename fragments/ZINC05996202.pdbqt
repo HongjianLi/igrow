@@ -1,0 +1,35 @@
+REMARK  3 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C1_1  and  N1_2 
+REMARK       I    between atoms: N1_2  and  C2_3 
+REMARK    2  A    between atoms: C2_3  and  C3_5 
+REMARK    3  A    between atoms: C6_8  and  O2_11 
+ROOT
+ATOM      1  C3  <0> d           1.223  -0.684  -0.013  0.00  0.00     0.032 A 
+ATOM      2  C4  <0> d           0.002  -0.004   0.002  0.00  0.00    -0.065 A 
+ATOM      3  C5  <0> d          -0.017   1.373   0.010  0.00  0.00    -0.050 A 
+ATOM      4  C6  <0> d           1.177   2.086   0.002  0.00  0.00     0.065 A 
+ATOM      5  C7  <0> d           2.393   1.413  -0.013  0.00  0.00    -0.050 A 
+ATOM      6  C8  <0> d           2.420   0.036  -0.021  0.00  0.00    -0.065 A 
+ATOM      7  H5  <0> d          -0.925  -0.557   0.008  0.00  0.00     0.085 H 
+ATOM      8  H6  <0> d          -0.960   1.899   0.017  0.00  0.00     0.087 H 
+ATOM      9  H7  <0> d           3.317   1.971  -0.019  0.00  0.00     0.087 H 
+ATOM     10  H8  <0> d           3.365  -0.486  -0.032  0.00  0.00     0.085 H 
+ENDROOT
+BRANCH   1  11
+ATOM     11  C2  <0> d           1.247  -2.160  -0.021  0.00  0.00     0.251 C 
+ATOM     12  N1  <0> d           2.425  -2.814  -0.036  0.00  0.00    -0.361 N 
+ATOM     13  H4  <0> d           3.257  -2.316  -0.041  0.00  0.00     0.162 HD
+ATOM     14  O1  <0> d           0.204  -2.785  -0.014  0.00  0.00    -0.268 OA
+BRANCH  12  15
+ATOM     15  C1  <0> d           2.450  -4.279  -0.043  0.00  0.00    -0.018 C 
+ATOM     16  H1  <0> d           1.951  -4.655   0.850  0.00  0.00     0.056 H 
+ATOM     17  H2  <0> d           1.933  -4.647  -0.930  0.00  0.00     0.056 H 
+ATOM     18  H3  <0> d           3.483  -4.625  -0.055  0.00  0.00     0.056 H 
+ENDBRANCH  12  15
+ENDBRANCH   1  11
+BRANCH   4  19
+ATOM     19  O2  <0> d           1.154   3.443   0.009  0.00  0.00    -0.361 OA
+ATOM     20  H9  <0> d           1.156   3.831   0.895  0.00  0.00     0.217 HD
+ENDBRANCH   4  19
+TORSDOF 3

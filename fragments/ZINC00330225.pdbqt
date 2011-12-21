@@ -1,0 +1,40 @@
+REMARK  5 active torsions:
+REMARK  status: ('A' for Active; 'I' for Inactive)
+REMARK    1  A    between atoms: C1_1  and  C2_2 
+REMARK    2  A    between atoms: C2_2  and  C3_4 
+REMARK    3  A    between atoms: C2_2  and  O2_9 
+REMARK       I    between atoms: C3_4  and  N1_6 
+REMARK    4  A    between atoms: N1_6  and  C4_7 
+REMARK    5  A    between atoms: N1_6  and  C5_8 
+ROOT
+ATOM      1  C3  <0> d           1.407   1.621  -0.035  0.00  0.00     0.247 C 
+ATOM      2  O1  <0> d           1.752   2.470   0.759  0.00  0.00    -0.271 OA
+ATOM      3  N1  <0> d           2.286   1.148  -0.941  0.00  0.00    -0.359 N 
+ENDROOT
+BRANCH   1   4
+ATOM      4  C2  <0> d          -0.005   1.095  -0.009  0.00  0.00     0.109 C 
+ATOM      5  H1  <0> d           0.012   0.006  -0.061  0.00  0.00     0.097 H 
+BRANCH   4   6
+ATOM      6  C1  <0> d          -0.779   1.651  -1.206  0.00  0.00    -0.044 C 
+ATOM      7  H2  <0> d          -0.343   1.269  -2.130  0.00  0.00     0.031 H 
+ATOM      8  H3  <0> d          -1.822   1.341  -1.141  0.00  0.00     0.031 H 
+ATOM      9  H4  <0> d          -0.722   2.740  -1.201  0.00  0.00     0.031 H 
+ENDBRANCH   4   6
+BRANCH   4  10
+ATOM     10  O2  <0> d          -0.643   1.504   1.202  0.00  0.00    -0.387 OA
+ATOM     11  H11 <0> d          -0.694   2.463   1.316  0.00  0.00     0.210 HD
+ENDBRANCH   4  10
+ENDBRANCH   1   4
+BRANCH   3  12
+ATOM     12  C4  <0> d           3.684   1.581  -0.900  0.00  0.00    -0.017 C 
+ATOM     13  H5  <0> d           4.256   0.905  -0.264  0.00  0.00     0.056 H 
+ATOM     14  H6  <0> d           4.099   1.568  -1.908  0.00  0.00     0.056 H 
+ATOM     15  H7  <0> d           3.740   2.593  -0.498  0.00  0.00     0.056 H 
+ENDBRANCH   3  12
+BRANCH   3  16
+ATOM     16  C5  <0> d           1.842   0.201  -1.967  0.00  0.00    -0.017 C 
+ATOM     17  H8  <0> d           0.803  -0.073  -1.784  0.00  0.00     0.056 H 
+ATOM     18  H9  <0> d           1.928   0.663  -2.950  0.00  0.00     0.056 H 
+ATOM     19  H10 <0> d           2.465  -0.693  -1.930  0.00  0.00     0.056 H 
+ENDBRANCH   3  16
+TORSDOF 5
