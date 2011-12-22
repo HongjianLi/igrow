@@ -8,6 +8,11 @@ Features
 --------
 
 * igrow is inspired by [AutoGrow]. It uses either [idock] or [AutoDock Vina] as backend docking engine.
+* igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
+* igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
+* igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire screening procedure. The thread pool parallelizes the creation of grid maps and the execution of Monte Carlo tasks.
+* igrow utilizes flyweight pattern for caching fragments and dynamic pointer vector for caching and sorting ligands.
+* igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial ligand and fragments.
 
 
 Supported operating systems and compilers

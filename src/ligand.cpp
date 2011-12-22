@@ -18,6 +18,7 @@
 
 #include <iomanip>
 #include <boost/filesystem/fstream.hpp>
+#include "fstream.hpp"
 #include "ligand.hpp"
 #include "mat.hpp"
 

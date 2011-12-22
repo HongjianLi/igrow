@@ -16,6 +16,29 @@
 
  */
 
+/**
+ * \mainpage igrow
+ *
+ * \section introduction Introduction
+ * igrow is a multithreaded virtual screening tool for flexible ligand docking.
+ *
+ * \section features Features
+ * igrow is inspired by AutoGrow. It uses either idock or AutoDock Vina as backend docking engine.
+ * igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
+ * igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
+ * igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire screening procedure. The thread pool parallelizes the creation of grid maps and the execution of Monte Carlo tasks.
+ * igrow utilizes flyweight pattern for caching fragments and dynamic pointer vector for caching and sorting ligands.
+ * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial ligand and fragments.
+ *
+ * \section availability Availability
+ * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Both x86 and x64 binaries for Linux and Windows are provided.
+ *
+ * \author Hongjian Li, The Chinese University of Hong Kong.
+ * \date 22 December 2011
+ *
+ * Copyright (C) 2011 The Chinese University of Hong Kong.
+ */
+
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
 #include <boost/random.hpp>
@@ -25,7 +48,7 @@
 #include <boost/process/operations.hpp>
 #include <boost/process/child.hpp>
 #include "seed.hpp"
-#include "file.hpp"
+#include "fstream.hpp"
 #include "tee.hpp"
 #include "ligand.hpp"
 
@@ -49,7 +72,6 @@ main(int argc, char* argv[])
 
 	// Process program options.
 	{
-		using namespace std;
 		using namespace boost::program_options;
 
 		// Initialize the default values of optional arguments.
@@ -73,15 +95,15 @@ main(int argc, char* argv[])
 		input_options.add_options()
 			("fragment_folder", value<path > (&fragment_folder_path)->required(), "path to folder of fragments in PDB format")
 			("initial_ligand", value<path > (&initial_ligand_path)->required(), "path to initial ligand in PDB format")
-			("docking_program", value<path > (&docking_program_path)->required(), "path to idock or vina executable")
-			("docking_config", value<path > (&docking_config_path)->required(), "path to idock or vina configuration file")
+			("docking_program", value<path > (&docking_program_path)->required(), "path to igrow or vina executable")
+			("docking_config", value<path > (&docking_config_path)->required(), "path to igrow or vina configuration file")
 			;
 
 		options_description output_options("output (optional)");
 		output_options.add_options()
 			("output_folder", value<path > (&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
 			("log", value<path > (&log_path)->default_value(default_log_path), "log file in plain text")
-			("csv", value<path > (&csv_path)->default_value(default_csv_path), "log file in CSV format")
+			("csv", value<path > (&csv_path)->default_value(default_csv_path), "summary file in csv format")
 			;
 
 		options_description miscellaneous_options("options (optional)");
@@ -106,7 +128,7 @@ main(int argc, char* argv[])
 		// If no command line argument is supplied, simply print the usage and exit.
 		if (argc == 1)
 		{
-			cout << all_options;
+			std::cout << all_options;
 			return 0;
 		}
 
@@ -118,54 +140,54 @@ main(int argc, char* argv[])
 			variable_value config_value = vm["config"];
 			if (!config_value.empty()) // If a configuration file is presented, parse it.
 			{
-				ifile config_file(config_value.as<path > ());
+				ifstream config_file(config_value.as<path > ());
 				store(parse_config_file(config_file, all_options), vm);
 			}
 			vm.notify(); // Notify the user if there are any parsing errors.
 		}
-		catch (const exception& e)
+		catch (const std::exception& e)
 		{
-			cerr << e.what() << '\n';
+			std::cerr << e.what() << '\n';
 			return 1;
 		}
 
 		// Validate fragment folder.
 		if (!exists(fragment_folder_path))
 		{
-			cerr << "Fragment folder " << fragment_folder_path << " does not exist\n";
+			std::cerr << "Fragment folder " << fragment_folder_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_directory(fragment_folder_path))
 		{
-			cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
+			std::cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
 			return 1;
 		}
 
 		// Validate initial ligand.
 		if (!exists(initial_ligand_path))
 		{
-			cerr << "Initial ligand " << initial_ligand_path << " does not exist\n";
+			std::cerr << "Initial ligand " << initial_ligand_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_regular_file(initial_ligand_path))
 		{
-			cerr << "Initial ligand " << initial_ligand_path << " is not a regular file\n";
+			std::cerr << "Initial ligand " << initial_ligand_path << " is not a regular file\n";
 			return 1;
 		}
 
 		// Validate docking program.
 		if (!exists(docking_program_path))
 		{
-			cerr << "Docking program " << docking_program_path << " does not exist\n";
+			std::cerr << "Docking program " << docking_program_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_regular_file(docking_program_path))
 		{
-			cerr << "Docking program " << docking_program_path << " is not a regular file\n";
+			std::cerr << "Docking program " << docking_program_path << " is not a regular file\n";
 			return 1;
 		}
 
-		// Determine if the docking program is idock or vina.
+		// Determine if the docking program is igrow or vina.
 		const string docking_program = docking_program_path.stem().string();
 		if (docking_program == "idock")
 		{
@@ -177,19 +199,19 @@ main(int argc, char* argv[])
 		}
 		else
 		{
-			cerr << "Docking program must be either idock or vina\n";
+			std::cerr << "Docking program must be either igrow or vina\n";
 			return 1;
 		}
 
 		// Validate docking configuration file.
 		if (!exists(docking_config_path))
 		{
-			cerr << "Docking configuration file " << docking_config_path << " does not exist\n";
+			std::cerr << "Docking configuration file " << docking_config_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_regular_file(docking_config_path))
 		{
-			cerr << "Docking configuration file " << docking_config_path << " is not a regular file\n";
+			std::cerr << "Docking configuration file " << docking_config_path << " is not a regular file\n";
 			return 1;
 		}
 
@@ -197,39 +219,39 @@ main(int argc, char* argv[])
 		remove_all(output_folder_path);
 		if (!create_directories(output_folder_path))
 		{
-			cerr << "Failed to create output folder " << output_folder_path << '\n';
+			std::cerr << "Failed to create output folder " << output_folder_path << '\n';
 			return 1;
 		}
 
 		// Validate miscellaneous options.
 		if (num_threads < 1)
 		{
-			cerr << "Option threads must be 1 or greater\n";
+			std::cerr << "Option threads must be 1 or greater\n";
 			return 1;
 		}
 		if (num_generations < 1)
 		{
-			cerr << "Option generations must be 1 or greater\n";
+			std::cerr << "Option generations must be 1 or greater\n";
 			return 1;
 		}
 		if (num_mutants < 1)
 		{
-			cerr << "Option mutants must be 1 or greater\n";
+			std::cerr << "Option mutants must be 1 or greater\n";
 			return 1;
 		}
 		if (num_children < 0)
 		{
-			cerr << "Option children must be 0 or greater\n";
+			std::cerr << "Option children must be 0 or greater\n";
 			return 1;
 		}
 		if (num_elitists < 0)
 		{
-			cerr << "Option carryovers must be 0 or greater\n";
+			std::cerr << "Option carryovers must be 0 or greater\n";
 			return 1;
 		}
 		if (max_atoms <= 0)
 		{
-			cerr << "Option max_atoms must be 1 or greater\n";
+			std::cerr << "Option max_atoms must be 1 or greater\n";
 			return 1;
 		}
 	}
@@ -245,8 +267,9 @@ main(int argc, char* argv[])
 		mt19937eng eng(seed);
 
 		// Scan the fragment folder to obtain a list of fragments.
+		log << "Scanning fragment folder " << fragment_folder_path.string() << '\n';
 		vector<path> fragment_paths;
-		fragment_paths.reserve(100);
+		fragment_paths.reserve(1000); // A fragment library typically consists of <= 1000 fragments.
 		{
 			using namespace boost::filesystem;
 			const directory_iterator end_dir_iter; // A default constructed directory_iterator acts as the end iterator.
@@ -260,8 +283,9 @@ main(int argc, char* argv[])
 			}
 		}
 		const size_t num_fragments = fragment_paths.size();
-		log << num_fragments << " fragments found in the fragment folder " << fragment_folder_path.string() << '\n';
+		log << num_fragments << " fragments found\n";
 
+		// Initialize random number generators.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
@@ -271,14 +295,13 @@ main(int argc, char* argv[])
 		using namespace boost::process;
 		context ctx;
 
-		// Initialize arguments to idock or vina.
+		// Initialize arguments to igrow or vina.
 		using namespace boost;
-		vector<string> docking_args(10);
+		vector<string> docking_args(8);
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
-		docking_args[6] = "--log";
-		docking_args[8] = "--seed";
-		docking_args[9] = lexical_cast<string>(seed);
+		docking_args[6] = "--seed";
+		docking_args[7] = lexical_cast<string>(seed);
 		if (idock)
 		{
 			docking_args[2] = "--ligand_folder";
@@ -295,23 +318,22 @@ main(int argc, char* argv[])
 		ptr_vector<ligand> ligands(num_ligands);
 
 		// Initialize csv file for dumping statistics.
-		ofile csv(csv_path);
+		ofstream csv(csv_path);
+		csv << "generation,ligand,free energy in kcal/mol,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logp\n";
 
 		for (size_t current_generation = 1; current_generation <= num_generations; ++current_generation)
 		{
 			log << "Running generation " << current_generation << '\n';
 
-			// Initialize the paths to current generation folder and its four subfolders.
+			// Initialize the paths to current generation folder and its two subfolders.
 			const path current_generation_folder_path(output_folder_path / path(lexical_cast<string > (current_generation)));
-			const path current_pdbqt_folder_path(current_generation_folder_path / path("pdbqt"));
+			const path current_pdbqt_folder_path (current_generation_folder_path / path("pdbqt"));
 			const path current_output_folder_path(current_generation_folder_path / path("output"));
-			const path current_log_folder_path(current_generation_folder_path / path("log"));
 
 			// Create a new folder and four subfolders for current generation.
 			create_directory(current_generation_folder_path);
 			create_directory(current_pdbqt_folder_path);
 			create_directory(current_output_folder_path);
-			create_directory(current_log_folder_path);
 
 			// Generate ligands and save them into the pdbqt subfolder.
 			if (current_generation == 1)
@@ -350,32 +372,32 @@ main(int argc, char* argv[])
 				}
 			}
 
-			// Call either idock or vina to dock ligands to predict their free energy and then parse the docking log.
+			// Call either igrow or vina to dock ligands to predict their free energy and then parse the docking log.
 			// TODO: Parse resultant pdbqt file instead.
+			ctx.work_dir = current_generation_folder_path.string();
 			if (idock)
 			{
 				// Invoke idock.
 				log << "Calling idock to dock " << num_ligands << " ligands\n";
-				docking_args[3] = current_pdbqt_folder_path.string();
-				docking_args[5] = current_output_folder_path.string();
-				docking_args[7] = (current_log_folder_path / path("log")).string();
+				docking_args[3] = "pdbqt";
+				docking_args[5] = "output";
 				create_child(docking_program_path.string(), docking_args, ctx).wait();
 
 				// Parse idock log.
-				ifile log(current_log_folder_path / path("log"));
-				log.seekg(103);
-				string line;
-				while (getline(log, line))
-				{
-					if (line[0] == ' ') break; //   index |       ligand |   progress | conf | top 5 conf free energy in kcal/mol
-				}
-				while (getline(log, line))
-				{
-					const size_t ligand_id = right_cast<size_t>(line, 11, 22);
-					const fl free_energy = right_cast<fl>(line, 46, 51);
-					ligands[ligand_id].free_energy = free_energy;
-				}
-				log.close();
+				//ifstream log(current_log_folder_path / path("log"));
+				//log.seekg(103);
+				//string line;
+				//while (getline(log, line))
+				//{
+				//	if (line[0] == ' ') break; //   index |       ligand |   progress | conf | top 5 conf free energy in kcal/mol
+				//}
+				//while (getline(log, line))
+				//{
+				//	const size_t ligand_id = right_cast<size_t>(line, 11, 22);
+				//	const fl free_energy = right_cast<fl>(line, 46, 51);
+				//	ligands[ligand_id].free_energy = free_energy;
+				//}
+				//log.close();
 			}
 			else
 			{
@@ -383,29 +405,28 @@ main(int argc, char* argv[])
 				log << "Calling vina to dock " << num_ligands << " ligands\n";
 				for (size_t i = 1; i <= num_ligands; ++i)
 				{
-					docking_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-					docking_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-					docking_args[7] = (current_log_folder_path / path(lexical_cast<string > (i) + ".log")).string();
+					docking_args[3] = (path("pdbqt")  / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					docking_args[5] = (path("output") / path(lexical_cast<string > (i) + ".pdbqt")).string();
 					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
 
 				// Parse vina log.
-				for (size_t i = 1; i <= num_ligands; ++i)
-				{
-					ifile log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
-					log.seekg(1177);
-					string line;
-					while (getline(log, line))
-					{
-						if (line[3] == '1')
-						{
-							const size_t start = line.find_first_not_of(' ', 8);
-							const fl free_energy = lexical_cast<fl > (line.substr(start, 17 - start));
-							ligands[i - 1].free_energy = free_energy;
-						}
-					}
-					log.close();
-				}
+				//for (size_t i = 1; i <= num_ligands; ++i)
+				//{
+				//	ifstream log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
+				//	log.seekg(1177);
+				//	string line;
+				//	while (getline(log, line))
+				//	{
+				//		if (line[3] == '1')
+				//		{
+				//			const size_t start = line.find_first_not_of(' ', 8);
+				//			const fl free_energy = lexical_cast<fl > (line.substr(start, 17 - start));
+				//			ligands[i - 1].free_energy = free_energy;
+				//		}
+				//	}
+				//	log.close();
+				//}
 			}
 
 			// Sort ligands in ascending order of predicted free energy
