@@ -16,25 +16,15 @@
 
  */
 
-#include <cfloat>
-#include <sstream>
-#include <fstream>
 #include <iomanip>
 #include <boost/filesystem/fstream.hpp>
-#include "common.hpp"
 #include "ligand.hpp"
-#include "bondlibrary.hpp"
 #include "mat.hpp"
-#include "file.hpp"
 
 namespace igrow
 {
-	using std::map;
-	using std::pair;
-	using std::list;
-	using std::set;
-	using std::multiset;
-	using std::ostringstream;
+	using boost::filesystem::ifstream;
+	using boost::filesystem::ofstream;
 	using namespace boost;
 
 	const fl ligand::pi = 3.14159265358979323846;
@@ -45,6 +35,17 @@ namespace igrow
 		// Throw exception if no hydrogen, no halogen, and no branch.
 	}
 
+	void ligand::save(const path& p) const
+	{
+	}
+
+	ligand* ligand::mutate(const ligand& lig) const
+	{
+		// Check ligand validity, i.e. steric clash, rule of 5
+		return NULL;
+	}
+
+/*
 	void ligand::save(const path& file) const
 	{
 		using namespace std;
@@ -80,8 +81,6 @@ namespace igrow
 
 	void ligand::mutate(ligand fragment)
 	{
-
-/*
 		// select hydrogen
 		int count(0), connectIndex, fragHydrogen(-1), fragIndex, linkerHydrogen(-1);
 		// atom copy and atom reference
@@ -153,7 +152,7 @@ namespace igrow
 					frag_dihedral = *it;
 			}
 			// calculate dihedral angle on these four atoms
-			dihedral = DihedralAngle(atoms[cur_dihedral], connectAtom, *fragConnectAtom, fragment.atoms[frag_dihedral]);
+			dihedral = DihedralAngle(atoms[cur_dihedral].coordinates, connectAtom.coordinates, (*fragConnectAtom).coordinates, fragment.atoms[frag_dihedral].coordinates);
 			// rotate so that the two planes are now parallel
 			fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -dihedral);
 			// calculate distance in this orientation
@@ -233,30 +232,6 @@ namespace igrow
 		// at last connect the fragment and molecule at the selected position
 		atoms[connectIndex].IndexArray.insert(fragIndex + cascadeIndex);
 		atoms[fragIndex + cascadeIndex].IndexArray.insert(connectIndex);
-*/
-
-		// Check ligand validity, i.e. steric clash, rule of 5
-	}
-
-	int ligand::IndexOfRandomHydrogen()
-	{
-		set<int> index_of_hydrogen;
-		set<int>::iterator it;
-		// find out all hydrogen atoms in the molecule
-		for (map<int, atom>::iterator iter = atoms.begin(); iter != atoms.end(); ++iter)
-		{
-			if (iter->second.element.at(0) == 'H' && iter->second.element.size() == 1)
-				index_of_hydrogen.insert(iter->first);
-		}
-		// if there is no more hydrogen atom, return error
-		if (index_of_hydrogen.empty()) return -1;
-		// randomly choose an index
-		//    int index = generator_int() % index_of_hydrogen.size();
-		int index = 0 % index_of_hydrogen.size();
-		it = index_of_hydrogen.begin();
-		advance(it, index);
-		// return index of chosen hydrogen
-		return *it;
 	}
 
 	void ligand::Translate(int index, Vec3d origin)
@@ -300,27 +275,6 @@ namespace igrow
 		}
 	}
 
-	// will invalidate iterator, return updated one
-
-	map<int, atom>::reverse_iterator ligand::DeleteAtom(int index)
-	{
-		// find iterator to the atom using index
-		map<int, atom>::iterator it = atoms.find(index);
-		set<int>::iterator index_it;
-		// return error when not found
-		if (it == atoms.end()) return atoms.rend();
-		// loop through connected indices
-		for (index_it = it->second.IndexArray.begin(); index_it != it->second.IndexArray.end(); ++index_it)
-		{
-			// remove index from the indicated atoms
-			atoms[*index_it].IndexArray.erase(index);
-		}
-		// removed indexed atom, can only erase using forward iterator
-		atoms.erase(it++);
-		map<int, atom>::reverse_iterator rit(it);
-		return rit;
-	}
-
 	// total minimum distance for all atoms, quadratic
 
 	double ligand::MolecularDistance(ligand& other)
@@ -343,20 +297,12 @@ namespace igrow
 
 	// in radian, angle between 2 planes (a1-a2-a3, a2-a3-a4) with respect to vector a2-a3
 
-	double ligand::DihedralAngle(atom a1, atom a2, atom a3, atom a4)
+	double ligand::DihedralAngle(const Vec3d& a1, const Vec3d& a2, const Vec3d& a3, const Vec3d& a4)
 	{
-		Vec3d v1 = a2.coordinates - a1.coordinates;
-		Vec3d v2 = a3.coordinates - a2.coordinates;
-		Vec3d v3 = a4.coordinates - a3.coordinates;
+		Vec3d v1 = a2 - a1;
+		Vec3d v2 = a3 - a2;
+		Vec3d v3 = a4 - a3;
 		return atan2((v1 * v2.length())*(v2^v3), (v1^v2)*(v2^v3));
 	}
-
-	// angle between v1-v2-v3
-
-	double ligand::Angle(Vec3d v1, Vec3d v2, Vec3d v3)
-	{
-		Vec3d b1 = v1 - v2;
-		Vec3d b2 = v3 - v2;
-		return acos((b1 * b2) / sqrt(b1.length2() * b2.length2()));
-	}
+*/
 }

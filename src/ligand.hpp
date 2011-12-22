@@ -19,8 +19,6 @@
 #ifndef IGROW_LIGAND_HPP
 #define IGROW_LIGAND_HPP
 
-#include <map>
-#include <set>
 #include <boost/filesystem/path.hpp>
 #include <boost/flyweight.hpp>
 #include <boost/flyweight/key_value.hpp>
@@ -29,8 +27,6 @@
 
 namespace igrow
 {
-	using std::set;
-	using std::map;
 	using boost::filesystem::path;
 
 	// Represents a ligand.
@@ -41,10 +37,6 @@ namespace igrow
 		static const fl pi;
 
 		const path p;
-		// a collection of atoms indicated by their indice
-		map<int, atom> atoms;
-		int ID;
-		
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
 		fl mw; ///< Molecular weight.		
@@ -55,34 +47,23 @@ namespace igrow
 		ligand(const path& p);
 		
 		void save(const path& file) const;
-		
+		ligand* mutate(const ligand& lig) const;
+/*
 		// add a fragment to the molecule by replacing a hydrogen in the original structure
 		void mutate(ligand fragment);
-		// remove atom of index and its connection, return an iterator for further process
-		map<int, atom>::reverse_iterator DeleteAtom(int index);
 		// a distance between two molecules given by the sum of minimum distance of each atom
 		double MolecularDistance(ligand& other);
 		// obtain the index of one hydrogen of this molecule
 		int IndexOfRandomHydrogen();
 		// move atom of index to origin along with its connected atoms
 		void Translate(int index, Vec3d origin);
-		// translation based on centre
-		void Translate(Vec3d origin);
 		// rotate along the line given by v1-v2 using indexed atom as pivot in terms of radian
 		void RotateLine(Vec3d v1, Vec3d v2, int index, double radian);
 		// rotate along the line normal using indexed atom as pivot in terms of radian
 		void RotateLine(Vec3d normal, int index, double radian);
-		// rotate along the line passing through CG of the molecule
-		void RotateLine(Vec3d normal, double radian);
-
-	protected:
-		// a set of hydrogen to replace a removed fragment
-		map<int, atom> toAddAtoms;
-
 		// the dihedral angle among the four atoms
-		double DihedralAngle(atom a1, atom a2, atom a3, atom a4);
-		// the angle between v1-v2-v3
-		double Angle(Vec3d v1, Vec3d v2, Vec3d v3);
+		double DihedralAngle(const Vec3d& a1, const Vec3d& a2, const Vec3d& a3, const Vec3d& a4);
+*/
 	};
 
 	/// For sorting ptr_vector<ligand>.

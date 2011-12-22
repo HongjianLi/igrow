@@ -20,9 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\atom.hpp" />
-    <ClInclude Include="..\src\bondlibrary.hpp" />
     <ClInclude Include="..\src\common.hpp" />
-    <ClInclude Include="..\src\file.hpp" />
     <ClInclude Include="..\src\ligand.hpp" />
     <ClInclude Include="..\src\mat.hpp" />
     <ClInclude Include="..\src\seed.hpp" />
@@ -30,7 +28,6 @@
     <ClInclude Include="..\src\vec.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\bondlibrary.cpp" />
     <ClCompile Include="..\src\ligand.cpp" />
     <ClCompile Include="..\src\main.cpp" />
   </ItemGroup>
