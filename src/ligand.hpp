@@ -22,6 +22,9 @@
 #include <map>
 #include <set>
 #include <boost/filesystem/path.hpp>
+#include <boost/flyweight.hpp>
+#include <boost/flyweight/key_value.hpp>
+#include <boost/flyweight/no_tracking.hpp>
 #include "atom.hpp"
 
 namespace igrow
@@ -37,6 +40,7 @@ namespace igrow
 	public:
 		static const fl pi;
 
+		const path p;
 		// a collection of atoms indicated by their indice
 		map<int, atom> atoms;
 		int ID;
@@ -46,14 +50,16 @@ namespace igrow
 		fl mw; ///< Molecular weight.		
 		fl logp; ///< LogP.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
+
+		ligand() {}
+		ligand(const path& p);
 		
-		void load(const path& file);
-		void save(const path& file);
+		void save(const path& file) const;
 		
-		// break the molecule into two while retaining the atoms indicated by the reference
-		ligand split(const ligand& ref);
 		// add a fragment to the molecule by replacing a hydrogen in the original structure
 		void mutate(ligand fragment);
+		// break the molecule into two while retaining the atoms indicated by the reference
+		ligand split(const ligand& ref);
 		// check whether all the atoms are no less than a certain threshold distance
 		bool hasBadBonds();
 		// not implemented
@@ -91,7 +97,7 @@ namespace igrow
 		// detect whether there is a ring structure in the molecule
 		int DetectRing(std::list<int>& ring, int index = -1);
 		// follow more strictly with the chemical rules, the resulting ligand would be more likely feasible
-		int synthesis(const path& file);
+		int synthesis(ligand fragment);
 		// returns true if the ligand is valid.
 		bool valid();
 		// returns the molecular weight
@@ -133,6 +139,25 @@ namespace igrow
 		int JoinRing(ligand& ref);
 	};
 
+	/// For sorting ptr_vector<ligand>.
+	inline bool operator<(const ligand& a, const ligand& b)
+	{
+		return a.free_energy < b.free_energy;
+	}
+
+	/// For extracting path out of a ligand.
+	class ligand_path_extractor
+	{
+	public:
+		const path& operator()(const ligand& lig) const
+		{
+			return lig.p;
+		}
+	};
+
+	/// Define flyweight type for ligand.
+	using namespace boost::flyweights;
+	typedef	flyweight<key_value<path, ligand, ligand_path_extractor>, no_tracking> ligand_flyweight;
 }
 
 #endif

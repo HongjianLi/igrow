@@ -39,91 +39,19 @@ namespace igrow
 
 	const fl ligand::pi = 3.14159265358979323846;
 
-	void ligand::load(const path& file)
+	ligand::ligand(const path& p) : p(p)
 	{
-		bool connectData = false;
-		string line;
-		ifile in(file);
-		while (getline(in, line))
-		{
-			const string record = line.substr(0, 6);
-			if ((record == "ATOM  ") || (record == "HETATM"))
-			{
-				atom a;
-
-				// Parse atom serial number.
-				const size_t start = line.find_first_not_of(' ', 6);
-				a.PDBIndex = line.substr(start, 11 - start);
-
-				// Parse atom name.
-				a.name = line.substr(13, 3);
-
-				// Parse residue name.
-				a.Residue = line.substr(16, 4);
-				if (a.Residue == "    ") a.Residue = " MOL";
-
-				// Parse X,Y,Z coordinates.
-				a.coordinates.n[0] = right_cast<fl>(line, 31, 38);
-				a.coordinates.n[1] = right_cast<fl>(line, 39, 46);
-				a.coordinates.n[2] = right_cast<fl>(line, 47, 54);
-
-				// Parse element symbol.
-				if (line[76] != ' ') a.element = toupper(line[76]);
-				a.element += toupper(line[77]);
-
-				a.ID = ID;
-
-				// read index from file
-				atoms.insert(pair<int, atom > (lexical_cast<int>(a.PDBIndex), a));
-			}
-			else if (record == "CONECT")
-			{
-				connectData = true;
-				const int index = right_cast<int>(line, 7, 11);
-				atoms[index].IndexArray.insert(right_cast<int>(line, 12, 16));
-				if (line[20] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 17, 21));
-				if (line[25] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 22, 26));
-				if (line[30] != ' ') atoms[index].IndexArray.insert(right_cast<int>(line, 27, 31));
-			}
-		}
-		in.close();
-
-		// TODO: Rewrite bond generation.
-		// when there is no connection information, generate bonds
-		if (!connectData)
-		{
-			int i = 0;
-			map<int, atom>::iterator it1, it2;
-			double dist;
-			bond_library library;
-			for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
-			{
-				++i;
-				it2 = atoms.begin();
-				advance(it2, i);
-				while (it2 != atoms.end())
-				{
-					dist = it1->second.DistanceTo(it2->second);
-					if (dist < library.length(it1->second.element, it2->second.element)*1.2)
-					{
-						it1->second.IndexArray.insert(it2->first);
-						it2->second.IndexArray.insert(it1->first);
-					}
-					++it2;
-				}
-				// skip last
-				if (i == atoms.size() - 1) break;
-			}
-		}
+		// Load pdbqt.
+		// Throw exception if no hydrogen, no halogen, and no branch.
 	}
 
-	void ligand::save(const path& file)
+	void ligand::save(const path& file) const
 	{
 		using namespace std;
 		ofstream out(file);
 		out.setf(ios::fixed, ios::floatfield);
 		out << setprecision(3);
-		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
+		for (map<int, atom>::const_iterator it = atoms.begin(); it != atoms.end(); ++it)
 		{
 			const atom& a = it->second;			
 			out << "ATOM  "
@@ -145,116 +73,7 @@ namespace igrow
 			}
 			out << "  \n";
 		}
-
-		// connect data
-		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-		{
-			if (it->second.IndexArray.empty()) continue;
-			out << "CONECT" << std::setw(5) << it->first;
-			for (set<int>::iterator iter = it->second.IndexArray.begin(); iter != it->second.IndexArray.end(); ++iter)
-			{
-				out << std::setw(5) << *iter;
-			}
-			out << std::endl;
-		}
 		out.close();
-	}
-
-	ligand ligand::split(const ligand& ref)
-	{
-		ligand ref_copy(ref);
-		ligand child;
-
-		// to detect whether it is a ring structure
-		list<int> ring;
-		int count = DetectRing(ring);
-		// clean overlapping and traversed set
-		overlap.clear();
-		scanned.clear();
-		// replace with hydrogen only
-		toAddAtoms.clear();
-		map<int, atom>::iterator it1, it2;
-		int indexToAdd;
-		atom atomH;
-
-		// loop through all atoms with the reference, assign overlaps by same type and position
-		for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
-			for (it2 = ref_copy.atoms.begin(); it2 != ref_copy.atoms.end(); ++it2)
-				if ((it1->second.element == it2->second.element) && (it1->second.coordinates == it2->second.coordinates))
-					overlap.insert(it1->first);
-
-		// randomly get some fragments
-		scan_recursive(MinIndex());
-
-		// make a copy for the child
-		for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
-			child.atoms.insert(pair<int, atom > (it1->first, atom(it1->second)));
-
-		// start from the end
-		map<int, atom>::reverse_iterator r_iter = atoms.rbegin();
-		set<int> toAddchild, toAddparent;
-		toAddchild.clear();
-		toAddparent.clear();
-		while (r_iter != atoms.rend())
-		{
-			// atoms is being rejected, see if replacement is needed
-			if (scanned.find(r_iter->first) == scanned.end())
-			{
-				// replacement found
-				if (toAddAtoms.find(r_iter->first) != toAddAtoms.end())
-					toAddchild.insert(r_iter->first);
-				// delete the atom from the child
-				child.DeleteAtom(r_iter->first);
-				/*if (toAddAtoms.find(pendingIndex) != toAddAtoms.end()) {
-					// retrieve corresponding hydrogen atom
-					atomH = toAddAtoms[pendingIndex];
-					child.atoms.insert(pair<int,Atom>(pendingIndex,atomH));
-					// get its connected atom index
-					indexToAdd = *(atomH.IndexArray.begin());
-					// update connection
-					child.atoms[indexToAdd].IndexArray.insert(pendingIndex);
-				}*/
-				// atoms to be deleted in this group
-			}
-			else if (overlap.find(r_iter->first) == overlap.end())
-			{
-				// replacement found
-				if (toAddAtoms.find(r_iter->first) != toAddAtoms.end())
-					toAddparent.insert(r_iter->first);
-				// delete atom from this molecule
-				r_iter = DeleteAtom(r_iter->first);
-				/*if (toAddAtoms.find(pendingIndex) != toAddAtoms.end()) {
-					atomH = toAddAtoms[pendingIndex];
-					atoms.insert(pair<int,Atom>(pendingIndex,atomH));
-					indexToAdd = *(atomH.IndexArray.begin());
-					atoms[indexToAdd].IndexArray.insert(pendingIndex);
-				}*/
-				// iterator has already incremented in the removal process
-				continue;
-			}
-			++r_iter;
-		}
-		for (set<int>::iterator set_it = toAddchild.begin(); set_it != toAddchild.end(); ++set_it)
-		{
-			// retrieve corresponding hydrogen atom
-			atomH = toAddAtoms[*set_it];
-			child.atoms.insert(pair<int, atom > (*set_it, atomH));
-			// get its connected atom index
-			indexToAdd = *(atomH.IndexArray.begin());
-			// update connection
-			child.atoms[indexToAdd].IndexArray.insert(*set_it);
-		}
-		for (set<int>::iterator set_it = toAddparent.begin(); set_it != toAddparent.end(); ++set_it)
-		{
-			// retrieve corresponding hydrogen atom
-			atomH = toAddAtoms[*set_it];
-			atoms.insert(pair<int, atom > (*set_it, atomH));
-			// get its connected atom index
-			indexToAdd = *(atomH.IndexArray.begin());
-			// update connection
-			atoms[indexToAdd].IndexArray.insert(*set_it);
-		}
-		return child;
 	}
 
 	// add a fragment to the position of a randomly selected hydrogen
@@ -412,6 +231,105 @@ namespace igrow
 		// at last connect the fragment and molecule at the selected position
 		atoms[connectIndex].IndexArray.insert(fragIndex + cascadeIndex);
 		atoms[fragIndex + cascadeIndex].IndexArray.insert(connectIndex);
+
+		// Check ligand validity.
+	}
+
+	ligand ligand::split(const ligand& ref)
+	{
+		ligand ref_copy(ref);
+		ligand child;
+
+		// to detect whether it is a ring structure
+		list<int> ring;
+		int count = DetectRing(ring);
+		// clean overlapping and traversed set
+		overlap.clear();
+		scanned.clear();
+		// replace with hydrogen only
+		toAddAtoms.clear();
+		map<int, atom>::iterator it1, it2;
+		int indexToAdd;
+		atom atomH;
+
+		// loop through all atoms with the reference, assign overlaps by same type and position
+		for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
+			for (it2 = ref_copy.atoms.begin(); it2 != ref_copy.atoms.end(); ++it2)
+				if ((it1->second.element == it2->second.element) && (it1->second.coordinates == it2->second.coordinates))
+					overlap.insert(it1->first);
+
+		// randomly get some fragments
+		scan_recursive(MinIndex());
+
+		// make a copy for the child
+		for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
+			child.atoms.insert(pair<int, atom > (it1->first, atom(it1->second)));
+
+		// start from the end
+		map<int, atom>::reverse_iterator r_iter = atoms.rbegin();
+		set<int> toAddchild, toAddparent;
+		toAddchild.clear();
+		toAddparent.clear();
+		while (r_iter != atoms.rend())
+		{
+			// atoms is being rejected, see if replacement is needed
+			if (scanned.find(r_iter->first) == scanned.end())
+			{
+				// replacement found
+				if (toAddAtoms.find(r_iter->first) != toAddAtoms.end())
+					toAddchild.insert(r_iter->first);
+				// delete the atom from the child
+				child.DeleteAtom(r_iter->first);
+				/*if (toAddAtoms.find(pendingIndex) != toAddAtoms.end()) {
+					// retrieve corresponding hydrogen atom
+					atomH = toAddAtoms[pendingIndex];
+					child.atoms.insert(pair<int,Atom>(pendingIndex,atomH));
+					// get its connected atom index
+					indexToAdd = *(atomH.IndexArray.begin());
+					// update connection
+					child.atoms[indexToAdd].IndexArray.insert(pendingIndex);
+				}*/
+				// atoms to be deleted in this group
+			}
+			else if (overlap.find(r_iter->first) == overlap.end())
+			{
+				// replacement found
+				if (toAddAtoms.find(r_iter->first) != toAddAtoms.end())
+					toAddparent.insert(r_iter->first);
+				// delete atom from this molecule
+				r_iter = DeleteAtom(r_iter->first);
+				/*if (toAddAtoms.find(pendingIndex) != toAddAtoms.end()) {
+					atomH = toAddAtoms[pendingIndex];
+					atoms.insert(pair<int,Atom>(pendingIndex,atomH));
+					indexToAdd = *(atomH.IndexArray.begin());
+					atoms[indexToAdd].IndexArray.insert(pendingIndex);
+				}*/
+				// iterator has already incremented in the removal process
+				continue;
+			}
+			++r_iter;
+		}
+		for (set<int>::iterator set_it = toAddchild.begin(); set_it != toAddchild.end(); ++set_it)
+		{
+			// retrieve corresponding hydrogen atom
+			atomH = toAddAtoms[*set_it];
+			child.atoms.insert(pair<int, atom > (*set_it, atomH));
+			// get its connected atom index
+			indexToAdd = *(atomH.IndexArray.begin());
+			// update connection
+			child.atoms[indexToAdd].IndexArray.insert(*set_it);
+		}
+		for (set<int>::iterator set_it = toAddparent.begin(); set_it != toAddparent.end(); ++set_it)
+		{
+			// retrieve corresponding hydrogen atom
+			atomH = toAddAtoms[*set_it];
+			atoms.insert(pair<int, atom > (*set_it, atomH));
+			// get its connected atom index
+			indexToAdd = *(atomH.IndexArray.begin());
+			// update connection
+			atoms[indexToAdd].IndexArray.insert(*set_it);
+		}
+		return child;
 	}
 
 	int ligand::IndexOfRandomHydrogen()
@@ -1013,12 +931,8 @@ namespace igrow
 		return vector_of_rings.size();
 	}
 
-	int ligand::synthesis(path const& file)
+	int ligand::synthesis(ligand fragment)
 	{
-		// local molecule copy
-		ligand fragment;
-		fragment.load(file);
-
 		// test if ring joining is successful, 0 is returned if successfully joined
 		if (JoinRing(fragment) == 0) return 2;
 

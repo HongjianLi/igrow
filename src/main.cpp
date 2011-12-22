@@ -42,7 +42,7 @@ main(int argc, char* argv[])
 	std::cout << "igrow 1.0\n";
 
 	using namespace igrow;
-	path fragment_folder_path, initial_ligand_path, python_path, prepare_ligand4_path, docking_program_path, docking_config_path, output_folder_path, log_path, csv_path;
+	path fragment_folder_path, initial_ligand_path, docking_program_path, docking_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_generations, num_elitists, num_mutants, num_children, max_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp;
 	bool idock;
@@ -73,8 +73,6 @@ main(int argc, char* argv[])
 		input_options.add_options()
 			("fragment_folder", value<path > (&fragment_folder_path)->required(), "path to folder of fragments in PDB format")
 			("initial_ligand", value<path > (&initial_ligand_path)->required(), "path to initial ligand in PDB format")
-			("python", value<path > (&python_path)->required(), "path to python executable")
-			("prepare_ligand4", value<path > (&prepare_ligand4_path)->required(), "path to prepare_ligand4 script")
 			("docking_program", value<path > (&docking_program_path)->required(), "path to idock or vina executable")
 			("docking_config", value<path > (&docking_config_path)->required(), "path to idock or vina configuration file")
 			;
@@ -152,30 +150,6 @@ main(int argc, char* argv[])
 		if (!is_regular_file(initial_ligand_path))
 		{
 			cerr << "Initial ligand " << initial_ligand_path << " is not a regular file\n";
-			return 1;
-		}
-
-		// Validate python executable.
-		if (!exists(python_path))
-		{
-			cerr << "Python executable " << python_path << " does not exist\n";
-			return 1;
-		}
-		if (!is_regular_file(python_path))
-		{
-			cerr << "Python executable " << python_path << " is not a regular file\n";
-			return 1;
-		}
-
-		// Validate prepare_ligand4 python script.
-		if (!exists(prepare_ligand4_path))
-		{
-			cerr << "prepare_ligand4 python script " << prepare_ligand4_path << " does not exist\n";
-			return 1;
-		}
-		if (!is_regular_file(prepare_ligand4_path))
-		{
-			cerr << "prepare_ligand4 python script " << prepare_ligand4_path << " is not a regular file\n";
 			return 1;
 		}
 
@@ -287,20 +261,18 @@ main(int argc, char* argv[])
 		}
 		const size_t num_fragments = fragment_paths.size();
 		log << num_fragments << " fragments found in the fragment folder " << fragment_folder_path.string() << '\n';
-		using namespace boost;
-		ptr_vector<ligand> fragments(num_fragments);
+
+		using boost::random::variate_generator;
+		using boost::random::uniform_int_distribution;
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
 		// Initialize process context.
 		using namespace boost::process;
 		context ctx;
 
-		// Initialize arguments to prepare_ligand4.
-		vector<string> prepare_ligand4_args(5);
-		prepare_ligand4_args[0] = prepare_ligand4_path.string();
-		prepare_ligand4_args[1] = "-l";
-		prepare_ligand4_args[3] = "-o";
-
 		// Initialize arguments to idock or vina.
+		using namespace boost;
 		vector<string> docking_args(10);
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
@@ -319,7 +291,8 @@ main(int argc, char* argv[])
 		}
 
 		// The number of ligands is equal to the number of elitists plus mutants plus children.
-		const size_t population_size = num_elitists + num_mutants + num_children;
+		const size_t num_ligands = num_elitists + num_mutants + num_children;
+		ptr_vector<ligand> ligands(num_ligands);
 
 		// Initialize csv file for dumping statistics.
 		ofile csv(csv_path);
@@ -330,61 +303,62 @@ main(int argc, char* argv[])
 
 			// Initialize the paths to current generation folder and its four subfolders.
 			const path current_generation_folder_path(output_folder_path / path(lexical_cast<string > (current_generation)));
-			const path current_pdb_folder_path(current_generation_folder_path / path("pdb"));
 			const path current_pdbqt_folder_path(current_generation_folder_path / path("pdbqt"));
 			const path current_output_folder_path(current_generation_folder_path / path("output"));
 			const path current_log_folder_path(current_generation_folder_path / path("log"));
 
 			// Create a new folder and four subfolders for current generation.
 			create_directory(current_generation_folder_path);
-			create_directory(current_pdb_folder_path);
 			create_directory(current_pdbqt_folder_path);
 			create_directory(current_output_folder_path);
 			create_directory(current_log_folder_path);
 
-			// Generate ligands and save them into the pdb subfolder.
+			// Generate ligands and save them into the pdbqt subfolder.
 			if (current_generation == 1)
 			{
 				// Parse and dump the initial ligand.
-				ligand initial_lig;
-				initial_lig.load(initial_ligand_path);
-				initial_lig.save(current_pdb_folder_path / "1.pdb");
+				ligands.push_back(new ligand(initial_ligand_path));
+				ligands.front().save(current_pdbqt_folder_path / "1.pdbqt");
 
 				// Create mutants in parallel.
-				for (size_t i = 1; i != population_size; ++i)
+				for (size_t i = 1; i != num_ligands; ++i)
 				{
-					ligand lig;
-					lig.load(initial_ligand_path);
-					//		    string fragment_name = fragments.ReturnRandomFileName();
-					//		    lig.mutate(fragments.path + fragment_name);
+					/*const*/ ligand lig(initial_ligand_path);					
+				    lig.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]));
 
 					if (lig.valid())
 					{
-						lig.save(current_pdb_folder_path / (lexical_cast<string > (i + 1) + ".pdb"));
+						lig.save(current_pdbqt_folder_path / (lexical_cast<string > (i + 1) + ".pdbqt"));
 					}
 				}
 			}
 			else
 			{
-				const path previous_generation_folder_path(output_folder_path / path(lexical_cast<string > (current_generation - 1)));
-				//	    Interaction interact;
-				//	    Ligand child = interact.mate(m1, m2);
-				//	    if (child.valid());
-			}
+				// TODO: abstract into tasks for parallel execution.
+				for (size_t i = 0; i < num_mutants; ++i)
+				{
+					ligand lig = ligands[uniform_elitist_gen()];
+				    lig.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]));
+					ligands.replace(num_elitists + i, &lig);
+				}
 
-			// Convert ligands to PDBQT format by calling prepare_ligand4 python script.
-			for (size_t i = 1; i <= population_size; ++i)
-			{
-				prepare_ligand4_args[2] = (current_pdb_folder_path / path(lexical_cast<string > (i) + ".pdb")).string();
-				prepare_ligand4_args[4] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
-				create_child(python_path.string(), prepare_ligand4_args, ctx).wait();
+				// TODO: abstract into tasks for parallel execution.
+				for (size_t i = 0; i < num_children; ++i)
+				{
+					//const path previous_generation_folder_path(output_folder_path / path(lexical_cast<string > (current_generation - 1)));
+					//	    Interaction interact;
+					//	    Ligand child = interact.mate(m1, m2);
+					//	    if (child.valid());
+					//ligands.replace(num_elitists + num_mutants + i, &lig);
+				}
 			}
 
 			// Call either idock or vina to dock ligands to predict their free energy and then parse the docking log.
+			// TODO: Parse resultant pdbqt file instead.
 			if (idock)
 			{
 				// Invoke idock.
-				log << "Calling idock to dock " << population_size << " ligands\n";
+				log << "Calling idock to dock " << num_ligands << " ligands\n";
 				docking_args[3] = current_pdbqt_folder_path.string();
 				docking_args[5] = current_output_folder_path.string();
 				docking_args[7] = (current_log_folder_path / path("log")).string();
@@ -402,14 +376,15 @@ main(int argc, char* argv[])
 				{
 					const size_t ligand_id = right_cast<size_t>(line, 11, 22);
 					const fl free_energy = right_cast<fl>(line, 46, 51);
+					ligands[ligand_id].free_energy = free_energy;
 				}
 				log.close();
 			}
 			else
 			{
 				// Invoke vina.
-				log << "Calling vina to dock " << population_size << " ligands\n";
-				for (size_t i = 1; i <= population_size; ++i)
+				log << "Calling vina to dock " << num_ligands << " ligands\n";
+				for (size_t i = 1; i <= num_ligands; ++i)
 				{
 					docking_args[3] = (current_pdbqt_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
 					docking_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
@@ -418,7 +393,7 @@ main(int argc, char* argv[])
 				}
 
 				// Parse vina log.
-				for (size_t i = 1; i <= population_size; ++i)
+				for (size_t i = 1; i <= num_ligands; ++i)
 				{
 					ifile log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
 					log.seekg(1177);
@@ -429,6 +404,7 @@ main(int argc, char* argv[])
 						{
 							const size_t start = line.find_first_not_of(' ', 8);
 							const fl free_energy = lexical_cast<fl > (line.substr(start, 17 - start));
+							ligands[i - 1].free_energy = free_energy;
 						}
 					}
 					log.close();
@@ -436,6 +412,7 @@ main(int argc, char* argv[])
 			}
 
 			// Sort ligands in ascending order of predicted free energy
+			ligands.sort();
 
 			// Write csv
 		}
