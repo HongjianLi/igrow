@@ -6,7 +6,7 @@ else ifeq ($(TOOLSET), intel-linux)
   CC = icpc -O3 -DNDEBUG -std=gnu++0x
 endif
 
-bin/igrow:obj/bondlibrary.o obj/ligand.o obj/interact.o obj/main.o
+bin/igrow: obj/ligand.o obj/main.o
 	$(CC) -o $@ $^ -pthread -lboost_system -lboost_thread -lboost_filesystem -lboost_program_options
 
 obj/%.o: src/%.cpp 
