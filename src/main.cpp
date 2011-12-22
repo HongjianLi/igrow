@@ -27,7 +27,7 @@
 #include "seed.hpp"
 #include "file.hpp"
 #include "tee.hpp"
-#include "interact.hpp"
+#include "ligand.hpp"
 
 // Choose the appropriate Mersenne Twister engine for random number generation on 32-bit or 64-bit platform.
 #if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(__amd64__) || defined(_M_X64) || defined(_M_AMD64)
@@ -325,11 +325,8 @@ main(int argc, char* argv[])
 				{
 					/*const*/ ligand lig(initial_ligand_path);					
 				    lig.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]));
-
-					if (lig.valid())
-					{
-						lig.save(current_pdbqt_folder_path / (lexical_cast<string > (i + 1) + ".pdbqt"));
-					}
+					// Check ligand validity.
+					lig.save(current_pdbqt_folder_path / (lexical_cast<string > (i + 1) + ".pdbqt"));
 				}
 			}
 			else
