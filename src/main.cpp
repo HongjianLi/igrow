@@ -70,14 +70,16 @@ main(int argc, char* argv[])
 	fl max_mw, max_logp;
 	bool idock;
 
+	// Initialize the default path to log files. They will be reused when calling idock.
+	const path default_log_path = "log.txt";
+	const path default_csv_path = "log.csv";
+
 	// Process program options.
 	{
 		using namespace boost::program_options;
 
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
-		const path default_log_path = "log.txt";
-		const path default_csv_path = "log.csv";
 		const unsigned int concurrency = boost::thread::hardware_concurrency();
 		const unsigned int default_num_threads = concurrency ? concurrency : 1;
 		const size_t default_seed = random_seed();
@@ -292,20 +294,21 @@ main(int argc, char* argv[])
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
 		// Initialize process context.
-		using namespace boost::process;
-		context ctx;
+		const boost::process::context ctx;
 
 		// Initialize arguments to igrow or vina.
 		using namespace boost;
-		vector<string> docking_args(8);
+		vector<string> docking_args(12);
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
-		docking_args[6] = "--seed";
-		docking_args[7] = lexical_cast<string>(seed);
+		docking_args[10] = "--seed";
+		docking_args[11] = lexical_cast<string>(seed);
 		if (idock)
 		{
 			docking_args[2] = "--ligand_folder";
-			docking_args[4] = "--output_folder";			
+			docking_args[4] = "--output_folder";
+			docking_args[6] = "--log";
+			docking_args[8] = "--csv";
 		}
 		else
 		{
@@ -315,6 +318,8 @@ main(int argc, char* argv[])
 
 		// The number of ligands is equal to the number of elitists plus mutants plus children.
 		const size_t num_ligands = num_elitists + num_mutants + num_children;
+
+		// Initialize pointer vector to hold generated ligands.
 		ptr_vector<ligand> ligands(num_ligands);
 
 		// Initialize csv file for dumping statistics.
@@ -345,10 +350,13 @@ main(int argc, char* argv[])
 				// Create mutants in parallel.
 				for (size_t i = 1; i != num_ligands; ++i)
 				{
-					/*const*/ ligand lig(initial_ligand_path);					
-				    lig.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]));
+					// Mutate the initial ligand by adding a random fragment.
+					ligands.push_back(ligands.front().mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()])));
+
 					// Check ligand validity.
-					lig.save(current_pdbqt_folder_path / (lexical_cast<string > (i + 1) + ".pdbqt"));
+
+					// Save the newly created mutant.
+					ligands.back().save(current_pdbqt_folder_path / (lexical_cast<string > (i + 1) + ".pdbqt"));
 				}
 			}
 			else
@@ -356,31 +364,27 @@ main(int argc, char* argv[])
 				// TODO: abstract into tasks for parallel execution.
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
-					ligand lig = ligands[uniform_elitist_gen()];
-				    lig.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]));
-					ligands.replace(num_elitists + i, &lig);
+					// Mutate an elitist by adding a random fragment.
+					ligands.replace(num_elitists + i, ligands[uniform_elitist_gen()].mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()])));
 				}
 
 				// TODO: abstract into tasks for parallel execution.
 				for (size_t i = 0; i < num_children; ++i)
 				{
-					//const path previous_generation_folder_path(output_folder_path / path(lexical_cast<string > (current_generation - 1)));
-					//	    Interaction interact;
-					//	    Ligand child = interact.mate(m1, m2);
-					//	    if (child.valid());
 					//ligands.replace(num_elitists + num_mutants + i, &lig);
 				}
 			}
 
 			// Call either igrow or vina to dock ligands to predict their free energy and then parse the docking log.
 			// TODO: Parse resultant pdbqt file instead.
-			ctx.work_dir = current_generation_folder_path.string();
 			if (idock)
 			{
 				// Invoke idock.
 				log << "Calling idock to dock " << num_ligands << " ligands\n";
-				docking_args[3] = "pdbqt";
-				docking_args[5] = "output";
+				docking_args[3] = current_pdbqt_folder_path.string();
+				docking_args[5] = current_output_folder_path.string();
+				docking_args[7] = (current_generation_folder_path / default_log_path).string();
+				docking_args[9] = (current_generation_folder_path / default_csv_path).string();
 				create_child(docking_program_path.string(), docking_args, ctx).wait();
 
 				// Parse idock log.
@@ -405,8 +409,8 @@ main(int argc, char* argv[])
 				log << "Calling vina to dock " << num_ligands << " ligands\n";
 				for (size_t i = 1; i <= num_ligands; ++i)
 				{
-					docking_args[3] = (path("pdbqt")  / path(lexical_cast<string > (i) + ".pdbqt")).string();
-					docking_args[5] = (path("output") / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					docking_args[3] = (current_pdbqt_folder_path  / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					docking_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
 					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
 

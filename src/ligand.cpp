@@ -43,7 +43,7 @@ namespace igrow
 	ligand* ligand::mutate(const ligand& lig) const
 	{
 		// Check ligand validity, i.e. steric clash, rule of 5
-		return NULL;
+		return new ligand(lig);
 	}
 
 /*
@@ -55,7 +55,7 @@ namespace igrow
 		out << setprecision(3);
 		for (map<int, atom>::const_iterator it = atoms.begin(); it != atoms.end(); ++it)
 		{
-			const atom& a = it->second;			
+			const atom& a = it->second;
 			out << "ATOM  "
 				<< std::setw(5) << it->first
 				<< "  " << a.name
