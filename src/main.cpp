@@ -298,23 +298,26 @@ main(int argc, char* argv[])
 
 		// Initialize arguments to igrow or vina.
 		using namespace boost;
-		vector<string> docking_args(12);
-		docking_args[0] = "--config";
-		docking_args[1] = docking_config_path.string();
-		docking_args[10] = "--seed";
-		docking_args[11] = lexical_cast<string>(seed);
+		vector<string> docking_args;
 		if (idock)
 		{
-			docking_args[2] = "--ligand_folder";
-			docking_args[4] = "--output_folder";
-			docking_args[6] = "--log";
-			docking_args[8] = "--csv";
+			docking_args.resize(12);
+			docking_args[3] = lexical_cast<string>(seed);
+			docking_args[4] = "--ligand_folder";
+			docking_args[6] = "--output_folder";
+			docking_args[8] = "--log";
+			docking_args[10]= "--csv";
 		}
 		else
 		{
-			docking_args[2] = "--ligand";
-			docking_args[4] = "--out";
+			docking_args.resize(8);
+			docking_args[3] = lexical_cast<string>(int(seed)); // AutoDock Vina does not support 64-bit seed.
+			docking_args[4] = "--ligand";
+			docking_args[6] = "--out";
 		}
+		docking_args[0] = "--config";
+		docking_args[1] = docking_config_path.string();
+		docking_args[2] = "--seed";
 
 		// The number of ligands is equal to the number of elitists plus mutants plus children.
 		const size_t num_ligands = num_elitists + num_mutants + num_children;
@@ -381,10 +384,10 @@ main(int argc, char* argv[])
 			{
 				// Invoke idock.
 				log << "Calling idock to dock " << num_ligands << " ligands\n";
-				docking_args[3] = current_pdbqt_folder_path.string();
-				docking_args[5] = current_output_folder_path.string();
-				docking_args[7] = (current_generation_folder_path / default_log_path).string();
-				docking_args[9] = (current_generation_folder_path / default_csv_path).string();
+				docking_args[5]  = current_pdbqt_folder_path.string();
+				docking_args[7]  = current_output_folder_path.string();
+				docking_args[9]  = (current_generation_folder_path / default_log_path).string();
+				docking_args[11] = (current_generation_folder_path / default_csv_path).string();
 				create_child(docking_program_path.string(), docking_args, ctx).wait();
 
 				// Parse idock log.
@@ -409,8 +412,8 @@ main(int argc, char* argv[])
 				log << "Calling vina to dock " << num_ligands << " ligands\n";
 				for (size_t i = 1; i <= num_ligands; ++i)
 				{
-					docking_args[3] = (current_pdbqt_folder_path  / path(lexical_cast<string > (i) + ".pdbqt")).string();
-					docking_args[5] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					docking_args[5] = (current_pdbqt_folder_path  / path(lexical_cast<string > (i) + ".pdbqt")).string();
+					docking_args[7] = (current_output_folder_path / path(lexical_cast<string > (i) + ".pdbqt")).string();
 					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
 
