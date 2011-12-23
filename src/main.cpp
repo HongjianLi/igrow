@@ -68,7 +68,7 @@ main(int argc, char* argv[])
 	path fragment_folder_path, initial_ligand_path, docking_program_path, docking_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_generations, num_elitists, num_mutants, num_children, max_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp;
-	bool idock;
+	bool idock; ///< True if the docking program idock, false if vina.
 
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.txt";
@@ -76,10 +76,9 @@ main(int argc, char* argv[])
 
 	// Process program options.
 	{
-		using namespace boost::program_options;
-
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
+		const string default_docking_program = "idock";
 		const unsigned int concurrency = boost::thread::hardware_concurrency();
 		const unsigned int default_num_threads = concurrency ? concurrency : 1;
 		const size_t default_seed = random_seed();
@@ -93,12 +92,12 @@ main(int argc, char* argv[])
 		const fl default_max_mw = 500;
 		const fl default_max_logp = 5;
 
+		using namespace boost::program_options;
 		options_description input_options("input (required)");
 		input_options.add_options()
-			("fragment_folder", value<path > (&fragment_folder_path)->required(), "path to folder of fragments in PDB format")
-			("initial_ligand", value<path > (&initial_ligand_path)->required(), "path to initial ligand in PDB format")
-			("docking_program", value<path > (&docking_program_path)->required(), "path to igrow or vina executable")
-			("docking_config", value<path > (&docking_config_path)->required(), "path to igrow or vina configuration file")
+			("fragment_folder", value<path > (&fragment_folder_path)->required(), "path to folder of fragments in pdbqt format")
+			("initial_ligand", value<path > (&initial_ligand_path)->required(), "path to initial ligand in pdbqt format")
+			("docking_config", value<path > (&docking_config_path)->required(), "path to docking configuration file")
 			;
 
 		options_description output_options("output (optional)");
@@ -108,8 +107,10 @@ main(int argc, char* argv[])
 			("csv", value<path > (&csv_path)->default_value(default_csv_path), "summary file in csv format")
 			;
 
+		string docking_program;
 		options_description miscellaneous_options("options (optional)");
 		miscellaneous_options.add_options()
+			("docking_program", value<string > (&docking_program)->default_value(default_docking_program), "either idock or vina")
 			("threads", value<size_t > (&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("seed", value<size_t > (&seed)->default_value(default_seed), "explicit non-negative random seed")
 			("generations", value<size_t > (&num_generations)->default_value(default_num_generations), "number of GA generations")
@@ -146,6 +147,24 @@ main(int argc, char* argv[])
 				store(parse_config_file(config_file, all_options), vm);
 			}
 			vm.notify(); // Notify the user if there are any parsing errors.
+
+			// Determine if the docking program is idock or vina.
+			if (docking_program == "idock")
+			{
+				idock = true;
+			}
+			else if (docking_program == "vina")
+			{
+				idock = false;
+			}
+			else
+			{
+				std::cerr << "Docking program must be either idock or vina\n";
+				return 1;
+			}
+
+			// Find the full path to the docking executable.
+			docking_program_path = boost::process::find_executable_in_path(docking_program);
 		}
 		catch (const std::exception& e)
 		{
@@ -177,34 +196,6 @@ main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Validate docking program.
-		if (!exists(docking_program_path))
-		{
-			std::cerr << "Docking program " << docking_program_path << " does not exist\n";
-			return 1;
-		}
-		if (!is_regular_file(docking_program_path))
-		{
-			std::cerr << "Docking program " << docking_program_path << " is not a regular file\n";
-			return 1;
-		}
-
-		// Determine if the docking program is igrow or vina.
-		const string docking_program = docking_program_path.stem().string();
-		if (docking_program == "idock")
-		{
-			idock = true;
-		}
-		else if (docking_program == "vina")
-		{
-			idock = false;
-		}
-		else
-		{
-			std::cerr << "Docking program must be either igrow or vina\n";
-			return 1;
-		}
-
 		// Validate docking configuration file.
 		if (!exists(docking_config_path))
 		{
@@ -226,34 +217,24 @@ main(int argc, char* argv[])
 		}
 
 		// Validate miscellaneous options.
-		if (num_threads < 1)
+		if (!num_threads)
 		{
 			std::cerr << "Option threads must be 1 or greater\n";
 			return 1;
 		}
-		if (num_generations < 1)
+		if (!num_generations)
 		{
 			std::cerr << "Option generations must be 1 or greater\n";
 			return 1;
 		}
-		if (num_mutants < 1)
+		if (!num_mutants)
 		{
 			std::cerr << "Option mutants must be 1 or greater\n";
 			return 1;
 		}
-		if (num_children < 0)
+		if (max_mw <= 0)
 		{
-			std::cerr << "Option children must be 0 or greater\n";
-			return 1;
-		}
-		if (num_elitists < 0)
-		{
-			std::cerr << "Option carryovers must be 0 or greater\n";
-			return 1;
-		}
-		if (max_atoms <= 0)
-		{
-			std::cerr << "Option max_atoms must be 1 or greater\n";
+			std::cerr << "Option max_mw must be positive\n";
 			return 1;
 		}
 	}
