@@ -113,15 +113,15 @@ The generated PDF will be `refman.pdf`.
 Change Log
 ----------
 
-### 1.0 (2011-12-20)
+### 1.0
 
-* First release.
+* Under construction.
 
 
 Contact Author
 --------------
 
-[Jacky Lee]
+[Jacky Lee] (JackyLeeHongJian@Gmail.com)
 
 
 Logo
