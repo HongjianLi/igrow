@@ -1,13 +1,13 @@
 igrow
 =====
 
-igrow is a multithreaded structure-based [drug design] tool for computational drug discovery. It is hosted by GitHub at https://github.com/HongjianLi/igrow under [Apache License 2.0].
+igrow is a multithreaded structure-based [drug design] tool for computational drug discovery. It is inspired by [AutoGrow], and is hosted by GitHub at https://github.com/HongjianLi/igrow under [Apache License 2.0].
 
 
 Features
 --------
 
-* igrow is inspired by [AutoGrow]. It uses either [idock] or [AutoDock Vina] as backend docking engine.
+* igrow uses either [idock] or [AutoDock Vina] as backend docking engine.
 * igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
 * igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
 * igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire synhsizing procedure. The thread pool parallelizes the creation of mutants and children in each generation.
@@ -82,13 +82,16 @@ To display a full list of available options, simply run the program without argu
 
     igrow
 
-The `examples` folder contains several use cases. One can supply the options from command line arguments
+The `examples` folder contains several use cases. For example, to grow TMC278 and dock the generated ligands against HIV-RT of PDB ID 2ZD1,
 
-    igrow --fragment_folder ~/igrow/fragments --initial_ligand ~/igrow/examples/2ZD1/ZINC01019824.pdb --python ~/MGLTools/bin/python2.5 --prepare_ligand4 ~/MGLTools/MGLToolsPckgs/AutoDockTools/Utilities24/prepare_ligand4.pyo --docking_program ~/idock/bin/idock --docking_config ~/igrow/examples/2ZD1/idock.cfg
+    cd examples/2ZD1
+
+One can supply the options from command line arguments
+
+    igrow --fragment_folder ../../fragments --initial_ligand ../../fragments/CH4.pdbqt --docking_program idock --docking_config docking.cfg
 
 Or one can instruct igrow to load the options from a configuration file
 
-    cd examples/2ZD1
     igrow --config igrow.cfg
 
 
