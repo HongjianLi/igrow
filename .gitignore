@@ -45,4 +45,4 @@ cache
 ifstream
 flyweight
 filterhydrogens
-
+NoHydrogen.txt
