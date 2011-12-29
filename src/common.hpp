@@ -16,6 +16,7 @@
 
 */
 
+#pragma once
 #ifndef IGROW_COMMON_HPP
 #define IGROW_COMMON_HPP
 

@@ -1,3 +1,4 @@
+#pragma once
 #ifndef IGROW_MAT_HPP
 #define IGROW_MAT_HPP
 

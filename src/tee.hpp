@@ -16,6 +16,7 @@
 
 */
 
+#pragma once
 #ifndef IGROW_TEE_HPP
 #define IGROW_TEE_HPP
 

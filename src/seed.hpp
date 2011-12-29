@@ -16,6 +16,7 @@
 
 */
 
+#pragma once
 #ifndef IGROW_SEED_HPP
 #define IGROW_SEED_HPP
 

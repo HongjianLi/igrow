@@ -16,6 +16,7 @@
 
 */
 
+#pragma once
 #ifndef IGROW_FSTREAM_HPP
 #define IGROW_FSTREAM_HPP
 

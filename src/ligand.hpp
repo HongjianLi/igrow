@@ -16,6 +16,7 @@
 
  */
 
+#pragma once
 #ifndef IGROW_LIGAND_HPP
 #define IGROW_LIGAND_HPP
 
@@ -27,6 +28,30 @@
 
 namespace igrow
 {
+	/// Represents a ROOT or a BRANCH in PDBQT structure.
+	class frame
+	{
+	public:
+		size_t parent; ///< Frame array index pointing to the parent of current frame. For ROOT frame, this field is not used.
+		size_t rotorX; ///< Index pointing to the parent frame atom which forms a rotatable bond with the first atom of current frame, a.k.a. rotor Y.
+		vector<size_t> branches; ///< Child branches.
+		vector<atom> atoms; ///< Heavy atoms.
+		vector<mutation_point> mutation_points; ///< Hydrogens or halogens.
+
+		/// Constructs a frame, and relates it to its parent frame.
+		explicit frame(const size_t parent) : parent(parent)
+		{
+			branches.reserve(5); // A frame typically consists of <= 5 branch frames.
+			atoms.reserve(20); // A frame typically consists of <= 20 atoms.
+			mutation_points.reserve(5); // A frame typically consists of <= 5 mutation points.
+		}
+		
+		/// Copy constructor.
+		
+		/// Move constructor.
+		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), branches(static_cast<vector<size_t>&&>(f.branches)), atoms(static_cast<vector<atom>&&>(f.atoms)), mutation_points(static_cast<vector<mutation_point>&&>(f.mutation_points)) {}
+	};
+
 	using boost::filesystem::path;
 
 	// Represents a ligand.
@@ -34,45 +59,36 @@ namespace igrow
 	class ligand
 	{
 	public:
-		static const fl pi;
-
-		const path p;
+		const path p; ///< The path to the fragment.
+		vector<frame> frames; ///< Ligand frames.
+		size_t num_heavy_atoms; ///< Number of heavy atoms.
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
 		fl mw; ///< Molecular weight.		
-		fl logp; ///< LogP.
+		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
+		fl efficacy; ///< Ligand efficacy
 
 		ligand() {}
-		ligand(const path& p);
+		explicit ligand(const path& p);
 		
-		void save(const path& file) const;
+		/// Saves the current ligand to a file in pdbqt format.
+		void save(const path& p) const;
+
+		/// Mutates the current ligand.
 		ligand* mutate(const ligand& lig) const;
-/*
-		// add a fragment to the molecule by replacing a hydrogen in the original structure
-		void mutate(ligand fragment);
-		// a distance between two molecules given by the sum of minimum distance of each atom
-		double MolecularDistance(ligand& other);
-		// obtain the index of one hydrogen of this molecule
-		int IndexOfRandomHydrogen();
-		// move atom of index to origin along with its connected atoms
-		void Translate(int index, Vec3d origin);
-		// rotate along the line given by v1-v2 using indexed atom as pivot in terms of radian
-		void RotateLine(Vec3d v1, Vec3d v2, int index, double radian);
-		// rotate along the line normal using indexed atom as pivot in terms of radian
-		void RotateLine(Vec3d normal, int index, double radian);
-		// the dihedral angle among the four atoms
-		double DihedralAngle(const Vec3d& a1, const Vec3d& a2, const Vec3d& a3, const Vec3d& a4);
-*/
+
+		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms.
+		void evaluate_efficacy();
+
+		/// For sorting ptr_vector<ligand>.
+		const bool operator<(const ligand& lig) const
+		{
+			return efficacy < lig.efficacy;
+		}
 	};
 
-	/// For sorting ptr_vector<ligand>.
-	inline bool operator<(const ligand& a, const ligand& b)
-	{
-		return a.free_energy < b.free_energy;
-	}
-
-	/// For extracting path out of a ligand.
+	/// For extracting the path out of a ligand.
 	class ligand_path_extractor
 	{
 	public:

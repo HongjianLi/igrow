@@ -17,27 +17,179 @@
  */
 
 #include <iomanip>
-#include <boost/filesystem/fstream.hpp>
 #include "fstream.hpp"
 #include "ligand.hpp"
 #include "mat.hpp"
 
 namespace igrow
 {
-	using boost::filesystem::ifstream;
-	using boost::filesystem::ofstream;
+	/// Represents a parsing error.
+	class parsing_error : public std::domain_error
+	{
+	public:
+		/// Constructs a parsing error.
+		parsing_error(const path& file, const size_t line, const string& reason) : std::domain_error("Error parsing \"" + file.filename().string() + "\" on line " + boost::lexical_cast<string>(line) + ": " + reason) {}
+	};
+
+	/// Returns true if a string starts with another string.
+	bool starts_with(const string& str, const string& start)
+	{
+		const size_t start_size = start.size();
+		if (str.size() < start_size) return false;
+		for (size_t i = 0; i < start_size; ++i)
+		{
+			if (str[i] != start[i]) return false;
+		}
+		return true;
+	}
+
 	using namespace boost;
 
-	const fl ligand::pi = 3.14159265358979323846;
-
-	ligand::ligand(const path& p) : p(p)
+	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
 	{
-		// Load pdbqt.
+		// Initialize necessary variables for constructing a ligand.
+		frames.reserve(30); // A ligand typically consists of <= 30 frames.
+		frames.push_back(frame(0)); // ROOT is also treated as a frame. The parent of ROOT frame is dummy.
+
+		// Initialize helper variables for parsing.
+		size_t current = 0; // Index of current frame, initialized to ROOT frame.
+		size_t num_lines = 0; // Used to track line number for reporting parsing errors, if any.
+		string line;
+		line.reserve(79); // According to PDBQT specification, the last item AutoDock atom type locates at 1-based [78, 79].
+
+		// Parse ROOT, ATOM/HETATM, ENDROOT, BRANCH, ENDBRANCH, TORSDOF.
+		ifstream in(p); // Parsing starts. Open the file stream as late as possible.
+		while (getline(in, line))
+		{
+			++num_lines;
+			if (starts_with(line, "ATOM") || starts_with(line, "HETATM"))
+			{
+				// Parse the ATOM/HETATM line.
+				frame& f = frames.back();
+				f.atoms.push_back(atom(line));
+				const atom& a = f.atoms.back();
+				if (a.ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + line.substr(77, isspace(line[78]) ? 1 : 2) + " is not supported by igrow.");
+				if (a.is_mutation_point())
+				{
+					// Find the neighbor of a.
+					const fl a_covalent_radius = a.covalent_radius();
+					for (size_t i = f.atoms.size(); i > 0;)
+					{
+						const atom& b = f.atoms[--i];
+						if (a.is_neighbor(b))
+						{
+							f.mutation_points.push_back(mutation_point(f.atoms.size() - 1, i));
+							break;
+						}
+					}
+				}
+				if (!a.is_hydrogen()) ++ num_heavy_atoms;
+				if (a.is_hb_donor()) ++num_hb_donors;
+				if (a.is_hb_acceptor()) ++num_hb_acceptors;
+				mw += a.atomic_weight();
+			}
+			else if (starts_with(line, "BRANCH"))
+			{
+				// Insert a new frame whose parent is the current frame.
+				frames.push_back(frame(current));
+
+				// Parse "BRANCH   X   Y". X and Y are right-justified and 4 characters wide.
+				// Y is not parsed because the atom immediately follows "BRANCH" must be Y in pdbqt files created by the prepare_ligand4.py script of MGLTools.
+				// This assumption fails if pdbqt files are prepared by OpenBabel. In this case, the class frame should incorporate a new field rotorY to track the origin.
+				const size_t x = right_cast<size_t>(line, 7, 10);
+
+				// Find the corresponding heavy atom with X as its atom number in the current frame.
+				frame& f = frames[current];
+				for (size_t i = 0; i < f.atoms.size(); ++i)
+				{
+					if (f.atoms[i].number == x)
+					{
+						frames.back().rotorX = i;
+						break;
+					}
+				}
+
+				// Now the current frame is the newly inserted BRANCH frame.
+				current = frames.size() - 1;
+
+				// The parent frame has the current frame as one of its branches.
+				f.branches.push_back(current);
+			}
+			else if (starts_with(line, "ENDBRANCH"))
+			{
+				// A frame may be empty, e.g. "BRANCH   4   9" is immediately followed by "ENDBRANCH   4   9".
+				// This emptiness is likely to be caused by invalid input structure, especially when all the atoms are located in the same plane.
+				if (frames.back().atoms.empty()) throw parsing_error(p, num_lines, "An empty BRANCH has been detected, indicating the input ligand structure is probably invalid.");
+
+				// Now the parent of the following frame is the parent of current frame.
+				current = frames[current].parent;
+			}
+		}
+		in.close(); // Parsing finishes. Close the file stream as soon as possible.
+
+		BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
+
 		// Throw exception if no hydrogen, no halogen, and no branch.
 	}
 
 	void ligand::save(const path& p) const
 	{
+		using namespace std;
+		ofstream out(p); // Dumping starts. Open the file stream as late as possible.
+		out.setf(ios::fixed, ios::floatfield);
+		out << setprecision(3);
+
+		// Dump ROOT frame.
+		out << "ROOT\n";
+		{
+			const frame& f = frames.front();
+			const size_t num_atoms = f.atoms.size();
+			for (size_t i = 0; i < num_atoms; ++i)
+			{
+				const atom& a = f.atoms[i];
+				out << "ATOM  " << setw(5) << a.number << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << endl;
+			}
+		}
+		out << "ENDROOT\n";
+
+		// Dump BRANCH frames.
+		vector<bool> dump_branches(frames.size()); // dump_branches[0] is dummy. The ROOT frame has been dumped.
+		vector<size_t> stack;
+		stack.reserve(frames.size());
+		{
+			const frame& f = frames.front();
+			const size_t num_branches = f.branches.size();
+			for (size_t i = 0; i < num_branches; ++i)
+			{
+				stack.push_back(f.branches[i]);
+			}
+		}
+		while (!stack.empty())
+		{
+			const size_t fn = stack.back();
+			const frame& f = frames[fn];
+			if (!dump_branches[fn])
+			{
+				out << "BRANCH"    << setw(4) << frames[f.parent].atoms[f.rotorX].number << setw(4) << f.atoms.front().number << endl;
+				const size_t num_atoms = f.atoms.size();
+				for (size_t i = 0; i < num_atoms; ++i)
+				{
+					const atom& a = f.atoms[i];
+					out << "ATOM  " << setw(5) << a.number << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << endl;
+				}
+				dump_branches[fn] = true;
+				for (size_t i = f.branches.size(); i > 0;)
+				{
+					stack.push_back(f.branches[--i]);
+				}
+			}
+			else
+			{
+				out << "ENDBRANCH" << setw(4) << frames[f.parent].atoms[f.rotorX].number << setw(4) << f.atoms.front().number << endl;
+				stack.pop_back();
+			}
+		}
+		out.close();
 	}
 
 	ligand* ligand::mutate(const ligand& lig) const
@@ -46,38 +198,12 @@ namespace igrow
 		return new ligand(lig);
 	}
 
-/*
-	void ligand::save(const path& file) const
+	void ligand::evaluate_efficacy()
 	{
-		using namespace std;
-		ofstream out(file);
-		out.setf(ios::fixed, ios::floatfield);
-		out << setprecision(3);
-		for (map<int, atom>::const_iterator it = atoms.begin(); it != atoms.end(); ++it)
-		{
-			const atom& a = it->second;
-			out << "ATOM  "
-				<< std::setw(5) << it->first
-				<< "  " << a.name
-				<< a.Residue
-				<< std::setw(10) << ' '
-				<< std::setw(8) << a.coordinates.n[0]
-				<< std::setw(8) << a.coordinates.n[1]
-				<< std::setw(8) << a.coordinates.n[2]
-				<< std::setw(22) << ' ';
-			if (a.element.size() == 2)
-			{
-				out << a.element;
-			}
-			else
-			{
-				out << ' ' << a.element;
-			}
-			out << "  \n";
-		}
-		out.close();
+		efficacy = free_energy / num_heavy_atoms;
 	}
 
+/*
 	// add a fragment to the position of a randomly selected hydrogen
 
 	void ligand::mutate(ligand fragment)
