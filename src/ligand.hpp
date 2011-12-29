@@ -47,6 +47,7 @@ namespace igrow
 		}
 		
 		/// Copy constructor.
+		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), branches(f.branches), atoms(f.atoms), mutation_points(f.mutation_points) {}
 		
 		/// Move constructor.
 		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), branches(static_cast<vector<size_t>&&>(f.branches)), atoms(static_cast<vector<atom>&&>(f.atoms)), mutation_points(static_cast<vector<mutation_point>&&>(f.mutation_points)) {}

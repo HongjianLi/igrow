@@ -187,6 +187,9 @@ namespace igrow
 		/// Constructs an atom from an ATOM/HETATM line in pdbqt format.
 		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_name(line.substr(77, isspace(line[78]) ? 1 : 2))) {}
 
+		/// Copy constructor.
+		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
+
 		/// Move constructor.
 		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
 
