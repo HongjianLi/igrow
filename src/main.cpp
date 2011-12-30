@@ -301,6 +301,9 @@ main(int argc, char* argv[])
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
 		docking_args[2] = "--seed";
+		
+		// Initialize a ligand validator.
+		validator v(max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
 
 		// The number of ligands is equal to the number of elitists plus mutants plus children.
 		const size_t num_ligands = num_elitists + num_mutants + num_children;

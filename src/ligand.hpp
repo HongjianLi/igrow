@@ -121,6 +121,32 @@ namespace igrow
 	/// Define flyweight type for ligand.
 	using namespace boost::flyweights;
 	typedef	flyweight<key_value<path, ligand, ligand_path_extractor>, no_tracking> ligand_flyweight;
+	
+	/// Represents a ligand validator.
+	class validator
+	{
+	public:		
+		validator(const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw, const fl max_logp, const fl min_logp) : max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw), max_logp(max_logp), min_logp(min_logp) {}
+		
+		const bool operator()(const ligand& l) const
+		{
+			if (l.num_heavy_atoms > max_heavy_atoms) return false;
+			if (l.num_hb_donors > max_hb_donors) return false;
+			if (l.num_hb_acceptors > max_hb_acceptors) return false;
+			if (l.mw > max_mw) return false;
+			if (l.logp > max_logp) return false;
+			if (l.logp < min_logp) return false;
+			return true;
+		}
+	
+	private:
+		const size_t max_heavy_atoms;
+		const size_t max_hb_donors;
+		const size_t max_hb_acceptors;
+		const fl max_mw;
+		const fl max_logp;
+		const fl min_logp;		
+	};
 }
 
 #endif
