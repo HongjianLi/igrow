@@ -20,7 +20,6 @@
 #include <boost/random.hpp>
 #include "fstream.hpp"
 #include "ligand.hpp"
-#include "mat.hpp"
 
 namespace igrow
 {
