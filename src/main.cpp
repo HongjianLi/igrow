@@ -34,7 +34,7 @@
  * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Both x86 and x64 binaries for Linux and Windows are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 22 December 2011
+ * \date 30 December 2011
  *
  * Copyright (C) 2011 The Chinese University of Hong Kong.
  */
@@ -61,7 +61,7 @@ main(int argc, char* argv[])
 	path fragment_folder_path, initial_ligand_path, docking_program_path, docking_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_generations, num_elitists, num_mutants, num_children, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp, min_logp;
-	bool idock; ///< True if the docking program idock, false if vina.
+	bool idock; ///< True if the docking program is idock, false if vina.
 
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.txt";
@@ -232,6 +232,11 @@ main(int argc, char* argv[])
 			std::cerr << "Option max_mw must be positive\n";
 			return 1;
 		}
+		if (min_logp > max_logp)
+		{
+			std::cerr << "Option max_mw must be larger than or equal to option min_mw\n";
+			return 1;
+		}
 	}
 
 	try
@@ -272,13 +277,14 @@ main(int argc, char* argv[])
 		// Initialize process context.
 		const boost::process::context ctx;
 
-		// Initialize arguments to igrow or vina.
+		// Initialize arguments to docking program.
 		using namespace boost;
 		vector<string> docking_args;
 		if (idock)
 		{
+			// Initialize argument to idock.
 			docking_args.resize(12);
-			docking_args[3] = lexical_cast<string > (seed);
+			docking_args[3] = lexical_cast<string>(seed); // idock supports 64-bit seed.
 			docking_args[4] = "--ligand_folder";
 			docking_args[6] = "--output_folder";
 			docking_args[8] = "--log";
@@ -286,8 +292,9 @@ main(int argc, char* argv[])
 		}
 		else
 		{
+			// Initialize argument to vina.
 			docking_args.resize(8);
-			docking_args[3] = lexical_cast<string > (int(seed)); // AutoDock Vina does not support 64-bit seed.
+			docking_args[3] = lexical_cast<string>(int(seed)); // AutoDock Vina does not support 64-bit seed.
 			docking_args[4] = "--ligand";
 			docking_args[6] = "--out";
 		}
@@ -303,7 +310,7 @@ main(int argc, char* argv[])
 
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
-		csv << "generation,ligand,free energy in kcal/mol,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logp,parent 1, parent 2\n";
+		csv << "generation,ligand,efficacy,free energy in kcal/mol,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logp,parent 1, parent 2\n";
 
 		for (size_t generation = 1; generation <= num_generations; ++generation)
 		{
@@ -401,6 +408,21 @@ main(int argc, char* argv[])
 			ligands.sort();
 
 			// Write csv
+			for (size_t i = 0; i < num_ligands; ++i)
+			{
+				const ligand& l = ligands[i];
+				csv << generation
+					<< ',' << (i + 1)
+					<< ',' << l.efficacy
+					<< ',' << l.free_energy
+					<< ',' << l.num_heavy_atoms
+					<< ',' << l.num_hb_donors
+					<< ',' << l.num_hb_acceptors
+					<< ',' << l.mw
+					<< ',' << l.logp
+					<< ',' << l.parent1
+					<< ',' << l.parent2;
+			}
 		}
 	}
 	catch (const std::exception& e)

@@ -235,17 +235,22 @@ namespace igrow
 			return ((AD_TYPE_NA <= ad) && (ad <= AD_TYPE_SA));
 		}
 
+		/// Returns true if the current atom is covalently bonded to a given atom.
 		const bool is_neighbor(const atom& a) const
 		{
 			return (distance_sqr(coordinate, a.coordinate) < sqr(covalent_radius() + a.covalent_radius()));
 		}
-/*
-		// planarize surroundings when this atom is found in this orbital
-		bool isSP2() const
+		
+		/// Returns true if the current atom is sp2 hybridized.
+		const bool is_sp2() const
 		{
-			return ((element == "C") && (IndexArray.size() == 3));
+			if ((ad == AD_TYPE_C) || (ad == AD_TYPE_A)) return false;
+			size_t num_neighbors = 0;
+			// Find the neighbors.
+			return num_neighbors == 3;
 		}
-
+		
+/*
 		// the Euclidean distance to another atom
 		double DistanceTo(const atom& other) const
 		{
