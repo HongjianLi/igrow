@@ -17,12 +17,12 @@
 */
 
 #pragma once
-#ifndef IDOCK_MAT3_HPP
-#define IDOCK_MAT3_HPP
+#ifndef IGROW_MAT3_HPP
+#define IGROW_MAT3_HPP
 
 #include "vec3.hpp"
 
-namespace idock
+namespace igrow
 {
 	// (0 3 6)
 	// (1 4 7)
