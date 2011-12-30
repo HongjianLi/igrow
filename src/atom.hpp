@@ -42,20 +42,7 @@ namespace igrow
 	const size_t AD_TYPE_Cl   = 12; ///< Chlorine.
 	const size_t AD_TYPE_Br   = 13; ///< Bromine.
 	const size_t AD_TYPE_I    = 14; ///< Iodine.
-	const size_t AD_TYPE_Zn   = 15; ///< Zine.
-	const size_t AD_TYPE_Fe   = 16; ///< Iron.
-	const size_t AD_TYPE_Mg   = 17; ///< Magnesium.
-	const size_t AD_TYPE_Ca   = 18; ///< Calcium.
-	const size_t AD_TYPE_Mn   = 19; ///< Manganese.
-	const size_t AD_TYPE_Cu   = 20; ///< Copper.
-	const size_t AD_TYPE_Na   = 21; ///< Sodium.
-	const size_t AD_TYPE_K    = 22; ///< Potassium.
-	const size_t AD_TYPE_Hg   = 23; ///< Mercury.
-	const size_t AD_TYPE_Ni   = 24; ///< Nickel.
-	const size_t AD_TYPE_Co   = 25; ///< Cobalt.
-	const size_t AD_TYPE_Cd   = 26; ///< Cadmium.
-	const size_t AD_TYPE_As   = 27; ///< Arsenic.
-	const size_t AD_TYPE_SIZE = 28; ///< Number of supported AutoDock4 atom types.
+	const size_t AD_TYPE_SIZE = 15; ///< Number of supported AutoDock4 atom types.
 
 	const string ad_type_strings[] = ///< AutoDock4 atom type names.
 	{
@@ -73,20 +60,7 @@ namespace igrow
 		"F" , // 11 = AD_TYPE_F
 		"Cl", // 12 = AD_TYPE_Cl
 		"Br", // 13 = AD_TYPE_Br
-		"I" , // 14 = AD_TYPE_I
-		"Zn", // 15 = AD_TYPE_Zn
-		"Fe", // 16 = AD_TYPE_Fe
-		"Mg", // 17 = AD_TYPE_Mg
-		"Ca", // 18 = AD_TYPE_Ca
-		"Mn", // 19 = AD_TYPE_Mn
-		"Cu", // 20 = AD_TYPE_Cu
-		"Na", // 21 = AD_TYPE_Na
-		"K" , // 22 = AD_TYPE_K
-		"Hg", // 23 = AD_TYPE_Hg
-		"Ni", // 24 = AD_TYPE_Ni
-		"Co", // 25 = AD_TYPE_Co
-		"Cd", // 26 = AD_TYPE_Cd
-		"As", // 27 = AD_TYPE_As
+		"I"   // 14 = AD_TYPE_I
 	};
 
 	// http://en.wikipedia.org/wiki/Atomic_radii_of_the_elements_(data_page)
@@ -109,20 +83,7 @@ namespace igrow
 		0.781, // 11 = AD_TYPE_F , 0.781 = 1.1 * 0.71
 		1.089, // 12 = AD_TYPE_Cl, 1.089 = 1.1 * 0.99
 		1.254, // 13 = AD_TYPE_Br, 1.254 = 1.1 * 1.14
-		1.463, // 14 = AD_TYPE_I , 1.463 = 1.1 * 1.33
-		1.441, // 15 = AD_TYPE_Zn, 1.441 = 1.1 * 1.31
-		1.375, // 16 = AD_TYPE_Fe, 1.375 = 1.1 * 1.25
-		1.430, // 17 = AD_TYPE_Mg, 1.430 = 1.1 * 1.30
-		1.914, // 18 = AD_TYPE_Ca, 1.914 = 1.1 * 1.74
-		1.529, // 19 = AD_TYPE_Mn, 1.529 = 1.1 * 1.39
-		1.518, // 20 = AD_TYPE_Cu, 1.518 = 1.1 * 1.38
-		1.694, // 21 = AD_TYPE_Na, 1.694 = 1.1 * 1.54
-		2.156, // 22 = AD_TYPE_K , 2.156 = 1.1 * 1.96
-		1.639, // 23 = AD_TYPE_Hg, 1.639 = 1.1 * 1.49
-		1.331, // 24 = AD_TYPE_Ni, 1.331 = 1.1 * 1.21
-		1.386, // 25 = AD_TYPE_Co, 1.386 = 1.1 * 1.26
-		1.628, // 26 = AD_TYPE_Cd, 1.628 = 1.1 * 1.48
-		1.309  // 27 = AD_TYPE_As, 1.309 = 1.1 * 1.19
+		1.463  // 14 = AD_TYPE_I , 1.463 = 1.1 * 1.33
 	};
 
 	const fl ad_atomic_weights[] = ///< AutoDock4 atomic weights.
@@ -141,20 +102,7 @@ namespace igrow
 		 19.00, // 11 = AD_TYPE_F
 		 35.45, // 12 = AD_TYPE_Cl
 		 79.90, // 13 = AD_TYPE_Br
-		126.90, // 14 = AD_TYPE_I
-		 65.39, // 15 = AD_TYPE_Zn
-		 55.84, // 16 = AD_TYPE_Fe
-		 24.31, // 17 = AD_TYPE_Mg
-		 40.08, // 18 = AD_TYPE_Ca
-		 54.94, // 19 = AD_TYPE_Mn
-		 63.55, // 20 = AD_TYPE_Cu
-		 22.99, // 21 = AD_TYPE_Na
-		 39.10, // 22 = AD_TYPE_K
-		200.59, // 23 = AD_TYPE_Hg
-		 58.69, // 24 = AD_TYPE_Ni
-		 58.93, // 25 = AD_TYPE_Co
-		112.41, // 26 = AD_TYPE_Cd
-		 74.92  // 27 = AD_TYPE_As
+		126.90  // 14 = AD_TYPE_I
 	};
 
 	/// Parses right-justified 1-based [i, j] of str into generic type T lexically.
@@ -226,7 +174,7 @@ namespace igrow
 		/// Returns true is the current atom is a hydrogen bond donor.
 		const bool is_hb_donor() const
 		{
-			return ((!ad) || ((AD_TYPE_Zn <= ad) && (ad <= AD_TYPE_As)));
+			return (!ad);
 		}
 
 		/// Returns true is the current atom is a hydrogen bond acceptor.

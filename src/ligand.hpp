@@ -79,6 +79,8 @@ namespace igrow
 		path p; ///< The path to the current ligand.
 		path parent1; ///< The first parent ligand to synthesize the current ligand.
 		path parent2; ///< The second parent ligand, if any, to synthesize the current ligand.
+		size_t connector1; ///< The serial number of the connecting atom of parent 1.
+		size_t connector2; ///< The serial number of the connecting atom of parent 2.
 		vector<frame> frames; ///< Ligand frames.
 		vector<mutation_point> mutation_points; ///< Hydrogens or halogens.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
@@ -93,7 +95,7 @@ namespace igrow
 		explicit ligand(const path& p);
 
 		/// Saves the current ligand to a file in pdbqt format.
-		void save(const path& p) const;
+		void save(const path& p);
 
 		/// Mutates the current ligand.
 		ligand* mutate(const ligand& other, const mt19937eng& eng) const;

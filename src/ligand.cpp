@@ -45,7 +45,7 @@ namespace igrow
 
 	using namespace boost;
 
-	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
+	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), connector1(0), connector2(0), logp(0) // TODO: comment logp(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
@@ -74,7 +74,7 @@ namespace igrow
 				{
 					// Find the neighbor of a.
 					const fl a_covalent_radius = a.covalent_radius();
-					for (size_t i = f.atoms.size(); i > 0;)
+					for (size_t i = f.atoms.size() - 1; i > 0;) // Exclude the last atom which is a itself.
 					{
 						const atom& b = f.atoms[--i];
 						if (a.is_neighbor(b))
@@ -133,14 +133,17 @@ namespace igrow
 		// Throw exception if no hydrogen, no halogen, and no branch.
 	}
 
-	void ligand::save(const path& p) const
+	void ligand::save(const path& p)
 	{
+		// Update the path to the current ligand.
+		this->p = p;
+
 		using namespace std;
 		ofstream out(p); // Dumping starts. Open the file stream as late as possible.
 		out.setf(ios::fixed, ios::floatfield);
 		out << setprecision(3);
 
-		// Dump ROOT frame.
+		// Dump the ROOT frame.
 		out << "ROOT\n";
 		{
 			const frame& f = frames.front();
@@ -153,10 +156,11 @@ namespace igrow
 		}
 		out << "ENDROOT\n";
 
-		// Dump BRANCH frames.
-		vector<bool> dump_branches(frames.size()); // dump_branches[0] is dummy. The ROOT frame has been dumped.
+		// Dump the BRANCH frames.
+		const size_t num_frames = frames.size();
+		vector<bool> dump_branches(num_frames); // dump_branches[0] is dummy. The ROOT frame has been dumped.
 		vector<size_t> stack; // Stack to track the traversal sequence of frames in order to avoid recursion.
-		stack.reserve(frames.size());
+		stack.reserve(num_frames - 1); // The ROOT frame is excluded.
 		{
 			const frame& f = frames.front();
 			const size_t num_branches = f.branches.size();
@@ -169,7 +173,7 @@ namespace igrow
 		{
 			const size_t fn = stack.back();
 			const frame& f = frames[fn];
-			if (!dump_branches[fn])
+			if (!dump_branches[fn]) // This BRANCH frame has not been dumped.
 			{
 				out << "BRANCH"    << setw(4) << frames[f.parent].atoms[f.rotorX].number << setw(4) << f.atoms.front().number << endl;
 				const size_t num_atoms = f.atoms.size();
@@ -184,12 +188,13 @@ namespace igrow
 					stack.push_back(f.branches[--i]);
 				}
 			}
-			else
+			else // This BRANCH frame has been dumped.
 			{
 				out << "ENDBRANCH" << setw(4) << frames[f.parent].atoms[f.rotorX].number << setw(4) << f.atoms.front().number << endl;
 				stack.pop_back();
 			}
 		}
+		out << "TORSDOF " << (num_frames - 1);
 		out.close();
 	}
 
@@ -199,23 +204,26 @@ namespace igrow
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_1(eng, uniform_int_distribution<size_t>(0, this->mutation_points.size() - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutation_points.size() - 1));
-		mutation_point mutation_point_1 = this->mutation_points[uniform_mutation_point_gen_1()];
-		mutation_point mutation_point_2 = other.mutation_points[uniform_mutation_point_gen_2()];
+		mutation_point mp1 = this->mutation_points[uniform_mutation_point_gen_1()];
+		mutation_point mp2 = other.mutation_points[uniform_mutation_point_gen_2()];
 
-		if (mutation_point_2.frame)
-		{
-			// Restructure the frame tree.
-		}
+		const frame& f1 = this->frames[mp1.frame];
+		const frame& f2 = other.frames[mp2.frame];
+		const atom& p1 = f1.atoms[mp1.point];
+		const atom& p2 = f2.atoms[mp2.point];
 
 		ligand child;
 		child.parent1 = this->p;
 		child.parent2 = other.p;
+		child.connector1 = f1.atoms[mp1.neighbor].number;
+		child.connector2 = f2.atoms[mp2.neighbor].number;
 		child.frames.reserve(this->frames.size() + other.frames.size());
 		child.mutation_points.reserve(this->mutation_points.size() + other.mutation_points.size());
-		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms;
+		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms - ((p1.is_hydrogen() ? 0 : 1) + (p2.is_hydrogen() ? 0 : 1));
 		child.num_hb_donors = this->num_hb_donors + other.num_hb_donors;
 		child.num_hb_acceptors = this->num_hb_acceptors + other.num_hb_acceptors;
-		child.mw = this->mw + other.mw;
+		child.mw = this->mw + other.mw - (p1.atomic_weight() + p2.atomic_weight());
+		child.logp = this->logp + other.logp; // TODO: comment this line.
 
 		// Check ligand validity, i.e. steric clash, rule of 5
 

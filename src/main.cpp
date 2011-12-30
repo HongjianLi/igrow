@@ -313,16 +313,16 @@ main(int argc, char* argv[])
 
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
-		csv << "generation,ligand,efficacy,free energy in kcal/mol,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logp,parent 1, parent 2\n";
+		csv << "generation,ligand,efficacy,free energy in kcal/mol,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logp,parent 1,connector 1,parent 2,connector 2\n";
 
 		for (size_t generation = 1; generation <= num_generations; ++generation)
 		{
 			log << "Running generation " << generation << '\n';
 
 			// Initialize the paths to current generation folder and its two subfolders.
-			const path generation_folder(output_folder_path / path(lexical_cast<string>(generation)));
-			const path ligand_folder(generation_folder / path("ligand"));
-			const path output_folder(generation_folder / path("output"));
+			const path generation_folder(output_folder_path / lexical_cast<string>(generation));
+			const path ligand_folder(generation_folder / "ligand");
+			const path output_folder(generation_folder / "output");
 
 			// Create a new folder and two subfolders for current generation.
 			create_directory(generation_folder);
@@ -332,24 +332,43 @@ main(int argc, char* argv[])
 			// Generate ligands and save them into the ligand folder.
 			if (generation == 1)
 			{
-				// Parse and dump the initial ligand.
+				// Parse the initial ligand.
 				ligands.push_back(new ligand(initial_ligand_path));
-				ligands.front().save(ligand_folder / "1.pdbqt");
+				ligand& initial_ligand = ligands.back();
+
+				// Save the initial ligand as 1.pdbqt into the ligand folder of generation 1.
+				initial_ligand.save(ligand_folder / "1.pdbqt");
+
+				// Set the parent of 1/1.pdbqt to the initial ligand.
+				initial_ligand.parent1 = initial_ligand_path;
 
 				// Create mutants in parallel.
 				for (size_t i = 2; i <= num_ligands; ++i)
 				{
-					// Mutate the initial ligand by adding a random fragment.
-					ligands.push_back(ligands.front().mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]), eng));
+					// Generate a child ligand by adding a random fragment to the initial ligand.
+					ligands.push_back(initial_ligand.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]), eng));
+					ligand& child = ligands.back();
 
 					// Check ligand validity.
+					const bool valid = v(child);
 
 					// Save the newly created mutant.
-					ligands.back().save(ligand_folder / (lexical_cast<string>(i) + ".pdbqt"));
+					child.save(ligand_folder / (lexical_cast<string>(i) + ".pdbqt"));
 				}
 			}
 			else
 			{
+				// TODO: abstract into tasks for parallel execution.
+				for (size_t i = 0; i < num_elitists; ++i)
+				{
+					ligand& l = ligands[i];
+					l.parent1 = l.p;
+					l.connector1 = 0;
+					l.parent2.clear();
+					l.connector2 = 0;
+					l.save(ligand_folder / (lexical_cast<string>(i) + ".pdbqt"));
+				}
+
 				// TODO: abstract into tasks for parallel execution.
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
@@ -381,8 +400,9 @@ main(int argc, char* argv[])
 				log << "Calling vina to dock " << num_ligands << " ligands\n";
 				for (size_t i = 1; i <= num_ligands; ++i)
 				{
-					docking_args[5] = (ligand_folder / path(lexical_cast<string>(i) + ".pdbqt")).string();
-					docking_args[7] = (output_folder / path(lexical_cast<string>(i) + ".pdbqt")).string();
+					const string filename = lexical_cast<string>(i) + ".pdbqt";
+					docking_args[5] = (ligand_folder / filename).string();
+					docking_args[7] = (output_folder / filename).string();
 					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
 			}
@@ -391,7 +411,7 @@ main(int argc, char* argv[])
 			for (size_t i = 1; i <= num_ligands; ++i)
 			{
 				string line;
-				ifstream in(output_folder / path(lexical_cast<string>(i) + ".pdbqt"));
+				ifstream in(output_folder / (lexical_cast<string>(i) + ".pdbqt"));
 				getline(in, line); // MODEL        1 or MODEL 1
 				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:   -4.082 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
 				ligands[i].free_energy = idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29);
@@ -407,15 +427,15 @@ main(int argc, char* argv[])
 				in.close();
 			}
 
-			// Sort ligands in ascending order of predicted free energy
+			// Sort ligands in ascending order of efficacy.
 			ligands.sort();
 
-			// Write csv
+			// Write summaries to csv.
 			for (size_t i = 0; i < num_ligands; ++i)
 			{
 				const ligand& l = ligands[i];
 				csv << generation
-					<< ',' << (i + 1)
+					<< ',' << l.p
 					<< ',' << l.efficacy
 					<< ',' << l.free_energy
 					<< ',' << l.num_heavy_atoms
@@ -424,7 +444,9 @@ main(int argc, char* argv[])
 					<< ',' << l.mw
 					<< ',' << l.logp
 					<< ',' << l.parent1
+					<< ',' << l.connector1
 					<< ',' << l.parent2
+					<< ',' << l.connector2
 					<< std::endl;
 			}
 		}
