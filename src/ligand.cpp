@@ -202,8 +202,15 @@ namespace igrow
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutation_points.size() - 1));
 		mutation_point mutation_point_1 = this->mutation_points[uniform_mutation_point_gen_1()];
 		mutation_point mutation_point_2 = other.mutation_points[uniform_mutation_point_gen_2()];
+		
+		if (mutation_point_2.frame)
+		{
+			// Restructure the frame tree.
+		}
 				
 		ligand child;
+		child.parent1 = this->p;
+		child.parent2 = other.p;
 		child.frames.reserve(this->frames.size() + other.frames.size());
 		child.mutation_points.reserve(this->mutation_points.size() + other.mutation_points.size());
 		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms;

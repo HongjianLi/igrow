@@ -327,7 +327,7 @@ main(int argc, char* argv[])
 				ligands.front().save(ligand_folder / "1.pdbqt");
 
 				// Create mutants in parallel.
-				for (size_t i = 1; i != num_ligands; ++i)
+				for (size_t i = 2; i <= num_ligands; ++i)
 				{
 					// Mutate the initial ligand by adding a random fragment.
 					ligands.push_back(ligands.front().mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]), eng));
@@ -335,7 +335,7 @@ main(int argc, char* argv[])
 					// Check ligand validity.
 
 					// Save the newly created mutant.
-					ligands.back().save(ligand_folder / (lexical_cast<string > (i + 1) + ".pdbqt"));
+					ligands.back().save(ligand_folder / (lexical_cast<string>(i) + ".pdbqt"));
 				}
 			}
 			else
@@ -354,34 +354,16 @@ main(int argc, char* argv[])
 				}
 			}
 
-			// Call either igrow or vina to dock ligands to predict their free energy and then parse the docking log.
-			// TODO: Parse resultant pdbqt file instead.
+			// Call the docking program to dock ligands.			
 			if (idock)
 			{
 				// Invoke idock.
 				log << "Calling idock to dock " << num_ligands << " ligands\n";
-				docking_args[5] = ligand_folder.string();
-				docking_args[7] = output_folder.string();
-				docking_args[9] = (generation_folder / default_log_path).string();
+				docking_args[5]  = ligand_folder.string();
+				docking_args[7]  = output_folder.string();
+				docking_args[9]  = (generation_folder / default_log_path).string();
 				docking_args[11] = (generation_folder / default_csv_path).string();
 				create_child(docking_program_path.string(), docking_args, ctx).wait();
-
-				// Parse idock log.
-				//ifstream log(current_log_folder_path / path("log"));
-				//log.seekg(103);
-				//string line;
-				//while (getline(log, line))
-				//{
-				//	if (line[0] == ' ') break; //   index |       ligand |   progress | conf | top 5 conf free energy in kcal/mol
-				//}
-				//while (getline(log, line))
-				//{
-				//	const size_t ligand_id = right_cast<size_t>(line, 11, 22);
-				//	const fl free_energy = right_cast<fl>(line, 46, 51);
-				//	ligands[ligand_id].free_energy = free_energy;
-				//	ligands[ligand_id].evaluate_efficacy();
-				//}
-				//log.close();
 			}
 			else
 			{
@@ -393,25 +375,26 @@ main(int argc, char* argv[])
 					docking_args[7] = (output_folder / path(lexical_cast<string>(i) + ".pdbqt")).string();
 					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
-
-				// Parse vina log.
-				//for (size_t i = 1; i <= num_ligands; ++i)
-				//{
-				//	ifstream log(current_log_folder_path / path(lexical_cast<string > (i) + ".log"));
-				//	log.seekg(1177);
-				//	string line;
-				//	while (getline(log, line))
-				//	{
-				//		if (line[3] == '1')
-				//		{
-				//			const size_t start = line.find_first_not_of(' ', 8);
-				//			const fl free_energy = lexical_cast<fl > (line.substr(start, 17 - start));
-				//			ligands[i - 1].free_energy = free_energy;
-				//			ligands[i - 1].evaluate_efficacy();
-				//		}
-				//	}
-				//	log.close();
-				//}
+			}
+						
+			// Parse output ligands to obtained predicted free energy and docked coordinates.
+			for (size_t i = 1; i <= num_ligands; ++i)
+			{
+				string line;
+				ifstream in(output_folder / path(lexical_cast<string>(i) + ".pdbqt"));					
+				getline(in, line); // MODEL        1 or MODEL 1
+				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:   -4.082 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
+				ligands[i].free_energy = idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29);
+				while (true)
+				{
+					getline(in, line);
+					if (line[0] == 'A') // ATOM
+					{
+						// Parse coordinates;
+					}
+					else if (line[0] == 'T') break; // TORSDOF
+				}					
+				in.close();
 			}
 
 			// Sort ligands in ascending order of predicted free energy

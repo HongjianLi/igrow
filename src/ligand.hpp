@@ -76,7 +76,9 @@ namespace igrow
 	class ligand
 	{
 	public:
-		const path p; ///< The path to the fragment.
+		path p; ///< The path to the current ligand.
+		path parent1; ///< The first parent ligand to synthesize the current ligand.
+		path parent2; ///< The second parent ligand, if any, to synthesize the current ligand.
 		vector<frame> frames; ///< Ligand frames.
 		vector<mutation_point> mutation_points; ///< Hydrogens or halogens.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
