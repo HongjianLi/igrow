@@ -51,10 +51,10 @@ namespace igrow
 			branches.reserve(5); // A frame typically consists of <= 5 branch frames.
 			atoms.reserve(20); // A frame typically consists of <= 20 atoms.
 		}
-		
+
 		/// Copy constructor.
 		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), branches(f.branches), atoms(f.atoms) {}
-		
+
 		/// Move constructor.
 		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), branches(static_cast<vector<size_t>&&>(f.branches)), atoms(static_cast<vector<atom>&&>(f.atoms)) {}
 	};
@@ -69,7 +69,7 @@ namespace igrow
 
 		explicit mutation_point(const size_t frame, const size_t point, const size_t neighbor) : frame(frame), point(point), neighbor(neighbor) {}
 	};
-	
+
 	using boost::filesystem::path;
 
 	// Represents a ligand.
@@ -84,14 +84,14 @@ namespace igrow
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
-		fl mw; ///< Molecular weight.		
+		fl mw; ///< Molecular weight.
 		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
 		fl efficacy; ///< Ligand efficacy
 
 		ligand() {}
 		explicit ligand(const path& p);
-		
+
 		/// Saves the current ligand to a file in pdbqt format.
 		void save(const path& p) const;
 
@@ -121,13 +121,13 @@ namespace igrow
 	/// Define flyweight type for ligand.
 	using namespace boost::flyweights;
 	typedef	flyweight<key_value<path, ligand, ligand_path_extractor>, no_tracking> ligand_flyweight;
-	
+
 	/// Represents a ligand validator.
 	class validator
 	{
-	public:		
+	public:
 		validator(const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw, const fl max_logp, const fl min_logp) : max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw), max_logp(max_logp), min_logp(min_logp) {}
-		
+
 		const bool operator()(const ligand& l) const
 		{
 			if (l.num_heavy_atoms > max_heavy_atoms) return false;
@@ -138,14 +138,14 @@ namespace igrow
 			if (l.logp < min_logp) return false;
 			return true;
 		}
-	
+
 	private:
 		const size_t max_heavy_atoms;
 		const size_t max_hb_donors;
 		const size_t max_hb_acceptors;
 		const fl max_mw;
 		const fl max_logp;
-		const fl min_logp;		
+		const fl min_logp;
 	};
 }
 

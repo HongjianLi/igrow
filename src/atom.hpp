@@ -172,7 +172,7 @@ namespace igrow
 	public:
 		string columns_13_to_30; ///< Columns from 1-based [13, 30] of an ATOM/HETATM line in pdbqt format.
 		string columns_55_to_79; ///< Columns from 1-based [55, 79] of an ATOM/HETATM line in pdbqt format.
-		size_t number; ///< Serial number.		
+		size_t number; ///< Serial number.
 		vec3 coordinate; ///< 3D coordinate.
 		size_t ad; ///< AutoDock4 atom type.
 
@@ -240,7 +240,7 @@ namespace igrow
 		{
 			return (distance_sqr(coordinate, a.coordinate) < sqr(covalent_radius() + a.covalent_radius()));
 		}
-		
+
 		/// Returns true if the current atom is sp2 hybridized.
 		const bool is_sp2() const
 		{
@@ -249,7 +249,7 @@ namespace igrow
 			// Find the neighbors.
 			return num_neighbors == 3;
 		}
-		
+
 /*
 		// the Euclidean distance to another atom
 		double DistanceTo(const atom& other) const

@@ -66,7 +66,7 @@ main(int argc, char* argv[])
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.txt";
 	const path default_csv_path = "log.csv";
-	
+
 	// Process program options.
 	{
 		// Initialize the default values of optional arguments.
@@ -301,7 +301,7 @@ main(int argc, char* argv[])
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
 		docking_args[2] = "--seed";
-		
+
 		// Initialize a ligand validator.
 		validator v(max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
 
@@ -364,7 +364,7 @@ main(int argc, char* argv[])
 				}
 			}
 
-			// Call the docking program to dock ligands.			
+			// Call the docking program to dock ligands.
 			if (idock)
 			{
 				// Invoke idock.
@@ -386,12 +386,12 @@ main(int argc, char* argv[])
 					create_child(docking_program_path.string(), docking_args, ctx).wait();
 				}
 			}
-						
+
 			// Parse output ligands to obtained predicted free energy and docked coordinates.
 			for (size_t i = 1; i <= num_ligands; ++i)
 			{
 				string line;
-				ifstream in(output_folder / path(lexical_cast<string>(i) + ".pdbqt"));					
+				ifstream in(output_folder / path(lexical_cast<string>(i) + ".pdbqt"));
 				getline(in, line); // MODEL        1 or MODEL 1
 				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:   -4.082 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
 				ligands[i].free_energy = idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29);
@@ -403,7 +403,7 @@ main(int argc, char* argv[])
 						// Parse coordinates;
 					}
 					else if (line[0] == 'T') break; // TORSDOF
-				}					
+				}
 				in.close();
 			}
 
@@ -424,7 +424,8 @@ main(int argc, char* argv[])
 					<< ',' << l.mw
 					<< ',' << l.logp
 					<< ',' << l.parent1
-					<< ',' << l.parent2;
+					<< ',' << l.parent2
+					<< std::endl;
 			}
 		}
 	}

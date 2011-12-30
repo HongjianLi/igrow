@@ -52,7 +52,7 @@ namespace igrow
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
 		frames.push_back(frame(0)); // ROOT is also treated as a frame. The parent of ROOT frame is dummy.
 		mutation_points.reserve(20); // A ligand typically consists of <= 5 mutation points.
-		
+
 		// Initialize helper variables for parsing.
 		size_t current = 0; // Index of current frame, initialized to ROOT frame.
 		size_t num_lines = 0; // Used to track line number for reporting parsing errors, if any.
@@ -202,12 +202,12 @@ namespace igrow
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutation_points.size() - 1));
 		mutation_point mutation_point_1 = this->mutation_points[uniform_mutation_point_gen_1()];
 		mutation_point mutation_point_2 = other.mutation_points[uniform_mutation_point_gen_2()];
-		
+
 		if (mutation_point_2.frame)
 		{
 			// Restructure the frame tree.
 		}
-				
+
 		ligand child;
 		child.parent1 = this->p;
 		child.parent2 = other.p;
@@ -217,9 +217,9 @@ namespace igrow
 		child.num_hb_donors = this->num_hb_donors + other.num_hb_donors;
 		child.num_hb_acceptors = this->num_hb_acceptors + other.num_hb_acceptors;
 		child.mw = this->mw + other.mw;
-		
+
 		// Check ligand validity, i.e. steric clash, rule of 5
-		
+
 		return new ligand(other);
 	}
 
