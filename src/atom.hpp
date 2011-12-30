@@ -57,7 +57,7 @@ namespace igrow
 	const size_t AD_TYPE_As   = 27; ///< Arsenic.
 	const size_t AD_TYPE_SIZE = 28; ///< Number of supported AutoDock4 atom types.
 
-	const string ad_names[] = ///< AutoDock4 atom type names.
+	const string ad_type_strings[] = ///< AutoDock4 atom type names.
 	{
 		"HD", //  0 = AD_TYPE_HD
 		"H" , //  1 = AD_TYPE_H
@@ -177,15 +177,15 @@ namespace igrow
 		size_t ad; ///< AutoDock4 atom type.
 
 		/// Parses AutoDock4 atom type name, and returns AD_TYPE_SIZE if it does not match any supported AutoDock4 atom types.
-		static size_t parse_ad_name(const string& ad_name)
+		static size_t parse_ad_type_string(const string& ad_type_string)
 		{
 			for (size_t i = 0; i < AD_TYPE_SIZE; ++i)
-				if (ad_names[i] == ad_name) return i;
+				if (ad_type_strings[i] == ad_type_string) return i;
 			return AD_TYPE_SIZE;
 		}
 
 		/// Constructs an atom from an ATOM/HETATM line in pdbqt format.
-		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_name(line.substr(77, isspace(line[78]) ? 1 : 2))) {}
+		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_type_string(line.substr(77, isspace(line[78]) ? 1 : 2))) {}
 
 		/// Copy constructor.
 		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
@@ -252,16 +252,6 @@ namespace igrow
 			return (coordinates - other.coordinates).length();
 		}
 */
-	};
-
-	/// Represents the index to a hydrogen or a halogen together with the index to its neighbor heavy atom.
-	class mutation_point
-	{
-	public:
-		size_t point; ///< The index to a mutation point, e.g. hydrogen or halogen.
-		size_t neighbor; ///< The index to the neighbor of the current mutation point.
-
-		explicit mutation_point(const size_t point, const size_t neighbor) : point(point), neighbor(neighbor) {}
 	};
 }
 

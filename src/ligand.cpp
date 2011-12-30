@@ -17,6 +17,7 @@
  */
 
 #include <iomanip>
+#include <boost/random.hpp>
 #include "fstream.hpp"
 #include "ligand.hpp"
 #include "mat.hpp"
@@ -50,7 +51,8 @@ namespace igrow
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
 		frames.push_back(frame(0)); // ROOT is also treated as a frame. The parent of ROOT frame is dummy.
-
+		mutation_points.reserve(20); // A ligand typically consists of <= 5 mutation points.
+		
 		// Initialize helper variables for parsing.
 		size_t current = 0; // Index of current frame, initialized to ROOT frame.
 		size_t num_lines = 0; // Used to track line number for reporting parsing errors, if any.
@@ -78,7 +80,7 @@ namespace igrow
 						const atom& b = f.atoms[--i];
 						if (a.is_neighbor(b))
 						{
-							f.mutation_points.push_back(mutation_point(f.atoms.size() - 1, i));
+							mutation_points.push_back(mutation_point(frames.size() - 1, f.atoms.size() - 1, i));
 							break;
 						}
 					}
@@ -154,7 +156,7 @@ namespace igrow
 
 		// Dump BRANCH frames.
 		vector<bool> dump_branches(frames.size()); // dump_branches[0] is dummy. The ROOT frame has been dumped.
-		vector<size_t> stack;
+		vector<size_t> stack; // Stack to track the traversal sequence of frames in order to avoid recursion.
 		stack.reserve(frames.size());
 		{
 			const frame& f = frames.front();
@@ -192,10 +194,26 @@ namespace igrow
 		out.close();
 	}
 
-	ligand* ligand::mutate(const ligand& lig) const
+	ligand* ligand::mutate(const ligand& other, const mt19937eng& eng) const
 	{
+		using boost::random::variate_generator;
+		using boost::random::uniform_int_distribution;
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_1(eng, uniform_int_distribution<size_t>(0, this->mutation_points.size() - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutation_points.size() - 1));
+		mutation_point mutation_point_1 = this->mutation_points[uniform_mutation_point_gen_1()];
+		mutation_point mutation_point_2 = other.mutation_points[uniform_mutation_point_gen_2()];
+				
+		ligand child;
+		child.frames.reserve(this->frames.size() + other.frames.size());
+		child.mutation_points.reserve(this->mutation_points.size() + other.mutation_points.size());
+		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms;
+		child.num_hb_donors = this->num_hb_donors + other.num_hb_donors;
+		child.num_hb_acceptors = this->num_hb_acceptors + other.num_hb_acceptors;
+		child.mw = this->mw + other.mw;
+		
 		// Check ligand validity, i.e. steric clash, rule of 5
-		return new ligand(lig);
+		
+		return new ligand(other);
 	}
 
 	void ligand::evaluate_efficacy()

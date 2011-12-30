@@ -28,6 +28,14 @@
 
 namespace igrow
 {
+
+// Choose the appropriate Mersenne Twister engine for random number generation on 32-bit or 64-bit platform.
+#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(__amd64__) || defined(_M_X64) || defined(_M_AMD64)
+	typedef boost::random::mt19937_64 mt19937eng;
+#else
+	typedef boost::random::mt19937 mt19937eng;
+#endif
+
 	/// Represents a ROOT or a BRANCH in PDBQT structure.
 	class frame
 	{
@@ -36,32 +44,41 @@ namespace igrow
 		size_t rotorX; ///< Index pointing to the parent frame atom which forms a rotatable bond with the first atom of current frame, a.k.a. rotor Y.
 		vector<size_t> branches; ///< Child branches.
 		vector<atom> atoms; ///< Heavy atoms.
-		vector<mutation_point> mutation_points; ///< Hydrogens or halogens.
 
 		/// Constructs a frame, and relates it to its parent frame.
 		explicit frame(const size_t parent) : parent(parent)
 		{
 			branches.reserve(5); // A frame typically consists of <= 5 branch frames.
 			atoms.reserve(20); // A frame typically consists of <= 20 atoms.
-			mutation_points.reserve(5); // A frame typically consists of <= 5 mutation points.
 		}
 		
 		/// Copy constructor.
-		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), branches(f.branches), atoms(f.atoms), mutation_points(f.mutation_points) {}
+		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), branches(f.branches), atoms(f.atoms) {}
 		
 		/// Move constructor.
-		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), branches(static_cast<vector<size_t>&&>(f.branches)), atoms(static_cast<vector<atom>&&>(f.atoms)), mutation_points(static_cast<vector<mutation_point>&&>(f.mutation_points)) {}
+		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), branches(static_cast<vector<size_t>&&>(f.branches)), atoms(static_cast<vector<atom>&&>(f.atoms)) {}
 	};
 
+	/// Represents the index to a hydrogen or a halogen together with the index to its neighbor heavy atom.
+	class mutation_point
+	{
+	public:
+		size_t frame; ///< The index to the frame to which the mutation point belongs.
+		size_t point; ///< The index to a mutation point, e.g. hydrogen or halogen.
+		size_t neighbor; ///< The index to the neighbor of the current mutation point.
+
+		explicit mutation_point(const size_t frame, const size_t point, const size_t neighbor) : frame(frame), point(point), neighbor(neighbor) {}
+	};
+	
 	using boost::filesystem::path;
 
 	// Represents a ligand.
-
 	class ligand
 	{
 	public:
 		const path p; ///< The path to the fragment.
 		vector<frame> frames; ///< Ligand frames.
+		vector<mutation_point> mutation_points; ///< Hydrogens or halogens.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
@@ -77,7 +94,7 @@ namespace igrow
 		void save(const path& p) const;
 
 		/// Mutates the current ligand.
-		ligand* mutate(const ligand& lig) const;
+		ligand* mutate(const ligand& other, const mt19937eng& eng) const;
 
 		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms.
 		void evaluate_efficacy();
