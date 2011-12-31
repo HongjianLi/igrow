@@ -111,7 +111,7 @@ namespace igrow
 	inline T right_cast(const string& str, const size_t i, const size_t j)
 	{
 		const size_t start = str.find_first_not_of(' ', i - 1);
-		return boost::lexical_cast<T > (str.substr(start, j - start));
+		return boost::lexical_cast<T>(str.substr(start, j - start));
 	}
 
 	/// Represents the index to an atom.
@@ -176,7 +176,7 @@ namespace igrow
 		/// Returns true if the current atom is a halogen.
 		const bool is_halogen() const
 		{
-			return ((ad <= AD_TYPE_F) && (ad <= AD_TYPE_I));
+			return ((AD_TYPE_F <= ad) && (ad <= AD_TYPE_I));
 		}
 
 		/// Returns true if the current atom is a mutable atom.

@@ -45,4 +45,5 @@ cache
 ifstream
 flyweight
 filterhydrogens
+filtermetals
 NoHydrogen.txt

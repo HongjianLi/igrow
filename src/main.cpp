@@ -408,13 +408,14 @@ main(int argc, char* argv[])
 			}
 
 			// Parse output ligands to obtained predicted free energy and docked coordinates.
-			for (size_t i = 1; i <= num_ligands; ++i)
+			for (size_t i = 0; i < num_ligands; ++i)
 			{
+				ligand& l = ligands[i];
 				string line;
-				ifstream in(output_folder / (lexical_cast<string>(i) + ".pdbqt"));
+				ifstream in(output_folder / (lexical_cast<string>(i + 1) + ".pdbqt"));
 				getline(in, line); // MODEL        1 or MODEL 1
-				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:   -4.082 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
-				ligands[i].free_energy = idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29);
+				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000				
+				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));
 				while (true)
 				{
 					getline(in, line);

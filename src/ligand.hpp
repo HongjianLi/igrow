@@ -81,8 +81,8 @@ namespace igrow
 		fl efficacy; ///< Ligand efficacy
 		bool mutation_feasible; // True if the current ligand is able to perform mutation.
 		bool crossover_feasible; // True if the current ligand is able to perform crossover.
-
-		ligand() {}
+		
+		/// Constructs a ligand by parsing a given ligand file in pdbqt.
 		explicit ligand(const path& p);
 
 		/// Updates the path and saves the current ligand to a file in pdbqt format.
@@ -91,14 +91,18 @@ namespace igrow
 		/// Mutates the current ligand.
 		ligand* mutate(const ligand& other, const mt19937eng& eng) const;
 
-		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms.
-		void evaluate_efficacy();
+		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms. This definition contradicts our conventional definition, but it works fine for sorting ligands.
+		void evaluate_efficacy(const fl free_energy);
 
 		/// For sorting ptr_vector<ligand>.
 		const bool operator<(const ligand& l) const
 		{
 			return efficacy < l.efficacy;
 		}
+	
+	private:
+		/// Constructs an empty ligand.
+		ligand() {}
 	};
 
 	/// For extracting the path out of a ligand.

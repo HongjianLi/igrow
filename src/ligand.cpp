@@ -89,11 +89,29 @@ namespace igrow
 						if (a.is_polar_hydrogen()) // b is a hydrogen bond donor.
 						{
 							// Increment num_hb_donors if b has not been counted.
-							if (!f.atoms[b.neighbors.back().index].is_polar_hydrogen()) ++num_hb_donors;
+							const size_t b_num_neighbors = b.neighbors.size();
+							BOOST_ASSERT(b_num_neighbors >= 1);
+							if (b_num_neighbors == 1) ++num_hb_donors;
+							else
+							{
+								BOOST_ASSERT(b_num_neighbors >= 2);
+								const atom_index& b_last_neighbor = b.neighbors[b_num_neighbors - 2];								
+								if ((b_last_neighbor.frame != idx.frame) || (!f.atoms[b_last_neighbor.index].is_polar_hydrogen())) ++num_hb_donors;
+							}
 							BOOST_ASSERT(a.neighbors.size() == 1);
 							break; // A hydrogen can only have one neighbor.
 						}
 					}
+				}
+				
+				// Add rotorX as a neighbor if the current atom is rotorY of a BRANCH frame.
+				if ((current) && (!idx.index))
+				{
+					BOOST_ASSERT(f.atoms.size() == 1);
+					a.neighbors.push_back(atom_index(f.parent, f.rotorX));
+					BOOST_ASSERT(a.neighbors.size() <= 4);
+					frames[f.parent].atoms[f.rotorX].neighbors.push_back(idx);
+					BOOST_ASSERT(frames[f.parent].atoms[f.rotorX].neighbors.size() <= 4);
 				}
 				
 				if (a.is_mutable()) mutable_atoms.push_back(idx);
@@ -178,10 +196,9 @@ namespace igrow
 		stack.reserve(num_frames - 1); // The ROOT frame is excluded.
 		{
 			const frame& f = frames.front();
-			const size_t num_branches = f.branches.size();
-			for (size_t i = 0; i < num_branches; ++i)
+			for (size_t i = f.branches.size(); i > 0;)
 			{
-				stack.push_back(f.branches[i]);
+				stack.push_back(f.branches[--i]);
 			}
 		}
 		while (!stack.empty())
@@ -209,7 +226,7 @@ namespace igrow
 				stack.pop_back();
 			}
 		}
-		out << "TORSDOF " << (num_frames - 1);
+		out << "TORSDOF " << (num_frames - 1) << std::endl;
 		out.close();
 	}
 
@@ -251,8 +268,9 @@ namespace igrow
 		return new ligand(other);
 	}
 
-	void ligand::evaluate_efficacy()
+	void ligand::evaluate_efficacy(const fl free_energy)
 	{
+		this->free_energy = free_energy;
 		efficacy = free_energy / num_heavy_atoms;
 	}
 
