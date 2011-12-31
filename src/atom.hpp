@@ -179,14 +179,14 @@ namespace igrow
 			return ((ad <= AD_TYPE_F) && (ad <= AD_TYPE_I));
 		}
 
-		/// Returns true if the current atom is a mutation point.
-		const bool is_mutation_point() const
+		/// Returns true if the current atom is a mutable atom.
+		const bool is_mutable() const
 		{
 			return (is_hydrogen() || is_halogen());
 		}
 
-		/// Returns true is the current atom is a hydrogen bond donor.
-		const bool is_hb_donor() const
+		/// Returns true is the current atom is a polar hydrogen.
+		const bool is_polar_hydrogen() const
 		{
 			return (!ad);
 		}

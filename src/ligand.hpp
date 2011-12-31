@@ -71,7 +71,7 @@ namespace igrow
 		size_t connector1; ///< The serial number of the connecting atom of parent 1.
 		size_t connector2; ///< The serial number of the connecting atom of parent 2.
 		vector<frame> frames; ///< Ligand frames.
-		vector<atom_index> mutation_points; ///< Hydrogens or halogens.
+		vector<atom_index> mutable_atoms; ///< Hydrogens or halogens.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.

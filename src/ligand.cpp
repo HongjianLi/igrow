@@ -50,42 +50,54 @@ namespace igrow
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
 		frames.push_back(frame(0)); // ROOT is also treated as a frame. The parent of ROOT frame is dummy.
-		mutation_points.reserve(20); // A ligand typically consists of <= 20 mutation points.
+		mutable_atoms.reserve(20); // A ligand typically consists of <= 20 mutation points.
 
 		// Initialize helper variables for parsing.
 		size_t current = 0; // Index of current frame, initialized to ROOT frame.
 		size_t num_lines = 0; // Used to track line number for reporting parsing errors, if any.
-		string line;
+		string line; // A line of ligand file in pdbqt format.
 		line.reserve(79); // According to PDBQT specification, the last item AutoDock atom type locates at 1-based [78, 79].
 
-		// Parse ROOT, ATOM/HETATM, ENDROOT, BRANCH, ENDBRANCH, TORSDOF.
+		// Parse ATOM/HETATM, BRANCH, ENDBRANCH.
 		ifstream in(p); // Parsing starts. Open the file stream as late as possible.
 		while (getline(in, line))
 		{
 			++num_lines;
 			if (starts_with(line, "ATOM") || starts_with(line, "HETATM"))
 			{
-				// Parse the ATOM/HETATM line.
+				// Parse the ATOM/HETATM line into an atom, which belongs to the last frame.
 				frame& f = frames.back();
-				f.atoms.push_back(atom(line));
-				const atom& a = f.atoms.back();
+				f.atoms.push_back(atom(line));				
+				
+				// Validate the AutoDock4 atom type.
+				atom& a = f.atoms.back();
 				if (a.ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + line.substr(77, isspace(line[78]) ? 1 : 2) + " is not supported by igrow.");
-				if (a.is_mutation_point())
+				
+				// Find the neighbors of a in the same frame.
+				const atom_index idx = atom_index(frames.size() - 1, f.atoms.size() - 1); // The index to the current atom.
+				for (size_t i = 0; i < idx.index; ++i) // Exclude the last atom which is a itself.
 				{
-					// Find the neighbor of a.
-					const fl a_covalent_radius = a.covalent_radius();
-					for (size_t i = f.atoms.size() - 1; i > 0;) // Exclude the last atom which is a itself.
+					atom& b = f.atoms[i];
+					if (a.is_neighbor(b))
 					{
-						const atom& b = f.atoms[--i];
-						if (a.is_neighbor(b))
+						a.neighbors.push_back(atom_index(idx.frame, i));
+						BOOST_ASSERT(a.neighbors.size() <= 4);
+						b.neighbors.push_back(idx);
+						BOOST_ASSERT(b.neighbors.size() <= 4);
+						
+						// Adjust num_hb_donors because AutoDock4 does not include explicit atom types for hydrogen bond donors.
+						if (a.is_polar_hydrogen()) // b is a hydrogen bond donor.
 						{
-							mutation_points.push_back(atom_index(frames.size() - 1, f.atoms.size() - 1));
-							break;
+							// Increment num_hb_donors if b has not been counted.
+							if (!f.atoms[b.neighbors.back().index].is_polar_hydrogen()) ++num_hb_donors;
+							BOOST_ASSERT(a.neighbors.size() == 1);
+							break; // A hydrogen can only have one neighbor.
 						}
 					}
 				}
-				if (!a.is_hydrogen()) ++ num_heavy_atoms;
-				if (a.is_hb_donor()) ++num_hb_donors;
+				
+				if (a.is_mutable()) mutable_atoms.push_back(idx);
+				if (!a.is_hydrogen()) ++ num_heavy_atoms;				
 				if (a.is_hb_acceptor()) ++num_hb_acceptors;
 				mw += a.atomic_weight();
 			}
@@ -202,10 +214,10 @@ namespace igrow
 	{
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_1(eng, uniform_int_distribution<size_t>(0, this->mutation_points.size() - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutation_points.size() - 1));
-		const atom_index& mp1 = this->mutation_points[uniform_mutation_point_gen_1()];
-		const atom_index& mp2 = other.mutation_points[uniform_mutation_point_gen_2()];
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_1(eng, uniform_int_distribution<size_t>(0, this->mutable_atoms.size() - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutable_atoms.size() - 1));
+		const atom_index& mp1 = this->mutable_atoms[uniform_mutation_point_gen_1()];
+		const atom_index& mp2 = other.mutable_atoms[uniform_mutation_point_gen_2()];
 
 		const frame& f1 = this->frames[mp1.frame];
 		const frame& f2 = other.frames[mp2.frame];
@@ -224,7 +236,7 @@ namespace igrow
 		child.connector1 = c1.number;
 		child.connector2 = c2.number;
 		child.frames.reserve(this->frames.size() + other.frames.size());
-		child.mutation_points.reserve(this->mutation_points.size() + other.mutation_points.size());
+		child.mutable_atoms.reserve(this->mutable_atoms.size() + other.mutable_atoms.size());
 		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms - ((p1.is_hydrogen() ? 0 : 1) + (p2.is_hydrogen() ? 0 : 1));
 		child.num_hb_donors = this->num_hb_donors + other.num_hb_donors;
 		child.num_hb_acceptors = this->num_hb_acceptors + other.num_hb_acceptors;
