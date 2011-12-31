@@ -59,17 +59,6 @@ namespace igrow
 		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), branches(static_cast<vector<size_t>&&>(f.branches)), atoms(static_cast<vector<atom>&&>(f.atoms)) {}
 	};
 
-	/// Represents the index to a hydrogen or a halogen together with the index to its neighbor heavy atom.
-	class mutation_point
-	{
-	public:
-		size_t frame; ///< The index to the frame to which the mutation point belongs.
-		size_t point; ///< The index to a mutation point, e.g. hydrogen or halogen.
-		size_t neighbor; ///< The index to the neighbor of the current mutation point.
-
-		explicit mutation_point(const size_t frame, const size_t point, const size_t neighbor) : frame(frame), point(point), neighbor(neighbor) {}
-	};
-
 	using boost::filesystem::path;
 
 	// Represents a ligand.
@@ -82,7 +71,7 @@ namespace igrow
 		size_t connector1; ///< The serial number of the connecting atom of parent 1.
 		size_t connector2; ///< The serial number of the connecting atom of parent 2.
 		vector<frame> frames; ///< Ligand frames.
-		vector<mutation_point> mutation_points; ///< Hydrogens or halogens.
+		vector<atom_index> mutation_points; ///< Hydrogens or halogens.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
@@ -94,7 +83,7 @@ namespace igrow
 		ligand() {}
 		explicit ligand(const path& p);
 
-		/// Saves the current ligand to a file in pdbqt format.
+		/// Updates the path and saves the current ligand to a file in pdbqt format.
 		void save(const path& p);
 
 		/// Mutates the current ligand.
@@ -104,9 +93,9 @@ namespace igrow
 		void evaluate_efficacy();
 
 		/// For sorting ptr_vector<ligand>.
-		const bool operator<(const ligand& lig) const
+		const bool operator<(const ligand& l) const
 		{
-			return efficacy < lig.efficacy;
+			return efficacy < l.efficacy;
 		}
 	};
 
@@ -114,9 +103,9 @@ namespace igrow
 	class ligand_path_extractor
 	{
 	public:
-		const path& operator()(const ligand& lig) const
+		const path& operator()(const ligand& l) const
 		{
-			return lig.p;
+			return l.p;
 		}
 	};
 

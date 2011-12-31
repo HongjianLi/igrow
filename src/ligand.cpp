@@ -50,7 +50,7 @@ namespace igrow
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
 		frames.push_back(frame(0)); // ROOT is also treated as a frame. The parent of ROOT frame is dummy.
-		mutation_points.reserve(20); // A ligand typically consists of <= 5 mutation points.
+		mutation_points.reserve(20); // A ligand typically consists of <= 20 mutation points.
 
 		// Initialize helper variables for parsing.
 		size_t current = 0; // Index of current frame, initialized to ROOT frame.
@@ -79,7 +79,7 @@ namespace igrow
 						const atom& b = f.atoms[--i];
 						if (a.is_neighbor(b))
 						{
-							mutation_points.push_back(mutation_point(frames.size() - 1, f.atoms.size() - 1, i));
+							mutation_points.push_back(atom_index(frames.size() - 1, f.atoms.size() - 1));
 							break;
 						}
 					}
@@ -204,19 +204,25 @@ namespace igrow
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_1(eng, uniform_int_distribution<size_t>(0, this->mutation_points.size() - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutation_points.size() - 1));
-		mutation_point mp1 = this->mutation_points[uniform_mutation_point_gen_1()];
-		mutation_point mp2 = other.mutation_points[uniform_mutation_point_gen_2()];
+		const atom_index& mp1 = this->mutation_points[uniform_mutation_point_gen_1()];
+		const atom_index& mp2 = other.mutation_points[uniform_mutation_point_gen_2()];
 
 		const frame& f1 = this->frames[mp1.frame];
 		const frame& f2 = other.frames[mp2.frame];
-		const atom& p1 = f1.atoms[mp1.point];
-		const atom& p2 = f2.atoms[mp2.point];
+		const atom& p1 = f1.atoms[mp1.index]; // Mutation point 1
+		const atom& p2 = f2.atoms[mp2.index]; // Mutation point 2
+		BOOST_ASSERT(p1.neighbors.size() == 1); // The mutation point should consists of only one non-rotatable single bond.
+		BOOST_ASSERT(p2.neighbors.size() == 1); // The mutation point should consists of only one non-rotatable single bond.
+		BOOST_ASSERT(p1.neighbors.front().frame == mp1.frame); // Both the connector and mutation point should be in the same frame.
+		BOOST_ASSERT(p2.neighbors.front().frame == mp2.frame); // Both the connector and mutation point should be in the same frame.
+		const atom& c1 = f1.atoms[p1.neighbors.front().index]; // Connector 1
+		const atom& c2 = f2.atoms[p2.neighbors.front().index]; // Connector 2
 
 		ligand child;
 		child.parent1 = this->p;
 		child.parent2 = other.p;
-		child.connector1 = f1.atoms[mp1.neighbor].number;
-		child.connector2 = f2.atoms[mp2.neighbor].number;
+		child.connector1 = c1.number;
+		child.connector2 = c2.number;
 		child.frames.reserve(this->frames.size() + other.frames.size());
 		child.mutation_points.reserve(this->mutation_points.size() + other.mutation_points.size());
 		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms - ((p1.is_hydrogen() ? 0 : 1) + (p2.is_hydrogen() ? 0 : 1));

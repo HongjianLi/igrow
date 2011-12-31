@@ -114,6 +114,16 @@ namespace igrow
 		return boost::lexical_cast<T > (str.substr(start, j - start));
 	}
 
+	/// Represents the index to an atom.
+	class atom_index
+	{
+	public:
+		size_t frame; ///< The index to the frame to which the atom belongs.
+		size_t index; ///< The index to the atom within its frame.
+
+		explicit atom_index(const size_t frame, const size_t index) : frame(frame), index(index) {}
+	};
+	
 	// Represents an atom.
 	class atom
 	{
@@ -123,6 +133,7 @@ namespace igrow
 		size_t number; ///< Serial number.
 		vec3 coordinate; ///< 3D coordinate.
 		size_t ad; ///< AutoDock4 atom type.
+		vector<atom_index> neighbors;
 
 		/// Parses AutoDock4 atom type name, and returns AD_TYPE_SIZE if it does not match any supported AutoDock4 atom types.
 		static size_t parse_ad_type_string(const string& ad_type_string)
@@ -133,13 +144,16 @@ namespace igrow
 		}
 
 		/// Constructs an atom from an ATOM/HETATM line in pdbqt format.
-		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_type_string(line.substr(77, isspace(line[78]) ? 1 : 2))) {}
+		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_type_string(line.substr(77, isspace(line[78]) ? 1 : 2)))
+		{
+			neighbors.reserve(4); // An atom typically consists of <= 4 neighbors.
+		}
 
 		/// Copy constructor.
-		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
+		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad), neighbors(a.neighbors) {}
 
 		/// Move constructor.
-		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
+		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad), neighbors(static_cast<vector<atom_index>&&>(a.neighbors)) {}
 
 		/// Returns covalent radius from an AutoDock4 atom type.
 		const fl covalent_radius() const
@@ -192,19 +206,8 @@ namespace igrow
 		/// Returns true if the current atom is sp2 hybridized.
 		const bool is_sp2() const
 		{
-			if ((ad == AD_TYPE_C) || (ad == AD_TYPE_A)) return false;
-			size_t num_neighbors = 0;
-			// Find the neighbors.
-			return num_neighbors == 3;
+			return (((ad == AD_TYPE_C) || (ad == AD_TYPE_A)) && (neighbors.size() == 3));
 		}
-
-/*
-		// the Euclidean distance to another atom
-		double DistanceTo(const atom& other) const
-		{
-			return (coordinates - other.coordinates).length();
-		}
-*/
 	};
 }
 
