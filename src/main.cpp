@@ -362,7 +362,7 @@ main(int argc, char* argv[])
 				for (size_t i = 0; i < num_elitists; ++i)
 				{
 					ligand& l = ligands[i];
-					l.parent1 = l.p;
+					l.parent1 = l.p.parent_path().parent_path() / "output" / l.p.filename();
 					l.connector1 = 0;
 					l.parent2.clear();
 					l.connector2 = 0;
