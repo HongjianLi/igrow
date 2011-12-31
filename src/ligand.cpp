@@ -141,8 +141,11 @@ namespace igrow
 		in.close(); // Parsing finishes. Close the file stream as soon as possible.
 
 		BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
+		BOOST_ASSERT(num_heavy_atoms + 2 < num_lines); // ROOT, ENDROOT
 
-		// Throw exception if no hydrogen, no halogen, and no branch.
+		// Determine if the current ligand is able to perform mutation or crossover.
+		mutation_feasible = !mutable_atoms.empty();
+		crossover_feasible = frames.size() > 1;
 	}
 
 	void ligand::save(const path& p)
