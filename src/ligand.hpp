@@ -79,7 +79,7 @@ namespace igrow
 		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
 		fl efficacy; ///< Ligand efficacy
-		bool mutation_feasible; // True if the current ligand is able to perform mutation.
+		bool mutation_feasible;  // True if the current ligand is able to perform mutation.
 		bool crossover_feasible; // True if the current ligand is able to perform crossover.
 		
 		/// Constructs a ligand by parsing a given ligand file in pdbqt.

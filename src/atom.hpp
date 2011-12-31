@@ -185,8 +185,8 @@ namespace igrow
 			return (is_hydrogen() || is_halogen());
 		}
 
-		/// Returns true is the current atom is a polar hydrogen.
-		const bool is_polar_hydrogen() const
+		/// Returns true is the current atom is a hydrogen bond donor, i.e. polar hydrogen.
+		const bool is_hb_donor() const
 		{
 			return (!ad);
 		}

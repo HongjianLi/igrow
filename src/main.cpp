@@ -448,7 +448,7 @@ main(int argc, char* argv[])
 					<< ',' << l.connector1
 					<< ',' << l.parent2
 					<< ',' << l.connector2
-					<< std::endl;
+					<< '\n';
 			}
 		}
 	}

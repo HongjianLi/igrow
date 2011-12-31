@@ -43,8 +43,6 @@ namespace igrow
 		return true;
 	}
 
-	using namespace boost;
-
 	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), connector1(0), connector2(0), logp(0) // TODO: comment logp(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
@@ -73,7 +71,7 @@ namespace igrow
 				atom& a = f.atoms.back();
 				if (a.ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + line.substr(77, isspace(line[78]) ? 1 : 2) + " is not supported by igrow.");
 				
-				// Find the neighbors of a in the same frame.
+				// Find the neighbors in the same frame.
 				const atom_index idx = atom_index(frames.size() - 1, f.atoms.size() - 1); // The index to the current atom.
 				for (size_t i = 0; i < idx.index; ++i) // Exclude the last atom which is a itself.
 				{
@@ -84,23 +82,6 @@ namespace igrow
 						BOOST_ASSERT(a.neighbors.size() <= 4);
 						b.neighbors.push_back(idx);
 						BOOST_ASSERT(b.neighbors.size() <= 4);
-						
-						// Adjust num_hb_donors because AutoDock4 does not include explicit atom types for hydrogen bond donors.
-						if (a.is_polar_hydrogen()) // b is a hydrogen bond donor.
-						{
-							// Increment num_hb_donors if b has not been counted.
-							const size_t b_num_neighbors = b.neighbors.size();
-							BOOST_ASSERT(b_num_neighbors >= 1);
-							if (b_num_neighbors == 1) ++num_hb_donors;
-							else
-							{
-								BOOST_ASSERT(b_num_neighbors >= 2);
-								const atom_index& b_last_neighbor = b.neighbors[b_num_neighbors - 2];								
-								if ((b_last_neighbor.frame != idx.frame) || (!f.atoms[b_last_neighbor.index].is_polar_hydrogen())) ++num_hb_donors;
-							}
-							BOOST_ASSERT(a.neighbors.size() == 1);
-							break; // A hydrogen can only have one neighbor.
-						}
 					}
 				}
 				
@@ -115,7 +96,8 @@ namespace igrow
 				}
 				
 				if (a.is_mutable()) mutable_atoms.push_back(idx);
-				if (!a.is_hydrogen()) ++ num_heavy_atoms;				
+				if (!a.is_hydrogen()) ++num_heavy_atoms;
+				if (a.is_hb_donor()) ++num_hb_donors;
 				if (a.is_hb_acceptor()) ++num_hb_acceptors;
 				mw += a.atomic_weight();
 			}
@@ -159,7 +141,7 @@ namespace igrow
 		in.close(); // Parsing finishes. Close the file stream as soon as possible.
 
 		BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
-		BOOST_ASSERT(num_heavy_atoms + 2 < num_lines); // ROOT, ENDROOT
+		BOOST_ASSERT(num_heavy_atoms + 3 <= num_lines); // ROOT, ENDROOT, TORSDOF
 
 		// Determine if the current ligand is able to perform mutation or crossover.
 		mutation_feasible = !mutable_atoms.empty();
@@ -232,40 +214,76 @@ namespace igrow
 
 	ligand* ligand::mutate(const ligand& other, const mt19937eng& eng) const
 	{
+		// Initialize random number generators for obtaining two random mutable atoms.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_1(eng, uniform_int_distribution<size_t>(0, this->mutable_atoms.size() - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutation_point_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutable_atoms.size() - 1));
-		const atom_index& mp1 = this->mutable_atoms[uniform_mutation_point_gen_1()];
-		const atom_index& mp2 = other.mutable_atoms[uniform_mutation_point_gen_2()];
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutable_atom_gen_1(eng, uniform_int_distribution<size_t>(0, this->mutable_atoms.size() - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutable_atom_gen_2(eng, uniform_int_distribution<size_t>(0, other.mutable_atoms.size() - 1));
 
-		const frame& f1 = this->frames[mp1.frame];
-		const frame& f2 = other.frames[mp2.frame];
-		const atom& p1 = f1.atoms[mp1.index]; // Mutation point 1
-		const atom& p2 = f2.atoms[mp2.index]; // Mutation point 2
-		BOOST_ASSERT(p1.neighbors.size() == 1); // The mutation point should consists of only one non-rotatable single bond.
-		BOOST_ASSERT(p2.neighbors.size() == 1); // The mutation point should consists of only one non-rotatable single bond.
-		BOOST_ASSERT(p1.neighbors.front().frame == mp1.frame); // Both the connector and mutation point should be in the same frame.
-		BOOST_ASSERT(p2.neighbors.front().frame == mp2.frame); // Both the connector and mutation point should be in the same frame.
-		const atom& c1 = f1.atoms[p1.neighbors.front().index]; // Connector 1
-		const atom& c2 = f2.atoms[p2.neighbors.front().index]; // Connector 2
+		// Obtain a random mutable atom from the current ligand and the other ligand respectively.
+		const atom_index& ma1 = this->mutable_atoms[uniform_mutable_atom_gen_1()];
+		const atom_index& ma2 = other.mutable_atoms[uniform_mutable_atom_gen_2()];
 
+		// Obtain constant references to the mutable atoms.
+		const frame& f1 = this->frames[ma1.frame];
+		const frame& f2 = other.frames[ma2.frame];
+		const atom& p1 = f1.atoms[ma1.index]; // Mutation point 1
+		const atom& p2 = f2.atoms[ma2.index]; // Mutation point 2
+
+		// The mutable atom should consist of only one non-rotatable single bond.
+		BOOST_ASSERT(p1.neighbors.size() == 1);
+		BOOST_ASSERT(p2.neighbors.size() == 1);
+
+		// Both the connector and mutable atom should be in the same frame.
+		BOOST_ASSERT(p1.neighbors.front().frame == ma1.frame);
+		BOOST_ASSERT(p2.neighbors.front().frame == ma2.frame);
+
+		// Obtain constant references to the connector atoms.
+		const atom& c1 = f1.atoms[p1.neighbors.front().index];
+		const atom& c2 = f2.atoms[p2.neighbors.front().index];
+
+		// Initialize a child ligand.
 		ligand child;
 		child.parent1 = this->p;
 		child.parent2 = other.p;
 		child.connector1 = c1.number;
 		child.connector2 = c2.number;
-		child.frames.reserve(this->frames.size() + other.frames.size());
-		child.mutable_atoms.reserve(this->mutable_atoms.size() + other.mutable_atoms.size());
+
+		// The number of heavy atoms of child ligand is equal to the sum of its parent ligands minus the two mutable atoms if they are heavy atoms.
 		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms - ((p1.is_hydrogen() ? 0 : 1) + (p2.is_hydrogen() ? 0 : 1));
-		child.num_hb_donors = this->num_hb_donors + other.num_hb_donors;
+
+		// The number of hydrogen bond donors of child ligand is equal to the sum of its parent ligands minus the two mutable atoms if they are hydrogen bond donors.
+		child.num_hb_donors = this->num_hb_donors + other.num_hb_donors - ((p1.is_hb_donor() ? 0 : 1) + (p2.is_hb_donor() ? 0 : 1));
+
+		// The number of hydrogen bond acceptors of child ligand is equal to the sum of its parent ligands.
 		child.num_hb_acceptors = this->num_hb_acceptors + other.num_hb_acceptors;
+
+		// The molecular weight of child ligand is equal to the sum of its parent ligands minus the two mutable atoms.
 		child.mw = this->mw + other.mw - (p1.atomic_weight() + p2.atomic_weight());
+
+		// The logP of child ligand is equal to the sum of its parent ligands minus the two mutable atoms.
 		child.logp = this->logp + other.logp; // TODO: comment this line.
 
-		// Check ligand validity, i.e. steric clash, rule of 5
+		// The number of frames of child ligand is equal to the sum of its parent ligands.
+		const size_t num_frames_1 = this->frames.size();
+		const size_t num_frames_2 = other.frames.size();
+		child.frames.reserve(num_frames_1 + num_frames_2);
 
-		return new ligand(other);
+		// Copy the current ligand to the child ligand.
+		// TODO: use std::copy instead.
+		for (size_t i = 0; i < ma1.frame; ++i)
+		{
+			child.frames.push_back(this->frames[i]);
+		}
+
+		// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
+		child.mutable_atoms.reserve(this->mutable_atoms.size() + other.mutable_atoms.size() - 2);
+
+		// Determine if the child ligand is able to perform mutation or crossover.
+		child.mutation_feasible = !child.mutable_atoms.empty();
+		child.crossover_feasible = child.frames.size() > 1;
+
+		return new ligand(child);
 	}
 
 	void ligand::evaluate_efficacy(const fl free_energy)
