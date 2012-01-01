@@ -122,6 +122,16 @@ namespace igrow
 		size_t index; ///< The index to the atom within its frame.
 
 		explicit atom_index(const size_t frame, const size_t index) : frame(frame), index(index) {}
+		
+		const bool operator==(const atom_index& idx) const
+		{
+			return ((frame == idx.frame) && (index == idx.index));
+		}
+		
+		const bool operator!=(const atom_index& idx) const
+		{
+			return ((frame != idx.frame) || (index != idx.index));
+		}
 	};
 	
 	// Represents an atom.
