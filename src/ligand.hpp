@@ -72,6 +72,8 @@ namespace igrow
 		size_t connector2; ///< The serial number of the connecting atom of parent 2.
 		vector<frame> frames; ///< Ligand frames.
 		vector<atom_index> mutable_atoms; ///< Hydrogens or halogens.
+		size_t num_rotatable_bonds; ///< Number of rotatable bonds.
+		size_t num_atoms; ///< Number of atoms.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
@@ -123,10 +125,12 @@ namespace igrow
 	class validator
 	{
 	public:
-		validator(const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw, const fl max_logp, const fl min_logp) : max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw), max_logp(max_logp), min_logp(min_logp) {}
+		validator(const size_t max_rotatable_bonds, const size_t max_atoms, const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw, const fl max_logp, const fl min_logp) : max_rotatable_bonds(max_rotatable_bonds), max_atoms(max_atoms), max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw), max_logp(max_logp), min_logp(min_logp) {}
 
 		const bool operator()(const ligand& l) const
 		{
+			if (l.num_rotatable_bonds > max_rotatable_bonds) return false;
+			if (l.num_atoms > max_atoms) return false;
 			if (l.num_heavy_atoms > max_heavy_atoms) return false;
 			if (l.num_hb_donors > max_hb_donors) return false;
 			if (l.num_hb_acceptors > max_hb_acceptors) return false;
@@ -137,6 +141,8 @@ namespace igrow
 		}
 
 	private:
+		const size_t max_rotatable_bonds;
+		const size_t max_atoms;
 		const size_t max_heavy_atoms;
 		const size_t max_hb_donors;
 		const size_t max_hb_acceptors;

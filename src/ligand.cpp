@@ -43,7 +43,7 @@ namespace igrow
 		return true;
 	}
 
-	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), connector1(0), connector2(0), logp(0) // TODO: comment logp(0)
+	ligand::ligand(const path& p) : p(p), num_atoms(0), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), connector1(0), connector2(0), logp(0) // TODO: comment logp(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
@@ -95,6 +95,7 @@ namespace igrow
 					BOOST_ASSERT(frames[f.parent].atoms[f.rotorX].neighbors.size() <= 4);
 				}
 				
+				++num_atoms;
 				if (a.is_mutable()) mutable_atoms.push_back(idx);
 				if (!a.is_hydrogen()) ++num_heavy_atoms;
 				if (a.is_hb_donor()) ++num_hb_donors;
@@ -141,7 +142,11 @@ namespace igrow
 		in.close(); // Parsing finishes. Close the file stream as soon as possible.
 
 		BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
-		BOOST_ASSERT(num_heavy_atoms + 3 <= num_lines); // ROOT, ENDROOT, TORSDOF
+		BOOST_ASSERT(num_atoms >= num_heavy_atoms);
+		BOOST_ASSERT(num_atoms + 3 <= num_lines); // ROOT, ENDROOT, TORSDOF
+		
+		// Determine the number of rotatable bonds.
+		num_rotatable_bonds = frames.size() - 1;
 
 		// Determine if the current ligand is able to perform mutation or crossover.
 		mutation_feasible = !mutable_atoms.empty();
@@ -208,7 +213,7 @@ namespace igrow
 				stack.pop_back();
 			}
 		}
-		out << "TORSDOF " << (num_frames - 1) << std::endl;
+		out << "TORSDOF " << num_rotatable_bonds << std::endl;
 		out.close();
 	}
 
@@ -248,6 +253,12 @@ namespace igrow
 		child.parent2 = other.p;
 		child.connector1 = c1.number;
 		child.connector2 = c2.number;
+		
+		// The number of rotatable bonds of child ligand is equal to the sum of its parent ligands plus 1.
+		child.num_rotatable_bonds = this->num_rotatable_bonds + other.num_rotatable_bonds + 1;
+		
+		// The number of atoms of child ligand is equal to the sum of its parent ligands minus 2.
+		child.num_atoms = this->num_atoms + other.num_atoms - 2;
 
 		// The number of heavy atoms of child ligand is equal to the sum of its parent ligands minus the two mutable atoms if they are heavy atoms.
 		child.num_heavy_atoms = this->num_heavy_atoms + other.num_heavy_atoms - ((p1.is_hydrogen() ? 0 : 1) + (p2.is_hydrogen() ? 0 : 1));
@@ -409,7 +420,7 @@ namespace igrow
 		{
 			const size_t k0 = mapping.front();
 			BOOST_ASSERT(k0 > 0);
-			const size_t least_branch = k0 - 1;
+			const size_t least_branch = k0 - 1; // The least frame number of num_frames_split + k0 frame of the child ligand is always equal to k0 - 1.
 			frame& f = child.frames[num_frames_split + k0];
 			f.parent = num_frames_split + least_branch;
 			const size_t num_branches_k0 = f.branches.size();
@@ -427,7 +438,7 @@ namespace igrow
 				f.parent = num_frames_split + i - 1;
 				std::sort(f.branches.begin(), f.branches.end());
 				BOOST_ASSERT(f.branches.front() == f.parent);
-				f.branches.front() += 2;
+				f.branches.front() += 2; // Previously this is the parent frame, now it becomes the first branch frame, so the frame number difference is +2.
 			}
 			frame& f0 = child.frames[num_frames_split];
 			f0.branches.insert(f0.branches.begin(), num_frames_split + 1);
@@ -482,9 +493,9 @@ namespace igrow
 		{
 			if (this->mutable_atoms[i] != ma2)
 			{
-				child.mutable_atoms.push_back(this->mutable_atoms[i]);
+				child.mutable_atoms.push_back(other.mutable_atoms[i]);
 				atom_index& ma = child.mutable_atoms.back();
-				// TODO:
+				ma.frame = num_frames_split + mapping[ma.frame];
 			}
 		}
 		
