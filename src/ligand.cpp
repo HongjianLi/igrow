@@ -149,8 +149,8 @@ namespace igrow
 		num_rotatable_bonds = frames.size() - 1;
 
 		// Determine if the current ligand is able to perform mutation or crossover.
-		mutation_feasible = !mutable_atoms.empty();
-		crossover_feasible = frames.size() > 1;
+		mutation_feasible = mutable_atoms.size();
+		crossover_feasible = num_rotatable_bonds;
 	}
 
 	void ligand::save(const path& p)
@@ -368,7 +368,9 @@ namespace igrow
 				c3.neighbors[i] = atom_index(num_frames_split, 0); // Assume rotorY is always 0.
 				break;
 			}
-		}		
+		}
+		
+		// Update atom neighbors because the indexes to all the atoms after ma2 are decremented by 1.
 		
 		// Find the traversal sequence of the other ligand starting from ma2 frame, as well as its reverse mapping.
 		vector<size_t> traversal;
@@ -471,6 +473,10 @@ namespace igrow
 		// Remove mutable atom 2 from ma2 frame.
 		frame& f4 = child.frames[num_frames_split];
 		f4.atoms.erase(f4.atoms.begin() + ma2.index);
+		
+		// Update c4 neighbor.
+		
+		// Update atom neighbors because the indexes to all the atoms after ma2 are decremented by 1.
 
 		// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
 		const size_t num_mutatable_atoms_1 = this->mutable_atoms.size();
@@ -491,7 +497,7 @@ namespace igrow
 		// Copy the mutable atoms of the other ligand except ma2 to the child ligand.
 		for (size_t i = 0; i < num_mutatable_atoms_2; ++i)
 		{
-			if (this->mutable_atoms[i] != ma2)
+			if (other.mutable_atoms[i] != ma2)
 			{
 				child.mutable_atoms.push_back(other.mutable_atoms[i]);
 				atom_index& ma = child.mutable_atoms.back();

@@ -342,11 +342,11 @@ main(int argc, char* argv[])
 				ligands.push_back(new ligand(initial_ligand_path));
 				ligand& initial_ligand = ligands.back();
 
-				// Save the initial ligand as 1.pdbqt into the ligand folder of generation 1.
-				initial_ligand.save(ligand_folder / "1.pdbqt");
-
 				// Set the parent of 1/1.pdbqt to the initial ligand.
 				initial_ligand.parent1 = initial_ligand_path;
+				
+				// Save the initial ligand as 1.pdbqt into the ligand folder of generation 1.
+				initial_ligand.save(ligand_folder / "1.pdbqt");
 
 				// Create mutants in parallel.
 				for (size_t i = 2; i <= num_ligands; ++i)
