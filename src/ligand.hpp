@@ -90,8 +90,11 @@ namespace igrow
 		/// Updates the path and saves the current ligand to a file in pdbqt format.
 		void save(const path& p);
 
-		/// Mutates the current ligand.
+		/// Mutates the current ligand with the other ligand.
 		ligand* mutate(const ligand& other, const mt19937eng& eng) const;
+		
+		/// Crossovers the current ligand with the other ligand.
+		ligand* crossover(const ligand& other, const mt19937eng& eng) const;
 
 		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms. This definition contradicts our conventional definition, but it works fine for sorting ligands.
 		void evaluate_efficacy(const fl free_energy);

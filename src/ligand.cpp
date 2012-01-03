@@ -511,6 +511,19 @@ namespace igrow
 
 		return new ligand(child);
 	}
+	
+	ligand* ligand::crossover(const ligand& other, const mt19937eng& eng) const
+	{
+
+		// Initialize a child ligand.
+		ligand child;
+		child.parent1 = this->p;
+		child.parent2 = other.p;
+		//child.connector1 = c1.number;
+		//child.connector2 = c2.number;
+		
+		return new ligand(child);
+	}
 
 	void ligand::evaluate_efficacy(const fl free_energy)
 	{

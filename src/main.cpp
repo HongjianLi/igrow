@@ -310,12 +310,22 @@ main(int argc, char* argv[])
 
 		// Initialize a ligand validator.
 		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
+		
+		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
+		size_t num_failures = 0;
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 		const size_t num_ligands = num_elitists + num_mutants + num_crossovers;
 
 		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 		ptr_vector<ligand> ligands(num_ligands);
+		
+		// Initialize constant strings.
+		const string pdbqt_extension_string = ".pdbqt";
+		const string ligand_folder_string = "ligand";
+		const string output_folder_string = "output";
+		const string maximum_failures_reached_string = "The number of failures has reached " + lexical_cast<string>(max_failures);
+		const char comma = ',';
 
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
@@ -327,8 +337,8 @@ main(int argc, char* argv[])
 
 			// Initialize the paths to current generation folder and its two subfolders.
 			const path generation_folder(output_folder_path / lexical_cast<string>(generation));
-			const path ligand_folder(generation_folder / "ligand");
-			const path output_folder(generation_folder / "output");
+			const path ligand_folder(generation_folder / ligand_folder_string);
+			const path output_folder(generation_folder / output_folder_string);
 
 			// Create a new folder and two subfolders for current generation.
 			create_directory(generation_folder);
@@ -351,15 +361,19 @@ main(int argc, char* argv[])
 				// Create mutants in parallel.
 				for (size_t i = 2; i <= num_ligands; ++i)
 				{
-					// Generate a child ligand by adding a random fragment to the initial ligand.
-					ligands.push_back(initial_ligand.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]), eng));
-					ligand& child = ligands.back();
+					// Create a child ligand by mutation.
+					for (bool invalid = true; invalid && (num_failures < max_failures); num_failures += (invalid = !v(ligands.back())))
+					{
+						ligands.push_back(initial_ligand.mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]), eng));						
+					}
+					if (num_failures == max_failures)
+					{
+						log << maximum_failures_reached_string << '\n';
+						return 0;
+					}
 
-					// Check ligand validity.
-					const bool valid = v(child);
-
-					// Save the newly created mutant.
-					child.save(ligand_folder / (lexical_cast<string>(i) + ".pdbqt"));
+					// Save the newly created child ligand.
+					ligands.back().save(ligand_folder / (lexical_cast<string>(i) + pdbqt_extension_string));
 				}
 			}
 			else
@@ -368,24 +382,46 @@ main(int argc, char* argv[])
 				for (size_t i = 0; i < num_elitists; ++i)
 				{
 					ligand& l = ligands[i];
-					l.parent1 = l.p.parent_path().parent_path() / "output" / l.p.filename();
+					l.parent1 = l.p.parent_path().parent_path() / output_folder_string / l.p.filename();
 					l.connector1 = 0;
 					l.parent2.clear();
 					l.connector2 = 0;
-					l.save(ligand_folder / (lexical_cast<string>(i) + ".pdbqt"));
+					l.save(ligand_folder / (lexical_cast<string>(i) + pdbqt_extension_string));
 				}
 
 				// TODO: abstract into tasks for parallel execution.
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
-					// Mutate an elitist by adding a random fragment.
-					ligands.replace(num_elitists + i, ligands[uniform_elitist_gen()].mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]), eng));
+					for (bool invalid = true; invalid && (num_failures < max_failures); num_failures += (invalid = !v(ligands.back())))
+					{
+						// Mutate an elitist by adding a random fragment.
+						ligands.replace(num_elitists + i, ligands[uniform_elitist_gen()].mutate(ligand_flyweight(fragment_paths[uniform_fragment_gen()]), eng));
+					}
+					if (num_failures == max_failures)
+					{
+						log << maximum_failures_reached_string << '\n';
+						return 0;
+					}
+
+					// Save the newly created child ligand.
+					ligands.back().save(ligand_folder / (lexical_cast<string>(num_elitists + i) + pdbqt_extension_string));
 				}
 
 				// TODO: abstract into tasks for parallel execution.
 				for (size_t i = 0; i < num_crossovers; ++i)
 				{
-					//ligands.replace(num_elitists + num_mutants + i, &lig);
+					for (bool invalid = true; invalid && (num_failures < max_failures); num_failures += (invalid = !v(ligands.back())))
+					{
+						ligands.replace(num_elitists + num_mutants + i, ligands[uniform_elitist_gen()].crossover(ligands[uniform_elitist_gen()], eng));
+					}
+					if (num_failures == max_failures)
+					{
+						log << maximum_failures_reached_string << '\n';
+						return 0;
+					}
+
+					// Save the newly created child ligand.
+					ligands.back().save(ligand_folder / (lexical_cast<string>(num_elitists + num_mutants + i) + pdbqt_extension_string));					
 				}
 			}
 
@@ -442,20 +478,20 @@ main(int argc, char* argv[])
 			{
 				const ligand& l = ligands[i];
 				csv << generation
-					<< ',' << l.p
-					<< ',' << l.parent1
-					<< ',' << l.connector1
-					<< ',' << l.parent2
-					<< ',' << l.connector2					
-					<< ',' << l.efficacy
-					<< ',' << l.free_energy
-					<< ',' << l.num_rotatable_bonds
-					<< ',' << l.num_atoms
-					<< ',' << l.num_heavy_atoms
-					<< ',' << l.num_hb_donors
-					<< ',' << l.num_hb_acceptors
-					<< ',' << l.mw
-					<< ',' << l.logp
+					<< comma << l.p
+					<< comma << l.parent1
+					<< comma << l.connector1
+					<< comma << l.parent2
+					<< comma << l.connector2					
+					<< comma << l.efficacy
+					<< comma << l.free_energy
+					<< comma << l.num_rotatable_bonds
+					<< comma << l.num_atoms
+					<< comma << l.num_heavy_atoms
+					<< comma << l.num_hb_donors
+					<< comma << l.num_hb_acceptors
+					<< comma << l.mw
+					<< comma << l.logp
 					<< '\n';
 			}
 		}
