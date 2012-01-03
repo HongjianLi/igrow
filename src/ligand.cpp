@@ -506,14 +506,24 @@ namespace igrow
 		}
 		
 		// Determine if the child ligand is able to perform mutation or crossover.
-		child.mutation_feasible = !child.mutable_atoms.empty();
-		child.crossover_feasible = child.frames.size() > 1;
+		child.mutation_feasible = child.mutable_atoms.size();
+		child.crossover_feasible = child.num_rotatable_bonds;
 
 		return new ligand(child);
 	}
 	
 	ligand* ligand::crossover(const ligand& other, const mt19937eng& eng) const
 	{
+		// Initialize random number generators for obtaining two random mutable atoms.
+		using boost::random::variate_generator;
+		using boost::random::uniform_int_distribution;
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_rotatable_bond_gen_1(eng, uniform_int_distribution<size_t>(0, this->num_rotatable_bonds - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_rotatable_bond_gen_2(eng, uniform_int_distribution<size_t>(0, other.num_rotatable_bonds - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_01_gen(eng, uniform_int_distribution<size_t>(0, 1));
+		
+		// Obtain a random rotatable bond from the current ligand and the other ligand respectively.
+		const size_t rotatable_bond_1 = uniform_rotatable_bond_gen_1();
+		const size_t rotatable_bond_2 = uniform_rotatable_bond_gen_2();
 
 		// Initialize a child ligand.
 		ligand child;

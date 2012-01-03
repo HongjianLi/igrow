@@ -61,7 +61,7 @@ namespace igrow
 
 	using boost::filesystem::path;
 
-	// Represents a ligand.
+	/// Represents a ligand.
 	class ligand
 	{
 	public:
@@ -99,7 +99,7 @@ namespace igrow
 		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms. This definition contradicts our conventional definition, but it works fine for sorting ligands.
 		void evaluate_efficacy(const fl free_energy);
 
-		/// For sorting ptr_vector<ligand>.
+		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
 		const bool operator<(const ligand& l) const
 		{
 			return efficacy < l.efficacy;
