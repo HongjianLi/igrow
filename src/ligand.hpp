@@ -42,21 +42,28 @@ namespace igrow
 	public:
 		size_t parent; ///< Frame array index pointing to the parent of current frame. For ROOT frame, this field is not used.
 		size_t rotorX; ///< Index pointing to the parent frame atom which forms a rotatable bond with the first atom of current frame, a.k.a. rotor Y.
+		size_t begin; ///< The inclusive beginning index to the atoms of the current frame.
+		size_t end; ///< The exclusive ending index to the atoms of the current frame.
 		vector<size_t> branches; ///< Child branches.
-		vector<atom> atoms; ///< Heavy atoms.
 
-		/// Constructs a frame, and relates it to its parent frame.
-		explicit frame(const size_t parent) : parent(parent)
+		/// Constructs a frame, and initializes its parent frame and beginning atom index.
+		explicit frame(const size_t parent, const size_t rotorX, const size_t begin) : parent(parent), rotorX(rotorX), begin(begin)
 		{
-			branches.reserve(5); // A frame typically consists of <= 5 branch frames.
-			atoms.reserve(20); // A frame typically consists of <= 20 atoms.
+			BOOST_ASSERT(rotorX <= begin); // The equal sign holds only for ROOT frame.
+			branches.reserve(4); // A frame typically consists of <= 4 branch frames.
 		}
 
 		/// Copy constructor.
-		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), branches(f.branches), atoms(f.atoms) {}
+		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), begin(f.begin), end(f.end), branches(f.branches) {}
 
 		/// Move constructor.
-		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), branches(static_cast<vector<size_t>&&>(f.branches)), atoms(static_cast<vector<atom>&&>(f.atoms)) {}
+		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
+	};
+
+	enum operation
+	{
+		operation_mutation,
+		operation_crossover
 	};
 
 	using boost::filesystem::path;
@@ -70,8 +77,9 @@ namespace igrow
 		path parent2; ///< The second parent ligand, if any, to synthesize the current ligand.
 		size_t connector1; ///< The serial number of the connecting atom of parent 1.
 		size_t connector2; ///< The serial number of the connecting atom of parent 2.
-		vector<frame> frames; ///< Ligand frames.
-		vector<atom_index> mutable_atoms; ///< Hydrogens or halogens.
+		vector<frame> frames; ///< Frames.
+		vector<atom> atoms; ///< Atoms.
+		vector<size_t> mutable_atoms; ///< Hydrogens or halogens.
 		size_t num_rotatable_bonds; ///< Number of rotatable bonds.
 		size_t num_atoms; ///< Number of atoms.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.
@@ -81,33 +89,58 @@ namespace igrow
 		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
 		fl efficacy; ///< Ligand efficacy
-		bool mutation_feasible;  // True if the current ligand is able to perform mutation.
-		bool crossover_feasible; // True if the current ligand is able to perform crossover.
 		
 		/// Constructs a ligand by parsing a given ligand file in pdbqt.
 		explicit ligand(const path& p);
 
+		/// Constructs a ligand by either mutation or crossover.
+		explicit ligand(const ligand& l1, const ligand& l2, const mt19937eng& eng, const operation op);
+
 		/// Updates the path and saves the current ligand to a file in pdbqt format.
 		void save(const path& p);
 
-		/// Mutates the current ligand with the other ligand.
-		ligand* mutate(const ligand& other, const mt19937eng& eng) const;
-		
-		/// Crossovers the current ligand with the other ligand.
-		ligand* crossover(const ligand& other, const mt19937eng& eng) const;
+		/// Returns true if the current ligand is able to perform mutation.
+		bool mutation_feasible() const
+		{
+			return mutable_atoms.size() > 0;
+		}
+
+		/// Returns true if the current ligand is able to perform crossover.
+		bool crossover_feasible() const
+		{
+			return num_rotatable_bonds > 0;
+		}
 
 		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms. This definition contradicts our conventional definition, but it works fine for sorting ligands.
-		void evaluate_efficacy(const fl free_energy);
+		void evaluate_efficacy(const fl free_energy)
+		{
+			this->free_energy = free_energy;
+			efficacy = free_energy / num_heavy_atoms;
+		}
 
 		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
 		const bool operator<(const ligand& l) const
 		{
 			return efficacy < l.efficacy;
 		}
+
+		/// Gets the frame to which a given atom belongs to.
+		const size_t get_frame(const size_t atom_idx) const
+		{
+			BOOST_ASSERT(num_rotatable_bonds == frames.size() - 1);
+			for (size_t i = 0; i < num_rotatable_bonds; ++i)
+			{
+				if (atom_idx < frames[i].end) return i;
+			}
+			return num_rotatable_bonds;
+		}
 	
 	private:
-		/// Constructs an empty ligand.
-		ligand() {}
+		/// Mutates ligand 1 with ligand 2.
+		void mutate(const ligand& l1, const ligand& l2, const mt19937eng& eng);
+
+		/// Crossovers ligand 1 with ligand 2.
+		void crossover(const ligand& l1, const ligand& l2, const mt19937eng& eng);
 	};
 
 	/// For extracting the path out of a ligand.

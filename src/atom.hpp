@@ -113,26 +113,6 @@ namespace igrow
 		const size_t start = str.find_first_not_of(' ', i - 1);
 		return boost::lexical_cast<T>(str.substr(start, j - start));
 	}
-
-	/// Represents the index to an atom.
-	class atom_index
-	{
-	public:
-		size_t frame; ///< The index to the frame to which the atom belongs.
-		size_t index; ///< The index to the atom within its frame.
-
-		explicit atom_index(const size_t frame, const size_t index) : frame(frame), index(index) {}
-		
-		const bool operator==(const atom_index& idx) const
-		{
-			return ((frame == idx.frame) && (index == idx.index));
-		}
-		
-		const bool operator!=(const atom_index& idx) const
-		{
-			return ((frame != idx.frame) || (index != idx.index));
-		}
-	};
 	
 	// Represents an atom.
 	class atom
@@ -143,13 +123,15 @@ namespace igrow
 		size_t number; ///< Serial number.
 		vec3 coordinate; ///< 3D coordinate.
 		size_t ad; ///< AutoDock4 atom type.
-		vector<atom_index> neighbors;
+		vector<size_t> neighbors; ///< Neighbor atoms that are covalently bonded.
 
 		/// Parses AutoDock4 atom type name, and returns AD_TYPE_SIZE if it does not match any supported AutoDock4 atom types.
 		static size_t parse_ad_type_string(const string& ad_type_string)
 		{
 			for (size_t i = 0; i < AD_TYPE_SIZE; ++i)
+			{
 				if (ad_type_strings[i] == ad_type_string) return i;
+			}
 			return AD_TYPE_SIZE;
 		}
 
@@ -163,7 +145,7 @@ namespace igrow
 		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad), neighbors(a.neighbors) {}
 
 		/// Move constructor.
-		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad), neighbors(static_cast<vector<atom_index>&&>(a.neighbors)) {}
+		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad), neighbors(static_cast<vector<size_t>&&>(a.neighbors)) {}
 
 		/// Returns covalent radius from an AutoDock4 atom type.
 		const fl covalent_radius() const
