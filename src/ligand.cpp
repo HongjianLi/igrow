@@ -245,8 +245,8 @@ namespace igrow
 		// Initialize random number generators for obtaining two random mutable atoms.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutable_atom_gen_1(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_mutable_atom_gen_2(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_mutable_atom_gen_1(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_mutable_atom_gen_2(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1));
 
 		// Obtain a random mutable atom from ligands 1 and 2 respectively.
 		const size_t m1idx = l1.mutable_atoms[uniform_mutable_atom_gen_1()];
@@ -562,9 +562,9 @@ namespace igrow
 		// Initialize random number generators for obtaining two random mutable atoms.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_rotatable_bond_gen_1(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_rotatable_bond_gen_2(eng, uniform_int_distribution<size_t>(0, l2.num_rotatable_bonds - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_01_gen(eng, uniform_int_distribution<size_t>(0, 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_1(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_2(eng, uniform_int_distribution<size_t>(0, l2.num_rotatable_bonds - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_01_gen(eng, uniform_int_distribution<size_t>(0, 1));
 		
 		// Obtain a random rotatable bond from the current ligand and the other ligand respectively.
 		const size_t rotatable_bond_1 = uniform_rotatable_bond_gen_1();

@@ -277,8 +277,8 @@ main(int argc, char* argv[])
 		// Initialize random number generators for obtaining a random fragment and a random elitist.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t> > uniform_elitist_gen (eng, uniform_int_distribution<size_t>(0, num_elitists  - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen (eng, uniform_int_distribution<size_t>(0, num_elitists  - 1));
 
 		// Initialize process context.
 		const boost::process::context ctx;
