@@ -52,8 +52,7 @@
 #include "tee.hpp"
 #include "ligand.hpp"
 
-int
-main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	std::cout << "igrow 1.0\n";
 
