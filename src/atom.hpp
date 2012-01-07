@@ -113,7 +113,7 @@ namespace igrow
 		const size_t start = str.find_first_not_of(' ', i - 1);
 		return boost::lexical_cast<T>(str.substr(start, j - start));
 	}
-	
+
 	// Represents an atom.
 	class atom
 	{

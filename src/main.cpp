@@ -310,7 +310,7 @@ main(int argc, char* argv[])
 
 		// Initialize a ligand validator.
 		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
-		
+
 		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
 		size_t num_failures = 0;
 
@@ -319,7 +319,7 @@ main(int argc, char* argv[])
 
 		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 		ptr_vector<ligand> ligands(num_ligands);
-		
+
 		// Initialize constant strings.
 		const string pdbqt_extension_string = ".pdbqt";
 		const string ligand_folder_string = "ligand";
@@ -354,7 +354,7 @@ main(int argc, char* argv[])
 
 				// Set the parent of 1/1.pdbqt to the initial ligand.
 				initial_ligand.parent1 = initial_ligand_path;
-				
+
 				// Save the initial ligand as 1.pdbqt into the ligand folder of generation 1.
 				initial_ligand.save(ligand_folder / "1.pdbqt");
 
@@ -426,7 +426,7 @@ main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligands.back().save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));					
+					ligands.back().save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
 				}
 			}
 
@@ -461,7 +461,7 @@ main(int argc, char* argv[])
 				string line;
 				ifstream in(output_folder / (lexical_cast<string>(i + 1) + ".pdbqt"));
 				getline(in, line); // MODEL        1 or MODEL 1
-				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000				
+				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
 				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));
 				while (true)
 				{
@@ -487,7 +487,7 @@ main(int argc, char* argv[])
 					<< comma << l.parent1
 					<< comma << l.connector1
 					<< comma << l.parent2
-					<< comma << l.connector2					
+					<< comma << l.connector2
 					<< comma << l.efficacy
 					<< comma << l.free_energy
 					<< comma << l.num_rotatable_bonds

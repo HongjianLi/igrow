@@ -89,7 +89,7 @@ namespace igrow
 		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
 		fl efficacy; ///< Ligand efficacy
-		
+
 		/// Constructs a ligand by parsing a given ligand file in pdbqt.
 		explicit ligand(const path& p);
 
@@ -134,7 +134,7 @@ namespace igrow
 			}
 			return num_rotatable_bonds;
 		}
-	
+
 	private:
 		/// Mutates ligand 1 with ligand 2.
 		void mutate(const ligand& l1, const ligand& l2, const mt19937eng& eng);

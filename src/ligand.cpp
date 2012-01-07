@@ -69,11 +69,11 @@ namespace igrow
 
 				// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
 				atoms.push_back(atom(line));
-				
+
 				// Validate the AutoDock4 atom type.
 				atom& a = atoms.back();
 				if (a.ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + line.substr(77, isspace(line[78]) ? 1 : 2) + " is not supported by igrow.");
-				
+
 				// Find the neighbors in the same frame.
 				const size_t idx = atoms.size() - 1; // The index to the current atom.
 				BOOST_ASSERT(f->begin <= idx);
@@ -88,7 +88,7 @@ namespace igrow
 						BOOST_ASSERT(b.neighbors.size() <= 4);
 					}
 				}
-				
+
 				// Add rotorX as a neighbor because rotorY is assumed to be the first atom of a BRANCH frame.
 				if ((current) && (idx == f->begin))
 				{
@@ -97,7 +97,7 @@ namespace igrow
 					BOOST_ASSERT(a.neighbors.size() <= 4);
 					BOOST_ASSERT(atoms[f->rotorX].neighbors.size() <= 4);
 				}
-				
+
 				if (a.is_mutable()) mutable_atoms.push_back(idx);
 				if (!a.is_hydrogen()) ++num_heavy_atoms;
 				if (a.is_hb_donor()) ++num_hb_donors;
@@ -148,7 +148,7 @@ namespace igrow
 
 		BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
 		BOOST_ASSERT(f == &frames.front()); // The frame pointer should point to the ROOT frame.
-		
+
 		// Determine the number of atoms.
 		num_atoms = atoms.size();
 		BOOST_ASSERT(num_atoms >= num_heavy_atoms);
@@ -253,7 +253,7 @@ namespace igrow
 		const size_t m2idx = l2.mutable_atoms[uniform_mutable_atom_gen_2()];
 		const atom& m1 = l1.atoms[m1idx]; // Constant reference to the mutable atom of ligand 1.
 		const atom& m2 = l2.atoms[m2idx]; // Constant reference to the mutable atom of ligand 2.
-		
+
 		// The mutable atom should consist of only one non-rotatable single bond.
 		BOOST_ASSERT(m1.neighbors.size() == 1);
 		BOOST_ASSERT(m2.neighbors.size() == 1);
@@ -275,7 +275,7 @@ namespace igrow
 		const size_t c2idx = m2.neighbors.front();
 		const atom& c1 = l1.atoms[c1idx];
 		const atom& c2 = l2.atoms[c2idx];
-		
+
 		// Both the connector and mutable atoms should be in the same frame.
 		BOOST_ASSERT(f1idx == l1.get_frame(c1idx));
 		BOOST_ASSERT(f2idx == l2.get_frame(c2idx));
@@ -283,10 +283,10 @@ namespace igrow
 		// Set the connector atoms.
 		connector1 = c1.number;
 		connector2 = c2.number;
-		
+
 		// The number of rotatable bonds of child ligand is equal to the sum of its parent ligands plus 1.
 		num_rotatable_bonds = l1.num_rotatable_bonds + l2.num_rotatable_bonds + 1;
-		
+
 		// The number of atoms of child ligand is equal to the sum of its parent ligands minus 2.
 		num_atoms = l1.num_atoms + l2.num_atoms - 2;
 
@@ -316,14 +316,14 @@ namespace igrow
 			{
 				l1_num_frames_split = f1.branches[i];
 				BOOST_ASSERT(l1_num_frames_split); // At least one frame of ligand 1 will be directly copied to the child ligand.
-				insertion_index = i;				
+				insertion_index = i;
 				break;
 			}
 		}
 		if (!l1_num_frames_split) // The insertion index is at the end of the branches of child ligand's f1 frame.
 		{
 			insertion_index = f1.branches.size();
-			
+
 			// Trace back the parents of f1 frame to the immediately next branch number, which is equal to l1_num_frames_split.
 			size_t c = f1idx; // Current frame.
 			size_t p = f1.parent; // Parent frame.
@@ -434,7 +434,7 @@ namespace igrow
 		{
 			const size_t k = stack.back();
 			old_to_new_mapping[k] = new_to_old_mapping.size();
-			new_to_old_mapping.push_back(k);			
+			new_to_old_mapping.push_back(k);
 			const frame& f = l2.frames[k];
 			stack.pop_back();
 			for (size_t i = f.branches.size(); i > 0;)
@@ -443,8 +443,8 @@ namespace igrow
 				if (std::find(new_to_old_mapping.cbegin(), new_to_old_mapping.cend(), j) == new_to_old_mapping.end()) stack.push_back(j);
 			}
 			if (std::find(new_to_old_mapping.cbegin(), new_to_old_mapping.cend(), f.parent) == new_to_old_mapping.end()) stack.push_back(f.parent);
-		}		
-		//
+		}
+
 		//// Copy the other ligand to the child ligand, and update the frame numbers of parent, branches, and atom neighbors;
 		//for (size_t k = 0; k < l2_num_frames; ++k)
 		//{
@@ -534,7 +534,7 @@ namespace igrow
 		//const size_t num_mutatable_atoms_2 = l2.mutable_atoms.size();
 		//mutable_atoms.reserve(num_mutatable_atoms_1 + num_mutatable_atoms_2 - 2);
 		//
-		//// Copy the mutable atoms of the current ligand except ma1 to the child ligand.		
+		//// Copy the mutable atoms of the current ligand except ma1 to the child ligand.
 		//for (size_t i = 0; i < num_mutatable_atoms_1; ++i)
 		//{
 		//	if (l1.mutable_atoms[i] != ma1)
@@ -556,7 +556,7 @@ namespace igrow
 		//	}
 		//}
 	}
-	
+
 	void ligand::crossover(const ligand& l1, const ligand& l2, const mt19937eng& eng)
 	{
 		// Initialize random number generators for obtaining two random mutable atoms.
@@ -565,7 +565,7 @@ namespace igrow
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_1(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_2(eng, uniform_int_distribution<size_t>(0, l2.num_rotatable_bonds - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_01_gen(eng, uniform_int_distribution<size_t>(0, 1));
-		
+
 		// Obtain a random rotatable bond from the current ligand and the other ligand respectively.
 		const size_t rotatable_bond_1 = uniform_rotatable_bond_gen_1();
 		const size_t rotatable_bond_2 = uniform_rotatable_bond_gen_2();
