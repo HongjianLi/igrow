@@ -42,8 +42,6 @@ doc
 PocoProcess
 BoostProcess
 cache
-ifstream
-flyweight
 filterhydrogens
 filtermetals
 NoHydrogen.txt
