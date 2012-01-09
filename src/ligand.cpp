@@ -310,7 +310,7 @@ namespace igrow
 		mw = l1.mw + l2.mw - (m1.atomic_weight() + m2.atomic_weight());
 
 		// The logP of child ligand is equal to the sum of its parent ligands minus the two mutable atoms.
-		logp = l1.logp + l2.logp; // TODO: comment this line.
+		logp = l1.logp + l2.logp;
 
 		// Determine the number of ligand 1's frames that will be directly copied to the child ligand. This is also the new frame number of ligand 2's f2 frame.
 		size_t l1_num_frames_split = 0; // Frames [0, l1_num_frames_split) constitute part 1, and frames [l1_num_frames_split, l1_num_frames) constitute part 2.
@@ -361,51 +361,37 @@ namespace igrow
 		BOOST_ASSERT(l1_num_frames_split >= f1idx + 1);
 		BOOST_ASSERT(l1_num_frames_split <= l1_num_frames);
 
-		// Reserve enough capacity for storing frames and atoms.
+		// Reserve enough capacity for storing frames.
 		const size_t l2_num_frames = l2.frames.size();
 		frames.reserve(l1_num_frames + l2_num_frames);
-		atoms.reserve(num_atoms);
 
-		// Copy part 1 of ligand 1 to the child ligand.
+		// Copy frames of part 1 of ligand 1 to the child ligand.
 		// TODO: use std::copy instead.
 		for (size_t i = 0; i < l1_num_frames_split; ++i)
 		{
 			frames.push_back(l1.frames[i]);
 		}
+
+		// Decrement frame fields by 1 due to the deletion of m1.
 		--frames[f1idx].end;
 		for (size_t i = f1idx + 1; i < l1_num_frames_split; ++i)
 		{
 			frame& f = frames[i];
 			--f.begin;
 			--f.end;
-			if (f.rotorX > m1idx) -- f.rotorX;
-		}
-		for (size_t i = 0; i < f1.begin; ++i)
-		{
-			atoms.push_back(l1.atoms[i]);
-		}
-		for (size_t i = f1.begin; i < l1.frames[l1_num_frames_split - 1].end; ++i)
-		{
-			if (i == m1idx) continue;
-			atoms.push_back(l1.atoms[i]);
-			atom& a = atoms.back();
-			const size_t a_num_neighbors = a.neighbors.size();
-			for (size_t j = 0; j < a_num_neighbors; ++j)
-			{
-				if (a.neighbors[j] > m1idx) --a.neighbors[j];
-			}
+			if (f.rotorX > m1idx) --f.rotorX;
 		}
 
-		// Insert the new frame number of ma2 frame of the other ligand at the previously found index.
-		frame& f0 = frames[f1idx];
-		f0.branches.insert(f0.branches.begin() + insertion_index, l1_num_frames_split);
+		// Insert the new frame number of f2 frame of ligand 2 at the previously found index.
+		frame& f3 = frames[f1idx];
+		f3.branches.insert(f3.branches.begin() + insertion_index, l1_num_frames_split);
 
-		// Increment the branch numbers of part 2 frames by l2_num_frames.
-		const size_t f0_num_branches = f0.branches.size();
-		BOOST_ASSERT(f0_num_branches == f1_num_branches + 1);
-		for (size_t i = insertion_index + 1; i < f0_num_branches; ++i)
+		// Increment by l2_num_frames the branch numbers of part 1 frames pointing part 2 frames.
+		const size_t f3_num_branches = f3.branches.size();
+		BOOST_ASSERT(f3_num_branches == f1_num_branches + 1);
+		for (size_t i = insertion_index + 1; i < f3_num_branches; ++i)
 		{
-			f0.branches[i] += l2_num_frames;
+			f3.branches[i] += l2_num_frames;
 		}
 		for (size_t k = 0; k < f1idx; ++k)
 		{
@@ -417,19 +403,47 @@ namespace igrow
 			}
 		}
 
-		//// Update a connector neighbor of c3 from mutable atom 1 to the rotorY of ma2 frame of the other ligand.
-		//atom& c3 = f3.atoms[m1.neighbors.front().index];
-		//for (size_t i = c3.neighbors.size(); i > 0;)
-		//{
-		//	if (c3.neighbors[--i] == ma1)
-		//	{
-		//		c3.neighbors[i] = atom_index(l1_num_frames_split, 0); // Assume rotorY is always 0.
-		//		break;
-		//	}
-		//}
-		//
-		//// Update atom neighbors because the indexes to all the atoms after ma2 are decremented by 1.
-		//
+		// Reserve enough capacity for storing atoms.
+		atoms.reserve(num_atoms);
+
+		// Copy atoms of part 1 of ligand 1 to the child ligand.
+		for (size_t i = 0; i < f1.begin; ++i)
+		{
+			atoms.push_back(l1.atoms[i]);
+		}
+		for (size_t i = f1.begin; i < l1.frames[l1_num_frames_split - 1].end; ++i)
+		{
+			if (i == m1idx) continue; // Mutable atom 1 is deleted.
+			atoms.push_back(l1.atoms[i]);
+			atom& a = atoms.back();
+			const size_t a_num_neighbors = a.neighbors.size();
+			for (size_t j = 0; j < a_num_neighbors; ++j)
+			{
+				size_t& neighbor = a.neighbors[j];
+				if (neighbor == m1idx)
+				{
+					BOOST_ASSERT(i == c1idx); // Only connector 1 has a neighbor of mutable atom 1.
+					neighbor = l1.frames[l1_num_frames_split - 1].end - 1; // Connector 3 has a new neighbor of connector 4.
+				}
+				else if (neighbor > m1idx) --neighbor;
+			}
+		}
+		BOOST_ASSERT(atoms.size() == l1.frames[l1_num_frames_split - 1].end - 1);
+
+		// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
+		const size_t l1_num_mutatable_atoms = l1.mutable_atoms.size();
+		const size_t l2_num_mutatable_atoms = l2.mutable_atoms.size();
+		mutable_atoms.reserve(l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
+		
+		// Copy the mutable atoms of ligand 1 except m1 to the child ligand.
+		for (size_t i = 0; i < l1_num_mutatable_atoms; ++i)
+		{
+			if (l1.mutable_atoms[i] != m1idx) continue; // Mutable atom 1 is deleted.
+			mutable_atoms.push_back(l1.mutable_atoms[i]);
+			size_t& m = mutable_atoms.back();
+			//if (ma.frame > l1_num_frames_split) ma.frame += l2_num_frames;
+		}
+
 		// Find the traversal sequence (i.e. new_to_old_mapping) of ligand 2 starting from f2 frame, as well as its reverse traversal sequence (i.e. old_to_new_mapping).
 		vector<size_t> new_to_old_mapping;
 		new_to_old_mapping.reserve(l2_num_frames);
@@ -536,24 +550,9 @@ namespace igrow
 		//
 		//// Update atom neighbors because the indexes to all the atoms after ma2 are decremented by 1.
 
-		//// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
-		//const size_t num_mutatable_atoms_1 = l1.mutable_atoms.size();
-		//const size_t num_mutatable_atoms_2 = l2.mutable_atoms.size();
-		//mutable_atoms.reserve(num_mutatable_atoms_1 + num_mutatable_atoms_2 - 2);
-		//
-		//// Copy the mutable atoms of the current ligand except ma1 to the child ligand.
-		//for (size_t i = 0; i < num_mutatable_atoms_1; ++i)
-		//{
-		//	if (l1.mutable_atoms[i] != ma1)
-		//	{
-		//		mutable_atoms.push_back(l1.mutable_atoms[i]);
-		//		atom_index& ma = mutable_atoms.back();
-		//		if (ma.frame > l1_num_frames_split) ma.frame += l2_num_frames;
-		//	}
-		//}
 		//
 		//// Copy the mutable atoms of the other ligand except ma2 to the child ligand.
-		//for (size_t i = 0; i < num_mutatable_atoms_2; ++i)
+		//for (size_t i = 0; i < l2_num_mutatable_atoms; ++i)
 		//{
 		//	if (l2.mutable_atoms[i] != ma2)
 		//	{
