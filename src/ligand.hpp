@@ -80,6 +80,7 @@ namespace igrow
 		vector<frame> frames; ///< Frames.
 		vector<atom> atoms; ///< Atoms.
 		vector<size_t> mutable_atoms; ///< Hydrogens or halogens.
+		size_t max_atom_number; ///< Maximum atom serial number.
 		size_t num_rotatable_bonds; ///< Number of rotatable bonds.
 		size_t num_atoms; ///< Number of atoms.
 		size_t num_heavy_atoms; ///< Number of heavy atoms.

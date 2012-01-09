@@ -154,9 +154,13 @@ namespace igrow
 		BOOST_ASSERT(num_atoms >= num_heavy_atoms);
 		BOOST_ASSERT(num_atoms <= num_heavy_atoms + mutable_atoms.size());
 
-		// Determin the number of rotatable bonds.
+		// Determine the number of rotatable bonds.
 		num_rotatable_bonds = frames.size() - 1;
 		BOOST_ASSERT(num_atoms + (num_rotatable_bonds << 1) + 3 <= num_lines); // ATOM/HETATM lines + BRANCH/ENDBRANCH lines + ROOT/ENDROOT/TORSDOF lines + REMARK lines (if any) == num_lines
+
+		// Determine the maximum atom serial number.
+		max_atom_number = atoms.back().number;
+		BOOST_ASSERT(max_atom_number >= num_atoms);
 
 		// Set frames[i].end = frames[i + 1].begin
 		for (size_t i = 0; i < num_rotatable_bonds; ++i)
@@ -283,6 +287,9 @@ namespace igrow
 		// Set the connector atoms.
 		connector1 = c1.number;
 		connector2 = c2.number;
+
+		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
+		max_atom_number = l1.max_atom_number + l2.max_atom_number;
 
 		// The number of rotatable bonds of child ligand is equal to the sum of its parent ligands plus 1.
 		num_rotatable_bonds = l1.num_rotatable_bonds + l2.num_rotatable_bonds + 1;
