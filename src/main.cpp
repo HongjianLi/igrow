@@ -279,11 +279,31 @@ int main(int argc, char* argv[])
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen (eng, uniform_int_distribution<size_t>(0, num_elitists  - 1));
 
+		// Initialize a ligand validator.
+		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
+
+		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
+		size_t num_failures = 0;
+
+		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
+		const size_t num_ligands = num_elitists + num_mutants + num_crossovers;
+
+		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
+		using namespace boost;
+		ptr_vector<ligand> ligands(num_ligands);
+
+		// Initialize constant strings.
+		const string pdbqt_extension_string = ".pdbqt";
+		const string ligand_folder_string = "ligand";
+		const string output_folder_string = "output";
+		const string maximum_failures_reached_string = "The number of failures has reached " + lexical_cast<string>(max_failures);
+		const string docking_failed_string = "Docking failed with exit code ";
+		const char comma = ',';
+
 		// Initialize process context.
 		const boost::process::context ctx;
 
 		// Initialize arguments to docking program.
-		using namespace boost;
 		vector<string> docking_args;
 		if (idock)
 		{
@@ -307,28 +327,9 @@ int main(int argc, char* argv[])
 		docking_args[1] = docking_config_path.string();
 		docking_args[2] = "--seed";
 
-		// Initialize a ligand validator.
-		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
-
-		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
-		size_t num_failures = 0;
-
-		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
-		const size_t num_ligands = num_elitists + num_mutants + num_crossovers;
-
-		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
-		ptr_vector<ligand> ligands(num_ligands);
-
-		// Initialize constant strings.
-		const string pdbqt_extension_string = ".pdbqt";
-		const string ligand_folder_string = "ligand";
-		const string output_folder_string = "output";
-		const string maximum_failures_reached_string = "The number of failures has reached " + lexical_cast<string>(max_failures);
-		const char comma = ',';
-
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
-		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,efficacy,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logp\n";
+		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,efficacy,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logP\n";
 
 		for (size_t generation = 1; generation <= num_generations; ++generation)
 		{
@@ -369,7 +370,7 @@ int main(int argc, char* argv[])
 						if (num_failures++ == max_failures)
 						{
 							log << maximum_failures_reached_string << '\n';
-							return 0;
+							return 1;
 						}
 					} while (true);
 
@@ -380,9 +381,11 @@ int main(int argc, char* argv[])
 			else
 			{
 				// TODO: abstract into tasks for parallel execution.
+				// For the elitists, update its parents.
 				for (size_t i = 0; i < num_elitists; ++i)
 				{
 					ligand& l = ligands[i];
+					BOOST_ASSERT(l.p.parent_path().stem() == ligand_folder_string);
 					l.parent1 = l.p.parent_path().parent_path() / output_folder_string / l.p.filename();
 					l.connector1 = 0;
 					l.parent2.clear();
@@ -391,9 +394,9 @@ int main(int argc, char* argv[])
 				}
 
 				// TODO: abstract into tasks for parallel execution.
+				// Create child ligands by mutating an elitist with a fragment.
 				for (size_t i = num_elitists; i < num_elitists + num_mutants; ++i)
-				{
-					// Create a child ligand by mutation.
+				{					
 					do
 					{
 						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligand_flyweight(fragments[uniform_fragment_gen()]), eng, operation_mutation));
@@ -401,7 +404,7 @@ int main(int argc, char* argv[])
 						if (num_failures++ == max_failures)
 						{
 							log << maximum_failures_reached_string << '\n';
-							return 0;
+							return 1;
 						}
 					} while (true);
 
@@ -410,9 +413,9 @@ int main(int argc, char* argv[])
 				}
 
 				// TODO: abstract into tasks for parallel execution.
+				// Create child ligands by crossovering two elitists.
 				for (size_t i = num_elitists + num_mutants; i < num_ligands; ++i)
-				{
-					// Create a child ligand by crossover.
+				{					
 					do
 					{
 						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligands[uniform_elitist_gen()], eng, operation_crossover));
@@ -420,7 +423,7 @@ int main(int argc, char* argv[])
 						if (num_failures++ == max_failures)
 						{
 							log << maximum_failures_reached_string << '\n';
-							return 0;
+							return 1;
 						}
 					} while (true);
 
@@ -438,7 +441,12 @@ int main(int argc, char* argv[])
 				docking_args[7]  = output_folder.string();
 				docking_args[9]  = (generation_folder / default_log_path).string();
 				docking_args[11] = (generation_folder / default_csv_path).string();
-				create_child(docking_program_path.string(), docking_args, ctx).wait();
+				const int exit_code = create_child(docking_program_path.string(), docking_args, ctx).wait();
+				if (exit_code)
+				{
+					log << docking_failed_string << exit_code << '\n';
+					return 1;
+				}
 			}
 			else
 			{
@@ -446,30 +454,40 @@ int main(int argc, char* argv[])
 				log << "Calling vina to dock " << num_ligands << " ligands\n";
 				for (size_t i = 1; i <= num_ligands; ++i)
 				{
-					const string filename = lexical_cast<string>(i) + ".pdbqt";
+					const string filename = lexical_cast<string>(i) + pdbqt_extension_string;
 					docking_args[5] = (ligand_folder / filename).string();
 					docking_args[7] = (output_folder / filename).string();
-					create_child(docking_program_path.string(), docking_args, ctx).wait();
+					const int exit_code = create_child(docking_program_path.string(), docking_args, ctx).wait();
+					if (exit_code)
+					{
+						log << docking_failed_string << exit_code << '\n';
+						return 1;
+					}
 				}
 			}
 
-			// Parse output ligands to obtained predicted free energy and docked coordinates.
+			// Parse output ligands to obtain predicted free energy and docked coordinates.
 			for (size_t i = 0; i < num_ligands; ++i)
 			{
 				ligand& l = ligands[i];
 				string line;
-				ifstream in(output_folder / (lexical_cast<string>(i + 1) + ".pdbqt"));
+				ifstream in(output_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
 				getline(in, line); // MODEL        1 or MODEL 1
 				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
-				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));
-				while (true)
+				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));				
+				for (size_t i = 0; true;)
 				{
 					getline(in, line);
 					if (line[0] == 'A') // ATOM
 					{
-						// Parse coordinates;
+						BOOST_ASSERT(l.atoms[i].number == right_cast<size_t>(line, 7, 11));
+						l.atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));						
 					}
-					else if (line[0] == 'T') break; // TORSDOF
+					else if (line[0] == 'T') // TORSDOF
+					{
+						BOOST_ASSERT(i == l.atoms.size());
+						break;					
+					}
 				}
 				in.close();
 			}
