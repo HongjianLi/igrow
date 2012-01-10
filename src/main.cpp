@@ -34,9 +34,9 @@
  * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Both x86 and x64 binaries for Linux and Windows are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 30 December 2011
+ * \date 10 January 2012
  *
- * Copyright (C) 2011 The Chinese University of Hong Kong.
+ * Copyright (C) 2011-2012 The Chinese University of Hong Kong.
  */
 
 #include <boost/thread/thread.hpp>
