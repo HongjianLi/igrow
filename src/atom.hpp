@@ -123,7 +123,6 @@ namespace igrow
 		size_t number; ///< Serial number.
 		vec3 coordinate; ///< 3D coordinate.
 		size_t ad; ///< AutoDock4 atom type.
-		vector<size_t> neighbors; ///< Neighbor atoms that are covalently bonded.
 
 		/// Parses AutoDock4 atom type name, and returns AD_TYPE_SIZE if it does not match any supported AutoDock4 atom types.
 		static size_t parse_ad_type_string(const string& ad_type_string)
@@ -136,16 +135,13 @@ namespace igrow
 		}
 
 		/// Constructs an atom from an ATOM/HETATM line in pdbqt format.
-		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_type_string(line.substr(77, isspace(line[78]) ? 1 : 2)))
-		{
-			neighbors.reserve(4); // An atom typically consists of <= 4 neighbors.
-		}
+		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_type_string(line.substr(77, isspace(line[78]) ? 1 : 2)))	{}
 
 		/// Copy constructor.
-		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad), neighbors(a.neighbors) {}
+		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
 
 		/// Move constructor.
-		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad), neighbors(static_cast<vector<size_t>&&>(a.neighbors)) {}
+		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
 
 		/// Returns covalent radius from an AutoDock4 atom type.
 		const fl covalent_radius() const
@@ -192,13 +188,8 @@ namespace igrow
 		/// Returns true if the current atom is covalently bonded to a given atom.
 		const bool is_neighbor(const atom& a) const
 		{
+			BOOST_ASSERT(this != &a);
 			return (distance_sqr(coordinate, a.coordinate) < sqr(covalent_radius() + a.covalent_radius()));
-		}
-
-		/// Returns true if the current atom is sp2 hybridized.
-		const bool is_sp2() const
-		{
-			return (((ad == AD_TYPE_C) || (ad == AD_TYPE_A)) && (neighbors.size() == 3));
 		}
 	};
 }
