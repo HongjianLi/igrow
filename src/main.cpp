@@ -385,12 +385,11 @@ int main(int argc, char* argv[])
 				for (size_t i = 0; i < num_elitists; ++i)
 				{
 					ligand& l = ligands[i];
-					BOOST_ASSERT(l.p.parent_path().stem() == ligand_folder_string);
-					l.parent1 = l.p.parent_path().parent_path() / output_folder_string / l.p.filename();
+					l.parent1 = l.p;
 					l.connector1 = 0;
 					l.parent2.clear();
 					l.connector2 = 0;
-					l.save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
+					l.p = ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string);
 				}
 
 				// TODO: abstract into tasks for parallel execution.
@@ -436,7 +435,7 @@ int main(int argc, char* argv[])
 			if (idock)
 			{
 				// Invoke idock.
-				log << "Calling idock to dock " << num_ligands << " ligands\n";
+				log << "Calling idock to dock " << (generation == 1 ? num_ligands : num_mutants + num_crossovers) << " ligands\n";
 				docking_args[5]  = ligand_folder.string();
 				docking_args[7]  = output_folder.string();
 				docking_args[9]  = (generation_folder / default_log_path).string();
@@ -451,8 +450,8 @@ int main(int argc, char* argv[])
 			else
 			{
 				// Invoke vina.
-				log << "Calling vina to dock " << num_ligands << " ligands\n";
-				for (size_t i = 1; i <= num_ligands; ++i)
+				log << "Calling vina to dock " << (generation == 1 ? num_ligands : num_mutants + num_crossovers) << " ligands\n";
+				for (size_t i = (generation == 1 ? 1 : num_elitists + 1); i <= num_ligands; ++i)
 				{
 					const string filename = lexical_cast<string>(i) + pdbqt_extension_string;
 					docking_args[5] = (ligand_folder / filename).string();
@@ -467,7 +466,7 @@ int main(int argc, char* argv[])
 			}
 
 			// Parse output ligands to obtain predicted free energy and docked coordinates.
-			for (size_t i = 0; i < num_ligands; ++i)
+			for (size_t i = (generation == 1 ? 0 : num_elitists); i < num_ligands; ++i)
 			{
 				ligand& l = ligands[i];
 				string line;
