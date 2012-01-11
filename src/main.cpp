@@ -297,7 +297,7 @@ int main(int argc, char* argv[])
 		const string ligand_folder_string = "ligand";
 		const string output_folder_string = "output";
 		const string maximum_failures_reached_string = "The number of failures has reached " + lexical_cast<string>(max_failures);
-		const string docking_failed_string = "Docking failed with exit code ";
+		const string docking_failed_string = "Docking program exited with code ";
 		const char comma = ',';
 
 		// Initialize process context.
@@ -381,18 +381,6 @@ int main(int argc, char* argv[])
 			else
 			{
 				// TODO: abstract into tasks for parallel execution.
-				// For the elitists, update its parents.
-				for (size_t i = 0; i < num_elitists; ++i)
-				{
-					ligand& l = ligands[i];
-					l.parent1 = l.p;
-					l.connector1 = 0;
-					l.parent2.clear();
-					l.connector2 = 0;
-					l.p = ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string);
-				}
-
-				// TODO: abstract into tasks for parallel execution.
 				// Create child ligands by mutating an elitist with a fragment.
 				for (size_t i = num_elitists; i < num_elitists + num_mutants; ++i)
 				{					
@@ -435,7 +423,7 @@ int main(int argc, char* argv[])
 			if (idock)
 			{
 				// Invoke idock.
-				log << "Calling idock to dock " << (generation == 1 ? num_ligands : num_mutants + num_crossovers) << " ligands\n";
+				log << "Calling idock to dock newly created ligands\n";
 				docking_args[5]  = ligand_folder.string();
 				docking_args[7]  = output_folder.string();
 				docking_args[9]  = (generation_folder / default_log_path).string();
@@ -450,7 +438,7 @@ int main(int argc, char* argv[])
 			else
 			{
 				// Invoke vina.
-				log << "Calling vina to dock " << (generation == 1 ? num_ligands : num_mutants + num_crossovers) << " ligands\n";
+				log << "Calling vina to dock newly created ligands\n";
 				for (size_t i = (generation == 1 ? 1 : num_elitists + 1); i <= num_ligands; ++i)
 				{
 					const string filename = lexical_cast<string>(i) + pdbqt_extension_string;
