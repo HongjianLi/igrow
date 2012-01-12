@@ -288,7 +288,7 @@ namespace igrow
 			// Populate branches.
 			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
-				const size_t b = f.branches[i];
+				const size_t b = rf.branches[i];
 				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);				
 			}
 			
