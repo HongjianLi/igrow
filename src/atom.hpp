@@ -20,7 +20,6 @@
 #ifndef IGROW_ATOM_HPP
 #define IGROW_ATOM_HPP
 
-#include <boost/lexical_cast.hpp>
 #include "common.hpp"
 #include "vec3.hpp"
 
@@ -105,13 +104,14 @@ namespace igrow
 		126.90  // 14 = AD_TYPE_I
 	};
 
-	/// Parses right-justified 1-based [i, j] of str into generic type T lexically.
-	/// This conversion does not apply to left-justified values.
-	template<typename T>
-	inline T right_cast(const string& str, const size_t i, const size_t j)
+	/// Parses AutoDock4 atom type name, and returns AD_TYPE_SIZE if it does not match any supported AutoDock4 atom types.
+	inline size_t parse_ad_type_string(const string& ad_type_string)
 	{
-		const size_t start = str.find_first_not_of(' ', i - 1);
-		return boost::lexical_cast<T>(str.substr(start, j - start));
+		for (size_t i = 0; i < AD_TYPE_SIZE; ++i)
+		{
+			if (ad_type_strings[i] == ad_type_string) return i;
+		}
+		return AD_TYPE_SIZE;
 	}
 
 	// Represents an atom.
@@ -124,18 +124,8 @@ namespace igrow
 		vec3 coordinate; ///< 3D coordinate.
 		size_t ad; ///< AutoDock4 atom type.
 
-		/// Parses AutoDock4 atom type name, and returns AD_TYPE_SIZE if it does not match any supported AutoDock4 atom types.
-		static size_t parse_ad_type_string(const string& ad_type_string)
-		{
-			for (size_t i = 0; i < AD_TYPE_SIZE; ++i)
-			{
-				if (ad_type_strings[i] == ad_type_string) return i;
-			}
-			return AD_TYPE_SIZE;
-		}
-
-		/// Constructs an atom from an ATOM/HETATM line in pdbqt format.
-		explicit atom(const string& line) : columns_13_to_30(line.substr(12, 18)), columns_55_to_79(line.substr(54)), number(right_cast<size_t>(line, 7, 11)), coordinate(vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54))), ad(parse_ad_type_string(line.substr(77, isspace(line[78]) ? 1 : 2)))	{}
+		/// Constructs an atoms.
+		explicit atom(const string& columns_13_to_30, const string columns_55_to_79, const size_t number, const vec3& coordinate, const size_t ad) : columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), number(number), coordinate(coordinate), ad(ad) {}
 
 		/// Copy constructor.
 		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad) {}

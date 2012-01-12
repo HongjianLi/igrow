@@ -20,7 +20,6 @@
 #ifndef IGROW_LIGAND_HPP
 #define IGROW_LIGAND_HPP
 
-#include <boost/filesystem/path.hpp>
 #include <boost/flyweight.hpp>
 #include <boost/flyweight/key_value.hpp>
 #include <boost/flyweight/no_tracking.hpp>
@@ -28,13 +27,13 @@
 
 namespace igrow
 {
-
-// Choose the appropriate Mersenne Twister engine for random number generation on 32-bit or 64-bit platform.
-#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(__amd64__) || defined(_M_X64) || defined(_M_AMD64)
-	typedef boost::random::mt19937_64 mt19937eng;
-#else
-	typedef boost::random::mt19937 mt19937eng;
-#endif
+	/// Represents a parsing error.
+	class parsing_error : public std::domain_error
+	{
+	public:
+		/// Constructs a parsing error.
+		parsing_error(const path& file, const size_t line, const string& reason) : std::domain_error("Error parsing \"" + file.filename().string() + "\" on line " + boost::lexical_cast<string>(line) + ": " + reason) {}
+	};
 
 	/// Represents a ROOT or a BRANCH in PDBQT structure.
 	class frame
@@ -66,8 +65,6 @@ namespace igrow
 		operation_crossover
 	};
 
-	using boost::filesystem::path;
-
 	/// Represents a ligand.
 	class ligand
 	{
@@ -92,6 +89,7 @@ namespace igrow
 		fl efficacy; ///< Ligand efficacy
 
 		/// Constructs a ligand by parsing a given ligand file in pdbqt.
+		/// @exception parsing_error Thrown when error parsing the ligand file.
 		explicit ligand(const path& p);
 
 		/// Constructs a ligand by either mutation or crossover.

@@ -17,32 +17,11 @@
  */
 
 #include <iomanip>
-#include <boost/random.hpp>
 #include "fstream.hpp"
 #include "ligand.hpp"
 
 namespace igrow
 {
-	/// Represents a parsing error.
-	class parsing_error : public std::domain_error
-	{
-	public:
-		/// Constructs a parsing error.
-		parsing_error(const path& file, const size_t line, const string& reason) : std::domain_error("Error parsing \"" + file.filename().string() + "\" on line " + boost::lexical_cast<string>(line) + ": " + reason) {}
-	};
-
-	/// Returns true if a string starts with another string.
-	bool starts_with(const string& str, const string& start)
-	{
-		const size_t start_size = start.size();
-		if (str.size() < start_size) return false;
-		for (size_t i = 0; i < start_size; ++i)
-		{
-			if (str[i] != start[i]) return false;
-		}
-		return true;
-	}
-
 	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), connector1(0), connector2(0), logp(0) // TODO: comment logp(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
@@ -67,13 +46,16 @@ namespace igrow
 				// Whenever an ATOM/HETATM line shows up, the current frame must be the last one.
 				BOOST_ASSERT(current == frames.size() - 1);
 
-				// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
-				atoms.push_back(atom(line));
-
 				// Validate the AutoDock4 atom type.
-				atom& a = atoms.back();
-				if (a.ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + line.substr(77, isspace(line[78]) ? 1 : 2) + " is not supported by igrow.");
+				const string ad_type_string = line.substr(77, isspace(line[78]) ? 1 : 2);
+				const size_t ad = parse_ad_type_string(ad_type_string);
+				if (ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + ad_type_string + " is not supported by igrow.");
 
+				// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
+				atoms.push_back(atom(line.substr(12, 18), line.substr(54), right_cast<size_t>(line, 7, 11), vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54)), ad));
+
+				// Update ligand properties.
+				const atom& a = atoms.back();
 				if (a.is_mutable()) mutable_atoms.push_back(atoms.size() - 1);
 				if (!a.is_hydrogen()) ++num_heavy_atoms;
 				if (a.is_hb_donor()) ++num_hb_donors;
@@ -338,11 +320,11 @@ namespace igrow
 			// Populate atoms.
 			BOOST_ASSERT(f.begin == f1.begin);
 			for (size_t i = f1.begin; i < m1idx; ++i)
-			{				
+			{
 				atoms.push_back(l1.atoms[i]);
 			}
 			for (size_t i = m1idx + 1; i < f1.end; ++i)
-			{				
+			{
 				atoms.push_back(l1.atoms[i]);
 			}
 			f.end = atoms.size();
@@ -392,16 +374,14 @@ namespace igrow
 			
 			// Populate atoms.
 			for (size_t i = f2.begin; i < m2idx; ++i)
-			{				
-				atoms.push_back(l2.atoms[i]);
-				atom& a = atoms.back();
-				a.number += l1.max_atom_number;
+			{
+				const atom& ra = l2.atoms[i];
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, ra.number + l1.max_atom_number, ra.coordinate, ra.ad));
 			}
 			for (size_t i = m2idx + 1; i < f2.end; ++i)
-			{				
-				atoms.push_back(l1.atoms[i]);
-				atom& a = atoms.back();
-				a.number += l1.max_atom_number;
+			{
+				const atom& ra = l2.atoms[i];
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, ra.number + l1.max_atom_number, ra.coordinate, ra.ad));
 			}
 			f.end = atoms.size();
 		}

@@ -41,7 +41,6 @@
 
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
-#include <boost/random.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/process/context.hpp>
@@ -289,8 +288,7 @@ int main(int argc, char* argv[])
 		const size_t num_ligands = num_elitists + num_mutants + num_crossovers;
 
 		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
-		using namespace boost;
-		ptr_vector<ligand> ligands(num_ligands);
+		boost::ptr_vector<ligand> ligands(num_ligands);
 
 		// Initialize constant strings.
 		const string pdbqt_extension_string = ".pdbqt";
