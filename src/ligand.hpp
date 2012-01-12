@@ -41,23 +41,23 @@ namespace igrow
 	{
 	public:
 		size_t parent; ///< Frame array index pointing to the parent of current frame. For ROOT frame, this field is not used.
-		size_t rotorX; ///< Index pointing to the parent frame atom which forms a rotatable bond with the first atom of current frame, a.k.a. rotor Y.
+		size_t rotorX; ///< Serial number of the parent frame atom which forms a rotatable bond with rotorY.
+		size_t rotorY; ///< Serial number of the current frame atom which forms a rotatable bond with rotorX.
 		size_t begin; ///< The inclusive beginning index to the atoms of the current frame.
 		size_t end; ///< The exclusive ending index to the atoms of the current frame.
-		vector<size_t> branches; ///< Child branches.
+		vector<size_t> branches; ///< Indexes to child branches.
 
-		/// Constructs a frame, and initializes its parent frame and beginning atom index.
-		explicit frame(const size_t parent, const size_t rotorX, const size_t begin) : parent(parent), rotorX(rotorX), begin(begin)
+		/// Constructs a frame, and initializes its parent frame, rotor connectors, and beginning atom index.
+		explicit frame(const size_t parent, const size_t rotorX, const size_t rotorY, const size_t begin, const size_t branch_capacity) : parent(parent), rotorX(rotorX), rotorY(rotorY), begin(begin)
 		{
-			BOOST_ASSERT(rotorX <= begin); // The equal sign holds only for ROOT frame.
-			branches.reserve(4); // A frame typically consists of <= 4 branch frames.
+			branches.reserve(branch_capacity);
 		}
 
 		/// Copy constructor.
-		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), begin(f.begin), end(f.end), branches(f.branches) {}
+		frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(f.branches) {}
 
 		/// Move constructor.
-		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
+		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
 	};
 
 	enum operation

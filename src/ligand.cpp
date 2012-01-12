@@ -47,7 +47,7 @@ namespace igrow
 	{
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
-		frames.push_back(frame(0, 0, 0)); // ROOT is also treated as a frame. The parent and rotorX of ROOT frame are dummy.
+		frames.push_back(frame(0, 0, 0, 0, 4)); // ROOT is also treated as a frame. The parent, rotorX, and rotorY of ROOT frame are dummy.
 		mutable_atoms.reserve(20); // A ligand typically consists of <= 20 mutable atoms.
 
 		// Initialize helper variables for parsing.
@@ -83,20 +83,7 @@ namespace igrow
 			else if (starts_with(line, "BRANCH"))
 			{
 				// Parse "BRANCH   X   Y". X and Y are right-justified and 4 characters wide.
-				// Y is not parsed because the atom immediately follows "BRANCH" must be Y in pdbqt files created by the prepare_ligand4.py script of MGLTools.
-				// This assumption fails if pdbqt files are prepared by OpenBabel. In this case, the class frame should incorporate a new field rotorY to track the origin.
-				const size_t x = right_cast<size_t>(line, 7, 10);
-
-				// Find the corresponding heavy atom with X as its atom number in the current frame.
-				for (size_t i = f->begin; ; ++i)
-				{
-					if (atoms[i].number == x)
-					{
-						// Insert a new frame whose parent is the current frame.
-						frames.push_back(frame(current, i, atoms.size()));
-						break;
-					}
-				}
+				frames.push_back(frame(current, right_cast<size_t>(line, 7, 10), right_cast<size_t>(line, 11, 14), atoms.size(), 4));
 
 				// Now the current frame is the newly inserted BRANCH frame.
 				current = frames.size() - 1;
@@ -185,7 +172,7 @@ namespace igrow
 			const frame& f = frames[fn];
 			if (!dump_branches[fn]) // This BRANCH frame has not been dumped.
 			{
-				out << "BRANCH"    << setw(4) << atoms[f.rotorX].number << setw(4) << atoms[f.begin].number << '\n';
+				out << "BRANCH"    << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
 				for (size_t i = f.begin; i < f.end; ++i)
 				{
 					const atom& a = atoms[i];
@@ -199,7 +186,7 @@ namespace igrow
 			}
 			else // This BRANCH frame has been dumped.
 			{
-				out << "ENDBRANCH" << setw(4) << atoms[f.rotorX].number << setw(4) << atoms[f.begin].number << '\n';
+				out << "ENDBRANCH" << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
 				stack.pop_back();
 			}
 		}
@@ -243,10 +230,10 @@ namespace igrow
 		const frame& f2 = l2.frames[f2idx];
 
 		// The mutable atom cannot be rotorY, but can be the last atom.
-		BOOST_ASSERT(f1.begin <  m1idx);
-		BOOST_ASSERT(f1.end   >= m1idx);
-		BOOST_ASSERT(f2.begin <  m2idx);
-		BOOST_ASSERT(f2.end   >= m2idx);
+		BOOST_ASSERT(f1.begin < m1idx);
+		BOOST_ASSERT(f1.end   > m1idx);
+		BOOST_ASSERT(f2.begin < m2idx);
+		BOOST_ASSERT(f2.end   > m2idx);
 
 		// Find the connector atom that is covalently bonded to the mutable atom for both ligands.
 		size_t c1idx, c2idx;
@@ -293,112 +280,73 @@ namespace igrow
 		// The logP of child ligand is equal to the sum of its parent ligands minus the two mutable atoms.
 		logp = l1.logp + l2.logp;
 
-		// Determine the number of ligand 1's frames that will be directly copied to the child ligand. This is also the new frame number of ligand 2's f2 frame.
-		size_t l1_num_frames_split = 0; // Frames [0, l1_num_frames_split) constitute part 1, and frames [l1_num_frames_split, l1_num_frames) constitute part 2.
-		size_t insertion_index; // The index at which the new frame number of ligand 2's f2 frame will be inserted into the branches of child ligand's f1 frame.
-		const size_t l1_num_frames = l1.frames.size();
-		const size_t f1_num_branches = f1.branches.size();
-		for (size_t i = 0; i < f1_num_branches; ++i)
-		{
-			if (c1.number < l1.atoms[l1.frames[f1.branches[i]].rotorX].number)
-			{
-				l1_num_frames_split = f1.branches[i];
-				BOOST_ASSERT(l1_num_frames_split); // At least one frame of ligand 1 will be directly copied to the child ligand.
-				insertion_index = i;
-				break;
-			}
-		}
-		if (!l1_num_frames_split) // The insertion index is at the end of the branches of child ligand's f1 frame.
-		{
-			insertion_index = f1.branches.size();
-
-			// Trace back the parents of f1 frame to the immediately next branch number, which is equal to l1_num_frames_split.
-			size_t c = f1idx; // Current frame.
-			size_t p = f1.parent; // Parent frame.
-			while (c && (c == l1.frames[p].branches.back()))
-			{
-				c = p;
-				p = l1.frames[p].parent;
-			}
-			if (c) // The immediately next branch number is found in frame p.
-			{
-				const frame& pf = l1.frames[p];
-				const size_t pf_num_branches = pf.branches.size();
-				for (size_t i = 0; i < pf_num_branches; ++i)
-				{
-					if (pf.branches[i] == c)
-					{
-						BOOST_ASSERT(i + 1 < pf_num_branches);
-						l1_num_frames_split = pf.branches[i + 1];
-						break;
-					}
-				}
-			}
-			else // The entire frame tree of ligand 1 has been traversed.
-			{
-				l1_num_frames_split = l1_num_frames;
-			}
-		}
-		BOOST_ASSERT(l1_num_frames_split >= f1idx + 1);
-		BOOST_ASSERT(l1_num_frames_split <= l1_num_frames);
-
-		// Reserve enough capacity for storing frames.
-		const size_t l2_num_frames = l2.frames.size();
-		frames.reserve(l1_num_frames + l2_num_frames);
-
-		// Copy frames of part 1 of ligand 1 to the child ligand.
-		// TODO: use std::copy instead.
-		for (size_t i = 0; i < l1_num_frames_split; ++i)
-		{
-			frames.push_back(l1.frames[i]);
-		}
-
-		// For f3's parent frames, increment by l2_num_frames the branch numbers of part 1 frames pointing part 2 frames.
-		for (size_t k = 0; k < f1idx; ++k)
-		{
-			frame& f = frames[k];
-			const size_t f_num_branches = f.branches.size();
-			for (size_t i = 0; i < f_num_branches; ++i)
-			{
-				if (f.branches[i] >= l1_num_frames_split) f.branches[i] += l2_num_frames;
-			}
-		}
-
-		// For f3 frame itself, adjust its fields.
-		{
-			frame& f3 = frames[f1idx];
-			--f3.end;
-			f3.branches.insert(f3.branches.begin() + insertion_index, l1_num_frames_split);
-			const size_t f3_num_branches = f3.branches.size();
-			BOOST_ASSERT(f3_num_branches == f1_num_branches + 1);
-			for (size_t i = insertion_index + 1; i < f3_num_branches; ++i)
-			{
-				f3.branches[i] += l2_num_frames;
-			}
-		}
-
-		// For f3's branch frames of part 1, decrement frame fields by 1 due to the deletion of m1.
-		for (size_t i = f1idx + 1; i < l1_num_frames_split; ++i)
-		{
-			frame& f = frames[i];
-			--f.begin;
-			--f.end;
-			if (f.rotorX > m1idx) --f.rotorX;
-		}
-
 		// Reserve enough capacity for storing atoms.
 		atoms.reserve(num_atoms);
+		
+		// Reserve enough capacity for storing frames.
+		const size_t l1_num_frames = l1.frames.size();
+		const size_t l2_num_frames = l2.frames.size();
+		frames.reserve(l1_num_frames + l2_num_frames);
+		
+		// Determine the number of ligand 1's frames that will be directly copied to the child ligand. This is also the new frame number of ligand 2's f2 frame.
+		const size_t l1_num_frames_split = f1idx + 1; // Frames [0, l1_num_frames_split) constitute part 1, and frames [l1_num_frames_split, l1_num_frames) constitute part 2.
+		BOOST_ASSERT(l1_num_frames_split <= l1_num_frames);
 
-		// Copy atoms of part 1 of ligand 1 except mutable atom 1 to the child ligand.
-		for (size_t i = 0; i < m1idx; ++i)
+		// Create new frames for reference frames that are before f1.
+		for (size_t k = 0; k < f1idx; ++k)
 		{
-			atoms.push_back(l1.atoms[i]);
+			// Obtain a constant reference to the corresponding frame of part 1 of ligand 1.
+			const frame& rf = l1.frames[k];
+			const size_t rf_num_branches = rf.branches.size();
+			
+			// Create a new frame based on the reference frame.
+			frames.push_back(frame(rf.parent, rf.rotorX, rf.rotorY, atoms.size(), rf_num_branches));
+			frame& f = frames.back();
+			
+			// Populate branches.
+			for (size_t i = 0; i < rf_num_branches; ++i)
+			{
+				const size_t b = f.branches[i];
+				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);				
+			}
+			
+			// Populate atoms.
+			BOOST_ASSERT(f.begin == rf.begin);
+			for (size_t i = rf.begin; i < rf.end; ++i)
+			{
+				atoms.push_back(l1.atoms[i]);
+			}
+			f.end = atoms.size();
 		}
-		for (size_t i = m1idx + 1; i < l1.frames[l1_num_frames_split - 1].end; ++i)
+
+		// Create a new frame for reference frame f1 itself.
 		{
-			atoms.push_back(l1.atoms[i]);
+			// The reference frame is f1.
+			const size_t f1_num_branches = f1.branches.size();
+			
+			// Create a new frame based on the reference frame.
+			frames.push_back(frame(f1.parent, f1.rotorX, f1.rotorY, atoms.size(), 1 + f1_num_branches));
+			frame& f = frames.back();
+						
+			// Populate branches.
+			f.branches.push_back(l1_num_frames_split);
+			for (size_t i = 0; i < f1_num_branches; ++i)
+			{
+				f.branches.push_back(l2_num_frames + f1.branches[i]);
+			}			
+			
+			// Populate atoms.
+			BOOST_ASSERT(f.begin == f1.begin);
+			for (size_t i = f1.begin; i < m1idx; ++i)
+			{				
+				atoms.push_back(l1.atoms[i]);
+			}
+			for (size_t i = m1idx + 1; i < f1.end; ++i)
+			{				
+				atoms.push_back(l1.atoms[i]);
+			}
+			f.end = atoms.size();
 		}
-		BOOST_ASSERT(atoms.size() == l1.frames[l1_num_frames_split - 1].end - 1);
 
 		// Find the traversal sequence (i.e. l4_to_l2_mapping) of ligand 2 starting from f2 frame, as well as its reverse traversal sequence (i.e. l2_to_l4_mapping).
 		vector<size_t> l4_to_l2_mapping;
@@ -411,39 +359,51 @@ namespace igrow
 			while (!stack.empty())
 			{
 				const size_t k = stack.back();
+				stack.pop_back();
 				l2_to_l4_mapping[k] = l4_to_l2_mapping.size();
 				l4_to_l2_mapping.push_back(k);
-				const frame& f = l2.frames[k];
-				stack.pop_back();
-				for (auto i = f.branches.crbegin(); i < f.branches.crend(); ++i)
+				const frame& rf = l2.frames[k];				
+				for (auto i = rf.branches.crbegin(); i < rf.branches.crend(); ++i)
 				{
 					if (std::find(l4_to_l2_mapping.cbegin(), l4_to_l2_mapping.cend(), *i) == l4_to_l2_mapping.end()) stack.push_back(*i);
 				}
-				if (std::find(l4_to_l2_mapping.cbegin(), l4_to_l2_mapping.cend(), f.parent) == l4_to_l2_mapping.end()) stack.push_back(f.parent);
+				if (std::find(l4_to_l2_mapping.cbegin(), l4_to_l2_mapping.cend(), rf.parent) == l4_to_l2_mapping.end()) stack.push_back(rf.parent);
 			}
 		}
 		BOOST_ASSERT(l4_to_l2_mapping.size() == l2_num_frames);
 		BOOST_ASSERT(l4_to_l2_mapping[0] == f2idx);
 		BOOST_ASSERT(l2_to_l4_mapping[f2idx] == 0);
 
-		// Copy ligand 2 to the child ligand, and update the frame numbers of parent and branches;
-		for (size_t k = 0; k < l2_num_frames; ++k)
+		// Create a new frame for reference frame f2 itself.		
 		{
-			const frame& l2f = l2.frames[l4_to_l2_mapping[k]];
-			frames.push_back(frame(l2_to_l4_mapping[l2f.parent] + l1_num_frames_split, 0, frames.back().end));
-			for (size_t i = l2f.begin; i < l2f.end; ++i)
-			{
-				atoms.push_back(l2.atoms[i]);
-				atoms.back().number += l1.max_atom_number;
-			}
-			const size_t num_branches = l2f.branches.size();
+			// The reference frame is f2.
+			const size_t f2_num_branches = f2.branches.size();
+			
+			// Create a new frame based on the reference frame.
+			frames.push_back(frame(f1idx, connector1, connector2 + l1.max_atom_number, atoms.size(), 1 + f2_num_branches));
 			frame& f = frames.back();
-			f.end = atoms.size();
-			f.branches.reserve(num_branches);
-			for (size_t i = 0; i < num_branches; ++i)
+			
+			// Populate branches.
+			f.branches.push_back(l1_num_frames_split + l2_to_l4_mapping[f2.parent]);
+			for (size_t i = 0; i < f2_num_branches; ++i)
 			{
-				f.branches.push_back(l2_to_l4_mapping[l2f.branches[i]] + l1_num_frames_split);
+				f.branches.push_back(l1_num_frames_split + l2_to_l4_mapping[f1.branches[i]]);
 			}
+			
+			// Populate atoms.
+			for (size_t i = f2.begin; i < m2idx; ++i)
+			{				
+				atoms.push_back(l2.atoms[i]);
+				atom& a = atoms.back();
+				a.number += l1.max_atom_number;
+			}
+			for (size_t i = m2idx + 1; i < f2.end; ++i)
+			{				
+				atoms.push_back(l1.atoms[i]);
+				atom& a = atoms.back();
+				a.number += l1.max_atom_number;
+			}
+			f.end = atoms.size();
 		}
 
 		// The parent path of f2 frame of ligand 2 becomes the branch path in the child ligand.
@@ -495,6 +455,9 @@ namespace igrow
 				if (f.branches[i] >= l1_num_frames_split) f.branches[i] += l2_num_frames;
 			}
 		}
+		
+		BOOST_ASSERT(frames.size() == l1_num_frames + l2_num_frames);
+		BOOST_ASSERT(atoms.size() == num_atoms);
 
 		//// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
 		//const size_t l1_num_mutatable_atoms = l1.mutable_atoms.size();
