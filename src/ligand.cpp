@@ -270,14 +270,14 @@ namespace igrow
 		const size_t l2_num_frames = l2.frames.size();
 		frames.reserve(l1_num_frames + l2_num_frames);
 		
-		// Determine the number of ligand 1's frames that will be directly copied to the child ligand. This is also the new frame number of ligand 2's f2 frame.
-		const size_t l1_num_frames_split = f1idx + 1; // Frames [0, l1_num_frames_split) constitute part 1, and frames [l1_num_frames_split, l1_num_frames) constitute part 2.
-		BOOST_ASSERT(l1_num_frames_split <= l1_num_frames);
+		// Determine the number of ligand 1's frames up to f1.
+		const size_t f1_num_frames = f1idx + 1;
+		BOOST_ASSERT(f1_num_frames <= l1_num_frames);
 
-		// Create new frames for reference frames that are before f1.
+		// Create new frames for ligand 1's reference frames that are before f1.
 		for (size_t k = 0; k < f1idx; ++k)
 		{
-			// Obtain a constant reference to the corresponding frame of part 1 of ligand 1.
+			// Obtain a constant reference to the corresponding frame of ligand 1.
 			const frame& rf = l1.frames[k];
 			const size_t rf_num_branches = rf.branches.size();
 			
@@ -301,7 +301,7 @@ namespace igrow
 			f.end = atoms.size();
 		}
 
-		// Create a new frame for reference frame f1 itself.
+		// Create a new frame for ligand 1's reference frame f1 itself.
 		{
 			// The reference frame is f1.
 			const size_t f1_num_branches = f1.branches.size();
@@ -311,7 +311,7 @@ namespace igrow
 			frame& f = frames.back();
 						
 			// Populate branches.
-			f.branches.push_back(l1_num_frames_split);
+			f.branches.push_back(f1_num_frames);
 			for (size_t i = 0; i < f1_num_branches; ++i)
 			{
 				f.branches.push_back(l2_num_frames + f1.branches[i]);
@@ -356,7 +356,7 @@ namespace igrow
 		BOOST_ASSERT(l4_to_l2_mapping[0] == f2idx);
 		BOOST_ASSERT(l2_to_l4_mapping[f2idx] == 0);
 
-		// Create a new frame for reference frame f2 itself.		
+		// Create a new frame for ligand 2's reference frame f2 itself.		
 		{
 			// The reference frame is f2.
 			const size_t f2_num_branches = f2.branches.size();
@@ -366,10 +366,10 @@ namespace igrow
 			frame& f = frames.back();
 			
 			// Populate branches.
-			f.branches.push_back(l1_num_frames_split + l2_to_l4_mapping[f2.parent]);
+			f.branches.push_back(f1_num_frames + l2_to_l4_mapping[f2.parent]);
 			for (size_t i = 0; i < f2_num_branches; ++i)
 			{
-				f.branches.push_back(l1_num_frames_split + l2_to_l4_mapping[f1.branches[i]]);
+				f.branches.push_back(f1_num_frames + l2_to_l4_mapping[f1.branches[i]]);
 			}
 			
 			// Populate atoms.
@@ -386,43 +386,51 @@ namespace igrow
 			f.end = atoms.size();
 		}
 
-		// The parent path of f2 frame of ligand 2 becomes the branch path in the child ligand.
-		if (f2idx)
+		// Create new frames for ligand 2's reference frames that are parent frames of f2.
+		for (size_t k = 0; k < l2_to_l4_mapping.front(); ++k)
 		{
-			const size_t k0 = l2_to_l4_mapping.front();
-			BOOST_ASSERT(k0 > 0); // k0 == 0 if and only if f2idx == 0
-			const size_t least_branch = k0 - 1; // The least branch number of l1_num_frames_split + k0 frame of the child ligand is always equal to k0 - 1.
-			frame& f = frames[l1_num_frames_split + k0];
-			f.parent = l1_num_frames_split + least_branch;
-			const size_t num_branches_k0 = f.branches.size();
-			for (size_t i = 0; i < num_branches_k0; ++i)
-			{
-				if (f.branches[i] == f.parent)
-				{
-					f.branches.erase(f.branches.begin() + i);
-					break;
-				}
-			}
-			for (size_t i = least_branch; i > 0; --i)
-			{
-				frame& f = frames[l1_num_frames_split + i];
-				f.parent = l1_num_frames_split + i - 1;
-				std::sort(f.branches.begin(), f.branches.end());
-				BOOST_ASSERT(f.branches.front() == f.parent);
-				f.branches.front() += 2; // Previously this is the parent frame, now it becomes the first branch frame, so the frame number difference is +2.
-			}
-			frame& f4 = frames[l1_num_frames_split];
-			f4.branches.insert(f4.branches.begin(), l1_num_frames_split + 1);
+			// Obtain a constant reference to the corresponding frame of ligand 2.
+			const frame& rf = l1.frames[k];
+			const size_t rf_num_branches = rf.branches.size();
+			
+			// Create a new frame based on the reference frame.
+			frames.push_back(frame(rf.parent, rf.rotorY, rf.rotorX, atoms.size(), rf_num_branches));
+			frame& f = frames.back();
 		}
-		frames[l1_num_frames_split].parent = f1idx;
+
+		// Create new frames for ligand 1's reference frames that are after f1.
+		for (size_t k = f1_num_frames; k < l1_num_frames; ++k)
+		{
+			// Obtain a constant reference to the corresponding frame of ligand 1.
+			const frame& rf = l1.frames[k];
+			const size_t rf_num_branches = rf.branches.size();
+			
+			//// Create a new frame based on the reference frame.
+			//frames.push_back(frame(rf.parent, rf.rotorX, rf.rotorY, atoms.size(), rf_num_branches));
+			//frame& f = frames.back();
+			//
+			//// Populate branches.
+			//for (size_t i = 0; i < rf_num_branches; ++i)
+			//{
+			//	const size_t b = rf.branches[i];
+			//	f.branches.push_back(b > f1idx ? l2_num_frames + b : b);				
+			//}
+			//
+			//// Populate atoms.
+			//for (size_t i = rf.begin; i < rf.end; ++i)
+			//{
+			//	atoms.push_back(l1.atoms[i]);
+			//}
+			//f.end = atoms.size();
+		}
 
 		// Copy part 2 of the current ligand to the child ligand, and update the frame numbers of parent, branches, and atom neighbors.
-		for (size_t k = l1_num_frames_split; k < l1_num_frames; ++k)
+		for (size_t k = f1_num_frames; k < l1_num_frames; ++k)
 		{
 			const frame& rf = l1.frames[k];
 			frames.push_back(rf);
 			frame& f = frames.back();
-			if (f.parent >= l1_num_frames_split) f.parent += l2_num_frames;
+			if (f.parent >= f1_num_frames) f.parent += l2_num_frames;
 			f.begin = atoms.size();
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
@@ -432,7 +440,7 @@ namespace igrow
 			const size_t num_branches = f.branches.size();
 			for (size_t i = 0; i < num_branches; ++i)
 			{
-				if (f.branches[i] >= l1_num_frames_split) f.branches[i] += l2_num_frames;
+				if (f.branches[i] >= f1_num_frames) f.branches[i] += l2_num_frames;
 			}
 		}
 		
@@ -450,7 +458,7 @@ namespace igrow
 		//	if (l1.mutable_atoms[i] != m1idx) continue; // Mutable atom 1 is deleted.
 		//	mutable_atoms.push_back(l1.mutable_atoms[i]);
 		//	size_t& m = mutable_atoms.back();
-		//	//if (ma.frame > l1_num_frames_split) ma.frame += l2_num_frames;
+		//	//if (ma.frame > f1_num_frames) ma.frame += l2_num_frames;
 		//}
 
 		//
@@ -461,7 +469,7 @@ namespace igrow
 		//	{
 		//		mutable_atoms.push_back(l2.mutable_atoms[i]);
 		//		atom_index& ma = mutable_atoms.back();
-		//		ma.frame = l1_num_frames_split + l2_to_l4_mapping[ma.frame];
+		//		ma.frame = f1_num_frames + l2_to_l4_mapping[ma.frame];
 		//	}
 		//}
 	}
