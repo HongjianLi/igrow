@@ -120,15 +120,28 @@ namespace igrow
 			return efficacy < l.efficacy;
 		}
 
-		/// Gets the frame to which a given atom belongs to.
-		const size_t get_frame(const size_t atom_idx) const
+		/// Gets the frame and index to which a atom belongs to given its serial number.
+		const std::pair<size_t, size_t> get_frame(const size_t srn) const
 		{
 			BOOST_ASSERT(num_rotatable_bonds == frames.size() - 1);
-			for (size_t i = 0; i < num_rotatable_bonds; ++i)
+			for (size_t k = 0; k <= num_rotatable_bonds; ++k)
 			{
-				if (atom_idx < frames[i].end) return i;
+				const frame& f = frames[k];
+				const size_t srn_begin = atoms[f.begin].number;
+				const size_t srn_end = atoms[f.end - 1].number;
+				if ((f.end - f.begin) == (srn_end - srn_begin)) // The serial numbers are continuous, which is the most cases.
+				{
+					if ((srn_begin <= srn) && (srn <= srn_end)) return std::pair<size_t, size_t>(k, f.begin + srn - srn_begin);
+				}
+				else // The serial numbers are not continuous, but they are sorted. Binary search can be used.
+				{
+					// Linear search at the moment.
+					for (size_t i = f.begin; i < f.end; ++i)
+					{
+						if (srn == atoms[i].number) return std::pair<size_t,  size_t>(k, i);
+					}
+				}
 			}
-			return num_rotatable_bonds;
 		}
 
 	private:

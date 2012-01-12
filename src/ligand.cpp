@@ -57,7 +57,7 @@ namespace igrow
 
 				// Update ligand properties.
 				const atom& a = atoms.back();
-				if (a.is_mutable()) mutable_atoms.push_back(atoms.size() - 1);
+				if (a.is_mutable()) mutable_atoms.push_back(a.number);
 				if (!a.is_hydrogen()) ++num_heavy_atoms;
 				if (a.is_hb_donor()) ++num_hb_donors;
 				if (a.is_hb_acceptor()) ++num_hb_acceptors;
@@ -201,25 +201,34 @@ namespace igrow
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_mutable_atom_gen_1(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_mutable_atom_gen_2(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1));
 
-		// Obtain a random mutable atom from ligands 1 and 2 respectively.
-		const size_t m1idx = l1.mutable_atoms[uniform_mutable_atom_gen_1()];
-		const size_t m2idx = l2.mutable_atoms[uniform_mutable_atom_gen_2()];
+		// Obtain a serial number of a random mutable atom from ligands 1 and 2 respectively.
+		const size_t g1 = uniform_mutable_atom_gen_1();
+		const size_t g2 = uniform_mutable_atom_gen_2();
+		const size_t m1srn = l1.mutable_atoms[g1];
+		const size_t m2srn = l2.mutable_atoms[g2];
+		BOOST_ASSERT(m1srn >= 1);
+		BOOST_ASSERT(m1srn <= l1.max_atom_number);
+		BOOST_ASSERT(m2srn >= 1);
+		BOOST_ASSERT(m2srn <= l2.max_atom_number);
+
+		// Obtain the frames and indices of the two mutable atoms.
+		const std::pair<size_t, size_t> p1 = l1.get_frame(m1srn);
+		const std::pair<size_t, size_t> p2 = l2.get_frame(m2srn);
+		const size_t f1idx = p1.first;
+		const size_t f2idx = p2.first;
+		const frame& f1 = l1.frames[f1idx];
+		const frame& f2 = l2.frames[f2idx];
+		const size_t m1idx = p1.second;
+		const size_t m2idx = p2.second;
+		BOOST_ASSERT(f1.begin <= m1idx);
+		BOOST_ASSERT(f1.end   >  m1idx);
+		BOOST_ASSERT(f2.begin <= m2idx);
+		BOOST_ASSERT(f2.end   >  m2idx);
+
 		const atom& m1 = l1.atoms[m1idx]; // Constant reference to the mutable atom of ligand 1.
 		const atom& m2 = l2.atoms[m2idx]; // Constant reference to the mutable atom of ligand 2.
 		BOOST_ASSERT(m1.is_mutable());
 		BOOST_ASSERT(m2.is_mutable());
-
-		// Obtain the frames of the two mutable atoms.
-		const size_t f1idx = l1.get_frame(m1idx);
-		const size_t f2idx = l2.get_frame(m2idx);
-		const frame& f1 = l1.frames[f1idx];
-		const frame& f2 = l2.frames[f2idx];
-
-		// The mutable atom cannot be rotorY, but can be the last atom.
-		BOOST_ASSERT(f1.begin < m1idx);
-		BOOST_ASSERT(f1.end   > m1idx);
-		BOOST_ASSERT(f2.begin < m2idx);
-		BOOST_ASSERT(f2.end   > m2idx);
 
 		// Find the connector atom that is covalently bonded to the mutable atom for both ligands.
 		size_t c1idx, c2idx;
@@ -235,8 +244,8 @@ namespace igrow
 		const atom& c2 = l2.atoms[c2idx];
 
 		// Both the connector and mutable atoms should be in the same frame.
-		BOOST_ASSERT(f1idx == l1.get_frame(c1idx));
-		BOOST_ASSERT(f2idx == l2.get_frame(c2idx));
+		BOOST_ASSERT(f1idx == l1.get_frame(c1.number).first);
+		BOOST_ASSERT(f2idx == l2.get_frame(c2.number).first);
 
 		// Set the connector atoms.
 		connector1 = c1.number;
@@ -540,33 +549,36 @@ namespace igrow
 		}
 		
 		BOOST_ASSERT(frames.size() == l1_num_frames + l2_num_frames);
+		BOOST_ASSERT(frames.size() == frames.capacity());
 		BOOST_ASSERT(atoms.size() == num_atoms);
+		BOOST_ASSERT(atoms.size() == atoms.capacity());
 
-		//// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
-		//const size_t l1_num_mutatable_atoms = l1.mutable_atoms.size();
-		//const size_t l2_num_mutatable_atoms = l2.mutable_atoms.size();
-		//mutable_atoms.reserve(l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
-		//
-		//// Copy the mutable atoms of ligand 1 except m1 to the child ligand.
-		//for (size_t i = 0; i < l1_num_mutatable_atoms; ++i)
-		//{
-		//	if (l1.mutable_atoms[i] != m1idx) continue; // Mutable atom 1 is deleted.
-		//	mutable_atoms.push_back(l1.mutable_atoms[i]);
-		//	size_t& m = mutable_atoms.back();
-		//	//if (ma.frame > f1_num_frames) ma.frame += l2_num_frames;
-		//}
+		// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
+		const size_t l1_num_mutatable_atoms = l1.mutable_atoms.size();
+		const size_t l2_num_mutatable_atoms = l2.mutable_atoms.size();
+		mutable_atoms.reserve(l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
+		
+		// Copy the mutable atoms of ligand 1 except m1 to the child ligand.
+		for (size_t i = 0; i < g1; ++i)
+		{
+			mutable_atoms.push_back(l1.mutable_atoms[i]);
+		}
+		for (size_t i = g1 + 1; i < l1_num_mutatable_atoms; ++i)
+		{
+			mutable_atoms.push_back(l1.mutable_atoms[i]);
+		}
 
-		//
-		//// Copy the mutable atoms of the other ligand except ma2 to the child ligand.
-		//for (size_t i = 0; i < l2_num_mutatable_atoms; ++i)
-		//{
-		//	if (l2.mutable_atoms[i] != ma2)
-		//	{
-		//		mutable_atoms.push_back(l2.mutable_atoms[i]);
-		//		atom_index& ma = mutable_atoms.back();
-		//		ma.frame = f1_num_frames + l2_to_l4_mapping[ma.frame];
-		//	}
-		//}
+		// Copy the mutable atoms of ligand 2 except m2 to the child ligand.
+		for (size_t i = 0; i < g2; ++i)
+		{
+			mutable_atoms.push_back(l2.mutable_atoms[i]);
+		}
+		for (size_t i = g2 + 1; i < l2_num_mutatable_atoms; ++i)
+		{
+			mutable_atoms.push_back(l2.mutable_atoms[i]);
+		}
+		BOOST_ASSERT(mutable_atoms.size() == l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
+		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
 	void ligand::crossover(const ligand& l1, const ligand& l2, const mt19937eng& eng)
