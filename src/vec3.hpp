@@ -79,6 +79,12 @@ namespace igrow
 			return elems[i];
 		}
 
+		/// Returns true if the vector is (0, 0, 0).
+		bool zero() const
+		{
+			return ((!elems[0]) && (!elems[1]) && (!elems[2]));
+		}
+
 		/// Returns the square norm.
 		fl norm_sqr() const
 		{
@@ -100,6 +106,7 @@ namespace igrow
 		/// Normalize the vector.
 		vec3 normalize() const
 		{
+			BOOST_ASSERT(!zero());
 			const fl factor = 1 / norm();
 			return vec3(factor * elems[0], factor * elems[1], factor * elems[2]);
 		}

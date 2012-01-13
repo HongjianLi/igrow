@@ -279,12 +279,12 @@ namespace igrow
 
 		// Reserve enough capacity for storing atoms.
 		atoms.reserve(num_atoms);
-		
+
 		// Reserve enough capacity for storing frames.
 		const size_t l1_num_frames = l1.frames.size();
 		const size_t l2_num_frames = l2.frames.size();
 		frames.reserve(l1_num_frames + l2_num_frames);
-		
+
 		// Determine the number of ligand 1's frames up to f1.
 		const size_t f1_num_frames = f1idx + 1;
 		BOOST_ASSERT(f1_num_frames <= l1_num_frames);
@@ -305,7 +305,7 @@ namespace igrow
 			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
 				const size_t b = rf.branches[i];
-				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);				
+				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);
 			}
 
 			// Populate atoms.
@@ -333,7 +333,7 @@ namespace igrow
 			for (size_t i = 0; i < f1_num_branches; ++i)
 			{
 				f.branches.push_back(l2_num_frames + f1.branches[i]);
-			}			
+			}
 
 			// Populate atoms.
 			BOOST_ASSERT(f.begin == f1.begin);
@@ -363,7 +363,7 @@ namespace igrow
 				stack.pop_back();
 				l2_to_l4_mapping[k] = l4_to_l2_mapping.size();
 				l4_to_l2_mapping.push_back(k);
-				const frame& rf = l2.frames[k];				
+				const frame& rf = l2.frames[k];
 				for (auto i = rf.branches.crbegin(); i < rf.branches.crend(); ++i)
 				{
 					if (std::find(l4_to_l2_mapping.cbegin(), l4_to_l2_mapping.cend(), *i) == l4_to_l2_mapping.end()) stack.push_back(*i);
@@ -374,24 +374,27 @@ namespace igrow
 		BOOST_ASSERT(l4_to_l2_mapping.size() == l2_num_frames);
 		BOOST_ASSERT(l4_to_l2_mapping[0] == f2idx);
 		BOOST_ASSERT(l2_to_l4_mapping[f2idx] == 0);
-		
+
 		// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
-		const vec3 t = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate) + c1.coordinate;
-		const vec3 A = c1.coordinate - c2.coordinate;
-		const vec3 B = m2.coordinate - c2.coordinate;
-		const vec3 axis = cross_product(B, A).normalize();
-		const fl angle = acos((A * B) / sqrt(A.norm_sqr() * B.norm_sqr()));
-		const mat3 r = quaternion_to_matrix(axis_angle_to_quaternion(axis, angle));
+		const vec3 d = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate);
+		const vec3 t = d + c1.coordinate;
+		const vec3 c2_to_c1 = -1 * d;
+		BOOST_ASSERT(!c2_to_c1.zero());
+		const vec3 c2_to_m2 = m2.coordinate - c2.coordinate;
+		BOOST_ASSERT(!c2_to_m2.zero());
+		const vec3 axis = cross_product(c2_to_m2, c2_to_c1);
+		const fl angle = acos((c2_to_c1 * c2_to_m2) / sqrt(c2_to_c1.norm_sqr() * c2_to_m2.norm_sqr()));
+		const mat3 r(axis, angle);
 
 		// Create a new frame for ligand 2's f2 frame itself. Its branches are separately considered, depending on whether f2 is the ROOT frame of ligand 2.
 		{
 			// The reference frame is f2.
 			BOOST_ASSERT(&f2 == &l2.frames[l4_to_l2_mapping[0]]);
-			
+
 			// Create a new frame based on the reference frame.
 			frames.push_back(frame(f1idx, connector1, l1.max_atom_number + connector2, atoms.size()));
 			frame& f = frames.back();
-			
+
 			// Populate atoms.
 			for (size_t i = f2.begin; i < m2idx; ++i)
 			{
@@ -443,7 +446,7 @@ namespace igrow
 				const frame& rf = l2.frames[l4_to_l2_mapping[k]];
 				const size_t rf_num_branches = rf.branches.size();
 				BOOST_ASSERT(rf_num_branches >= 1);
-			
+
 				// Create a new frame based on the reference frame.
 				const frame& pf = l2.frames[l4_to_l2_mapping[k - 1]];
 				BOOST_ASSERT(f1idx + k == frames.size() - 1);
@@ -458,7 +461,7 @@ namespace igrow
 				{
 					if (rf.branches[i] == b) continue;
 					f.branches.push_back(f1_num_frames + l2_to_l4_mapping[rf.branches[i]]);
-				}			
+				}
 
 				// Populate atoms.
 				for (size_t i = rf.begin; i < rf.end; ++i)
@@ -476,7 +479,7 @@ namespace igrow
 				const frame& rf = l2.frames.front();
 				const size_t rf_num_branches = rf.branches.size();
 				BOOST_ASSERT(rf_num_branches >= 1);
-			
+
 				// Create a new frame based on the reference frame.
 				const frame& pf = l2.frames[l4_to_l2_mapping[l2_to_l4_mapping.front() - 1]];
 				BOOST_ASSERT(f1idx + l2_to_l4_mapping.front() == frames.size() - 1);
@@ -490,7 +493,7 @@ namespace igrow
 				{
 					if (rf.branches[i] == b) continue;
 					f.branches.push_back(f1_num_frames + l2_to_l4_mapping[rf.branches[i]]);
-				}			
+				}
 
 				// Populate atoms.
 				for (size_t i = rf.begin; i < rf.end; ++i)
@@ -509,7 +512,7 @@ namespace igrow
 			// Obtain a constant reference to the corresponding frame of ligand 2.
 			const frame& rf = l2.frames[l4_to_l2_mapping[k]];
 			const size_t rf_num_branches = rf.branches.size();
-			
+
 			// Create a new frame based on the reference frame.
 			frames.push_back(frame(f1_num_frames + l2_to_l4_mapping[rf.parent], l1.max_atom_number + rf.rotorX, l1.max_atom_number + rf.rotorY, atoms.size()));
 			frame& f = frames.back();
@@ -518,9 +521,9 @@ namespace igrow
 			f.branches.reserve(rf_num_branches); // This frame exactly consists of rf_num_branches BRANCH frames.
 			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
-				f.branches.push_back(f1_num_frames + l2_to_l4_mapping[rf.branches[i]]);				
+				f.branches.push_back(f1_num_frames + l2_to_l4_mapping[rf.branches[i]]);
 			}
-			
+
 			// Populate atoms.
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
@@ -537,19 +540,19 @@ namespace igrow
 			// Obtain a constant reference to the corresponding frame of ligand 1.
 			const frame& rf = l1.frames[k];
 			const size_t rf_num_branches = rf.branches.size();
-			
+
 			// Create a new frame based on the reference frame.
 			frames.push_back(frame(rf.parent > f1idx ? l2_num_frames + rf.parent : rf.parent, rf.rotorX, rf.rotorY, atoms.size()));
 			frame& f = frames.back();
-			
+
 			// Populate branches.
 			f.branches.reserve(rf_num_branches); // This frame exactly consists of rf_num_branches BRANCH frames.
 			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
 				const size_t b = rf.branches[i];
-				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);				
+				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);
 			}
-			
+
 			// Populate atoms.
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
@@ -557,7 +560,7 @@ namespace igrow
 			}
 			f.end = atoms.size();
 		}
-		
+
 		BOOST_ASSERT(frames.size() == l1_num_frames + l2_num_frames);
 		BOOST_ASSERT(frames.size() == frames.capacity());
 		BOOST_ASSERT(atoms.size() == num_atoms);
@@ -567,7 +570,7 @@ namespace igrow
 		const size_t l1_num_mutatable_atoms = l1.mutable_atoms.size();
 		const size_t l2_num_mutatable_atoms = l2.mutable_atoms.size();
 		mutable_atoms.reserve(l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
-		
+
 		// Copy the mutable atoms of ligand 1 except m1 to the child ligand.
 		for (size_t i = 0; i < g1; ++i)
 		{
@@ -599,17 +602,20 @@ namespace igrow
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_1(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_2(eng, uniform_int_distribution<size_t>(0, l2.num_rotatable_bonds - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_01_gen(eng, uniform_int_distribution<size_t>(0, 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_01_gen_1(eng, uniform_int_distribution<size_t>(0, 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_01_gen_2(eng, uniform_int_distribution<size_t>(0, 1));
 
 		// Obtain a random rotatable bond from the current ligand and the other ligand respectively.
-		const size_t rotatable_bond_1 = uniform_rotatable_bond_gen_1();
-		const size_t rotatable_bond_2 = uniform_rotatable_bond_gen_2();
+		const size_t g1 = uniform_rotatable_bond_gen_1();
+		const size_t g2 = uniform_rotatable_bond_gen_2();
+		const frame& f1 = l1.frames[g1];
+		const frame& f2 = l2.frames[g2];
+		const size_t r1 = uniform_01_gen_1();
+		const size_t r2 = uniform_01_gen_1();
 
-		// Initialize a child ligand.
-		parent1 = l1.p;
-		parent2 = l2.p;
-		//connector1 = c1.number;
-		//connector2 = c2.number;
+		// Set the connector atoms.
+		connector1 = r1 ? f1.rotorY : f1.rotorX;
+		connector2 = r2 ? f2.rotorY : f2.rotorX;
 	}
 
 /*

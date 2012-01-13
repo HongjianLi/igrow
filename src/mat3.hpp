@@ -53,6 +53,24 @@ namespace igrow
 			elems[6] = d20; elems[7] = d21; elems[8] = d22;
 		}
 
+		/// Constructs a rotation matrix from a normalized axis and an angle.
+		mat3(const vec3& axis, const fl angle)
+		{
+			const vec3 a = axis.normalize();
+			const fl c = cos(angle);
+			const fl s = sin(angle);
+			const fl t = 1 - fabs(c);
+			elems[0] = t * a[0] * a[0] + c;
+			elems[1] = t * a[0] * a[1] - s * a[2];
+			elems[2] = t * a[0] * a[2] + s * a[1];
+			elems[3] = t * a[0] * a[1] + s * a[2];
+			elems[4] = t * a[1] * a[1] + c;
+			elems[5] = t * a[1] * a[2] - s * a[0];
+			elems[6] = t * a[0] * a[2] - s * a[1];
+			elems[7] = t * a[1] * a[2] + s * a[0];
+			elems[8] = t * a[2] * a[2] + c;
+		}
+
 		/// Returns the value at index (i, j) where j is the lowest dimension.
 		const fl operator()(const size_t i, const size_t j) const
 		{

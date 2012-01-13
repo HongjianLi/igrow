@@ -50,6 +50,7 @@
 #include "fstream.hpp"
 #include "tee.hpp"
 #include "ligand.hpp"
+#include "quaternion.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -381,7 +382,7 @@ int main(int argc, char* argv[])
 				// TODO: abstract into tasks for parallel execution.
 				// Create child ligands by mutating an elitist with a fragment.
 				for (size_t i = num_elitists; i < num_elitists + num_mutants; ++i)
-				{					
+				{
 					do
 					{
 						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligand_flyweight(fragments[uniform_fragment_gen()]), eng(), operation_mutation));
@@ -400,7 +401,7 @@ int main(int argc, char* argv[])
 				// TODO: abstract into tasks for parallel execution.
 				// Create child ligands by crossovering two elitists.
 				for (size_t i = num_elitists + num_mutants; i < num_ligands; ++i)
-				{					
+				{
 					do
 					{
 						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligands[uniform_elitist_gen()], eng(), operation_crossover));
@@ -459,19 +460,19 @@ int main(int argc, char* argv[])
 				ifstream in(output_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
 				getline(in, line); // MODEL        1 or MODEL 1
 				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
-				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));				
+				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));
 				for (size_t i = 0; true;)
 				{
 					getline(in, line);
 					if (line[0] == 'A') // ATOM
 					{
 						BOOST_ASSERT(l.atoms[i].number == right_cast<size_t>(line, 7, 11));
-						l.atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));						
+						l.atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));
 					}
 					else if (line[0] == 'T') // TORSDOF
 					{
 						BOOST_ASSERT(i == l.atoms.size());
-						break;					
+						break;
 					}
 				}
 				in.close();
