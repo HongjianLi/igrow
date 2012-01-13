@@ -376,7 +376,12 @@ namespace igrow
 		BOOST_ASSERT(l2_to_l4_mapping[f2idx] == 0);
 		
 		// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
-		const vec3 t = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate) + c1.coordinate - c2.coordinate;
+		const vec3 t = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate) + c1.coordinate;
+		const vec3 A = c1.coordinate - c2.coordinate;
+		const vec3 B = m2.coordinate - c2.coordinate;
+		const vec3 axis = cross_product(B, A).normalize();
+		const fl angle = acos((A * B) / sqrt(A.norm_sqr() * B.norm_sqr()));
+		const mat3 r = quaternion_to_matrix(axis_angle_to_quaternion(axis, angle));
 
 		// Create a new frame for ligand 2's f2 frame itself. Its branches are separately considered, depending on whether f2 is the ROOT frame of ligand 2.
 		{
@@ -391,12 +396,12 @@ namespace igrow
 			for (size_t i = f2.begin; i < m2idx; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, ra.coordinate + t, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
 			}
 			for (size_t i = m2idx + 1; i < f2.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, ra.coordinate + t, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
@@ -459,7 +464,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, ra.coordinate + t, ra.ad));
+					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -491,7 +496,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, ra.coordinate + t, ra.ad));
+					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -520,7 +525,7 @@ namespace igrow
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, ra.coordinate + t, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
