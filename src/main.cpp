@@ -362,7 +362,7 @@ int main(int argc, char* argv[])
 					// Create a child ligand by mutation.
 					do
 					{
-						ligands.push_back(new ligand(initial_ligand, ligand_flyweight(fragments[uniform_fragment_gen()]), eng, operation_mutation));
+						ligands.push_back(new ligand(initial_ligand, ligand_flyweight(fragments[uniform_fragment_gen()]), eng(), operation_mutation));
 						if (v(ligands.back())) break;
 						ligands.pop_back();
 						if (num_failures++ == max_failures)
@@ -384,7 +384,7 @@ int main(int argc, char* argv[])
 				{					
 					do
 					{
-						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligand_flyweight(fragments[uniform_fragment_gen()]), eng, operation_mutation));
+						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligand_flyweight(fragments[uniform_fragment_gen()]), eng(), operation_mutation));
 						if (v(ligands[i])) break;
 						if (num_failures++ == max_failures)
 						{
@@ -394,7 +394,7 @@ int main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligands.back().save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
+					ligands[i].save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
 				}
 
 				// TODO: abstract into tasks for parallel execution.
@@ -403,7 +403,7 @@ int main(int argc, char* argv[])
 				{					
 					do
 					{
-						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligands[uniform_elitist_gen()], eng, operation_crossover));
+						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligands[uniform_elitist_gen()], eng(), operation_crossover));
 						if (v(ligands[i])) break;
 						if (num_failures++ == max_failures)
 						{
@@ -413,7 +413,7 @@ int main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligands.back().save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
+					ligands[i].save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
 				}
 			}
 

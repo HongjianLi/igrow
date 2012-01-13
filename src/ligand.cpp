@@ -180,22 +180,23 @@ namespace igrow
 		out.close();
 	}
 
-	ligand::ligand(const ligand& l1, const ligand& l2, const mt19937eng& eng, const operation op) : parent1(l1.p), parent2(l2.p)
+	ligand::ligand(const ligand& l1, const ligand& l2, const size_t seed, const operation op) : parent1(l1.p), parent2(l2.p)
 	{
 		switch (op)
 		{
 		case operation_mutation:
-			mutate(l1, l2, eng);
+			mutate(l1, l2, seed);
 			break;
 		case operation_crossover:
-			crossover(l1, l2, eng);
+			crossover(l1, l2, seed);
 			break;
 		}
 	}
 
-	void ligand::mutate(const ligand& l1, const ligand& l2, const mt19937eng& eng)
+	void ligand::mutate(const ligand& l1, const ligand& l2, const size_t seed)
 	{
 		// Initialize random number generators for obtaining two random mutable atoms.
+		mt19937eng eng(seed);
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_mutable_atom_gen_1(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1));
@@ -581,9 +582,10 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	void ligand::crossover(const ligand& l1, const ligand& l2, const mt19937eng& eng)
+	void ligand::crossover(const ligand& l1, const ligand& l2, const size_t seed)
 	{
 		// Initialize random number generators for obtaining two random mutable atoms.
+		mt19937eng eng(seed);
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_1(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1));

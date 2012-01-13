@@ -90,7 +90,7 @@ namespace igrow
 		explicit ligand(const path& p);
 
 		/// Constructs a ligand by either mutation or crossover.
-		explicit ligand(const ligand& l1, const ligand& l2, const mt19937eng& eng, const operation op);
+		explicit ligand(const ligand& l1, const ligand& l2, const size_t seed, const operation op);
 
 		/// Updates the path and saves the current ligand to a file in pdbqt format.
 		void save(const path& p);
@@ -146,10 +146,10 @@ namespace igrow
 
 	private:
 		/// Mutates ligand 1 with ligand 2.
-		void mutate(const ligand& l1, const ligand& l2, const mt19937eng& eng);
+		void mutate(const ligand& l1, const ligand& l2, const size_t seed);
 
 		/// Crossovers ligand 1 with ligand 2.
-		void crossover(const ligand& l1, const ligand& l2, const mt19937eng& eng);
+		void crossover(const ligand& l1, const ligand& l2, const size_t seed);
 	};
 
 	/// For extracting the path out of a ligand.
