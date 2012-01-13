@@ -66,23 +66,23 @@ namespace igrow
 	// http://en.wikipedia.org/wiki/Covalent_radius
 	// The above two references have inconsistent values for covalent radius.
 	// The following definitions use the first reference, while OpenBabel uses the second.
-	const fl ad_covalent_radii[] = ///< AutoDock4 covalent radii, factorized by 1.1 for extra allowance.
+	const fl ad_covalent_radii[] = ///< AutoDock4 covalent radii.
 	{
-		0.407, //  0 = AD_TYPE_HD, 0.407 = 1.1 * 0.37
-		0.407, //  1 = AD_TYPE_H , 0.407 = 1.1 * 0.37
-		0.847, //  2 = AD_TYPE_C , 0.847 = 1.1 * 0.77
-		0.847, //  3 = AD_TYPE_A , 0.847 = 1.1 * 0.77
-		0.825, //  4 = AD_TYPE_N , 0.825 = 1.1 * 0.75
-		0.825, //  5 = AD_TYPE_NA, 0.825 = 1.1 * 0.75
-		0.803, //  6 = AD_TYPE_OA, 0.803 = 1.1 * 0.73
-		1.122, //  7 = AD_TYPE_SA, 1.122 = 1.1 * 1.02
-		1.122, //  8 = AD_TYPE_S , 1.122 = 1.1 * 1.02
-		1.276, //  9 = AD_TYPE_Se, 1.276 = 1.1 * 1.16
-		1.166, // 10 = AD_TYPE_P , 1.166 = 1.1 * 1.06
-		0.781, // 11 = AD_TYPE_F , 0.781 = 1.1 * 0.71
-		1.089, // 12 = AD_TYPE_Cl, 1.089 = 1.1 * 0.99
-		1.254, // 13 = AD_TYPE_Br, 1.254 = 1.1 * 1.14
-		1.463  // 14 = AD_TYPE_I , 1.463 = 1.1 * 1.33
+		0.37, //  0 = AD_TYPE_HD
+		0.37, //  1 = AD_TYPE_H
+		0.77, //  2 = AD_TYPE_C
+		0.77, //  3 = AD_TYPE_A
+		0.75, //  4 = AD_TYPE_N
+		0.75, //  5 = AD_TYPE_NA
+		0.73, //  6 = AD_TYPE_OA
+		1.02, //  7 = AD_TYPE_SA
+		1.02, //  8 = AD_TYPE_S
+		1.16, //  9 = AD_TYPE_Se
+		1.06, // 10 = AD_TYPE_P
+		0.71, // 11 = AD_TYPE_F
+		0.99, // 12 = AD_TYPE_Cl
+		1.14, // 13 = AD_TYPE_Br
+		1.33  // 14 = AD_TYPE_I
 	};
 
 	const fl ad_atomic_weights[] = ///< AutoDock4 atomic weights.
@@ -179,7 +179,7 @@ namespace igrow
 		const bool is_neighbor(const atom& a) const
 		{
 			BOOST_ASSERT(this != &a);
-			return (distance_sqr(coordinate, a.coordinate) < sqr(covalent_radius() + a.covalent_radius()));
+			return (distance_sqr(coordinate, a.coordinate) < sqr(1.1 * (covalent_radius() + a.covalent_radius())));
 		}
 	};
 }
