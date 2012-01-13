@@ -56,19 +56,19 @@ namespace igrow
 		/// Constructs a rotation matrix from a normalized axis and an angle.
 		mat3(const vec3& axis, const fl angle)
 		{
-			const vec3 a = axis.normalize();
+			BOOST_ASSERT(axis.normalized());
 			const fl c = cos(angle);
 			const fl s = sin(angle);
 			const fl t = 1 - fabs(c);
-			elems[0] = t * a[0] * a[0] + c;
-			elems[1] = t * a[0] * a[1] - s * a[2];
-			elems[2] = t * a[0] * a[2] + s * a[1];
-			elems[3] = t * a[0] * a[1] + s * a[2];
-			elems[4] = t * a[1] * a[1] + c;
-			elems[5] = t * a[1] * a[2] - s * a[0];
-			elems[6] = t * a[0] * a[2] - s * a[1];
-			elems[7] = t * a[1] * a[2] + s * a[0];
-			elems[8] = t * a[2] * a[2] + c;
+			elems[0] = t * axis[0] * axis[0] + c;
+			elems[1] = t * axis[0] * axis[1] - s * axis[2];
+			elems[2] = t * axis[0] * axis[2] + s * axis[1];
+			elems[3] = t * axis[0] * axis[1] + s * axis[2];
+			elems[4] = t * axis[1] * axis[1] + c;
+			elems[5] = t * axis[1] * axis[2] - s * axis[0];
+			elems[6] = t * axis[0] * axis[2] - s * axis[1];
+			elems[7] = t * axis[1] * axis[2] + s * axis[0];
+			elems[8] = t * axis[2] * axis[2] + c;
 		}
 
 		/// Returns the value at index (i, j) where j is the lowest dimension.
@@ -90,6 +90,9 @@ namespace igrow
 			);
 		}
 	};
+
+	const mat3 mat3_identity(1, 0, 0, 0, 1, 0, 0, 0, 1); ///< Identity 3x3 transformation matrix.
+	const mat3 mat3_minus_identity(-1, 0, 0, 0, -1, 0, 0, 0, -1); ///< Minus identity 3x3 transformation matrix.
 }
 
 #endif

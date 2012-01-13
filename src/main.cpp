@@ -209,8 +209,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Validate output folder.
-		remove_all(output_folder_path);
-		if (!create_directories(output_folder_path))
+		if (!exists(output_folder_path) && !create_directories(output_folder_path))
 		{
 			std::cerr << "Failed to create output folder " << output_folder_path << '\n';
 			return 1;

@@ -378,13 +378,10 @@ namespace igrow
 		// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
 		const vec3 d = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate);
 		const vec3 t = d + c1.coordinate;
-		const vec3 c2_to_c1 = -1 * d;
-		BOOST_ASSERT(!c2_to_c1.zero());
-		const vec3 c2_to_m2 = m2.coordinate - c2.coordinate;
-		BOOST_ASSERT(!c2_to_m2.zero());
-		const vec3 axis = cross_product(c2_to_m2, c2_to_c1);
-		const fl angle = acos((c2_to_c1 * c2_to_m2) / sqrt(c2_to_c1.norm_sqr() * c2_to_m2.norm_sqr()));
-		const mat3 r(axis, angle);
+		const vec3 c2_to_c1 = (-1 * d).normalize();
+		const vec3 c2_to_m2 = (m2.coordinate - c2.coordinate).normalize();
+		const fl p = c2_to_c1 * c2_to_m2;
+		const mat3 r = (eq(p, 0) ? mat3_identity : (eq(p, pi) ? mat3_minus_identity : mat3(cross_product(c2_to_m2, c2_to_c1).normalize(), acos(p))));
 
 		// Create a new frame for ligand 2's f2 frame itself. Its branches are separately considered, depending on whether f2 is the ROOT frame of ligand 2.
 		{

@@ -142,6 +142,7 @@ namespace igrow
 					}
 				}
 			}
+			BOOST_ASSERT(false);
 		}
 
 	private:

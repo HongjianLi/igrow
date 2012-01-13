@@ -46,6 +46,21 @@ namespace igrow
 	typedef boost::random::mt19937 mt19937eng;
 #endif
 
+	const fl tolerance = static_cast<fl>(0.001); ///< Tolerance for equality comparison of two floating point values.
+
+	/// Returns true if the absolute difference between two floating point values is within the constant tolerance.
+	inline bool eq(const fl a, const fl b)
+	{
+		return fabs(a - b) < tolerance;
+	}
+
+	/// Returns the square of a generic value.
+	template<typename T>
+	inline T sqr(const T x)
+	{
+		return x * x;
+	}
+
 	/// Returns true if a string starts with another string.
 	inline bool starts_with(const string& str, const string& start)
 	{
