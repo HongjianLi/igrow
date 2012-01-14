@@ -114,7 +114,7 @@ namespace igrow
 		void evaluate_efficacy(const fl free_energy)
 		{
 			this->free_energy = free_energy;
-			efficacy = free_energy / num_heavy_atoms;
+			efficacy = free_energy * pow(static_cast<fl>(num_heavy_atoms), static_cast<fl>(-0.6));
 		}
 
 		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.

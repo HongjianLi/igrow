@@ -186,7 +186,8 @@ namespace igrow
 			const frame& f = frames[k];
 			const size_t srn_begin = atoms[f.begin].number;
 			const size_t srn_end = atoms[f.end - 1].number;
-			if ((f.end - f.begin) == (srn_end - srn_begin)) // The serial numbers are continuous, which is the most cases.
+			BOOST_ASSERT(srn_begin <= srn_end);
+			if ((f.end - f.begin) == (srn_end - srn_begin + 1)) // The serial numbers are continuous, which is the most cases.
 			{
 				if ((srn_begin <= srn) && (srn <= srn_end)) return std::pair<size_t, size_t>(k, f.begin + srn - srn_begin);
 			}
@@ -601,11 +602,11 @@ namespace igrow
 		// Copy the mutable atoms of ligand 2 except m2 to the child ligand.
 		for (size_t i = 0; i < g2; ++i)
 		{
-			mutable_atoms.push_back(l2.mutable_atoms[i]);
+			mutable_atoms.push_back(l1.max_atom_number + l2.mutable_atoms[i]);
 		}
 		for (size_t i = g2 + 1; i < l2_num_mutatable_atoms; ++i)
 		{
-			mutable_atoms.push_back(l2.mutable_atoms[i]);
+			mutable_atoms.push_back(l1.max_atom_number + l2.mutable_atoms[i]);
 		}
 		BOOST_ASSERT(mutable_atoms.size() == l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());

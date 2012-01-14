@@ -466,19 +466,19 @@ int main(int argc, char* argv[])
 			{
 				ligand& l = ligands[i];
 				string line;
-				ifstream in(output_folder / ligand_filenames[i]);
+				ifstream in(l.p);
 				getline(in, line); // MODEL        1 or MODEL 1
-				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
-				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));
+				getline(in, line); // REMARK     FREE ENERGY PREDICTED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
+				l.evaluate_efficacy(idock ? right_cast<fl>(line, 44, 51) : right_cast<fl>(line, 21, 29));
 				for (size_t i = 0; true;)
 				{
 					getline(in, line);
-					if (line[0] == 'A') // ATOM
+					if (starts_with(line, "ATOM"))
 					{
 						BOOST_ASSERT(l.atoms[i].number == right_cast<size_t>(line, 7, 11));
 						l.atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));
 					}
-					else if (line[0] == 'T') // TORSDOF
+					else if (starts_with(line, "TORSDOF"))
 					{
 						BOOST_ASSERT(i == l.atoms.size());
 						break;

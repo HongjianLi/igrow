@@ -63,7 +63,7 @@ namespace igrow
 			BOOST_ASSERT(i < 3);
 			return elems[i];
 		}
-		
+
 		/// Returns true is the vector is (0, 0, 0).
 		bool zero() const
 		{
