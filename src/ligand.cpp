@@ -18,8 +18,8 @@
 
 #include <iomanip>
 #include "fstream.hpp"
+#include "mat3.hpp"
 #include "ligand.hpp"
-#include "quaternion.hpp"
 
 namespace igrow
 {
@@ -376,12 +376,11 @@ namespace igrow
 		BOOST_ASSERT(l2_to_l4_mapping[f2idx] == 0);
 
 		// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
-		const vec3 d = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate);
-		const vec3 t = d + c1.coordinate;
-		const vec3 c2_to_c1 = (-1 * d).normalize();
-		const vec3 c2_to_m2 = (m2.coordinate - c2.coordinate).normalize();
-		const fl p = c2_to_c1 * c2_to_m2;
-		const mat3 r = (eq(p, 0) ? mat3_identity : (eq(p, pi) ? mat3_minus_identity : mat3(cross_product(c2_to_m2, c2_to_c1).normalize(), acos(p))));
+		const vec3 c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
+		const vec3 origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
+		const vec3 c2_to_c1_nd = (-1 * c1_to_c2).normalize(); // Normalized vector pointing from c2 to c1.
+		const vec3 c2_to_m2_nd = (m2.coordinate - c2.coordinate).normalize(); // Normalized vector pointing from c2 to m2.
+		const mat3 rot(cross_product(c2_to_m2_nd, c2_to_c1_nd).normalize(), c2_to_m2_nd * c2_to_c1_nd); // Rotation matrix to rotate m2 along the normal to the direction from the new position of c2 to c1.
 
 		// Create a new frame for ligand 2's f2 frame itself. Its branches are separately considered, depending on whether f2 is the ROOT frame of ligand 2.
 		{
@@ -396,12 +395,12 @@ namespace igrow
 			for (size_t i = f2.begin; i < m2idx; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			for (size_t i = m2idx + 1; i < f2.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
@@ -464,7 +463,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
+					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -496,7 +495,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
+					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -525,7 +524,7 @@ namespace igrow
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, r * (ra.coordinate - c2.coordinate) + t, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);

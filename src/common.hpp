@@ -20,6 +20,7 @@
 #ifndef IGROW_COMMON_HPP
 #define IGROW_COMMON_HPP
 
+#include <limits>
 #include <vector>
 #include <string>
 #include <boost/lexical_cast.hpp>
@@ -46,12 +47,12 @@ namespace igrow
 	typedef boost::random::mt19937 mt19937eng;
 #endif
 
-	const fl tolerance = static_cast<fl>(0.001); ///< Tolerance for equality comparison of two floating point values.
+	const fl epsilon = std::numeric_limits<fl>::epsilon(); ///< Tolerance for equality comparison of two floating point values.
 
 	/// Returns true if the absolute difference between two floating point values is within the constant tolerance.
 	inline bool eq(const fl a, const fl b)
 	{
-		return fabs(a - b) < tolerance;
+		return fabs(a - b) < epsilon;
 	}
 
 	/// Returns the square of a generic value.

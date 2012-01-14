@@ -50,7 +50,6 @@
 #include "fstream.hpp"
 #include "tee.hpp"
 #include "ligand.hpp"
-#include "quaternion.hpp"
 
 int main(int argc, char* argv[])
 {
