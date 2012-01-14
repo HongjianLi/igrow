@@ -110,11 +110,11 @@ namespace igrow
 			return num_rotatable_bonds > 0;
 		}
 
-		/// Recalculates ligand efficacy, defined as free_energy / num_heavy_atoms. This definition contradicts our conventional definition, but it works fine for sorting ligands.
+		/// Evaluates ligand efficacy from free energy.
 		void evaluate_efficacy(const fl free_energy)
 		{
 			this->free_energy = free_energy;
-			efficacy = free_energy * pow(static_cast<fl>(num_heavy_atoms), static_cast<fl>(-0.6));
+			efficacy = free_energy * pow(static_cast<fl>(num_heavy_atoms), static_cast<fl>(-0.4));
 		}
 
 		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.

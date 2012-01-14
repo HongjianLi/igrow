@@ -66,6 +66,7 @@ int main(int argc, char* argv[])
 	const path default_csv_path = "log.csv";
 
 	// Process program options.
+	try
 	{
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
@@ -135,41 +136,33 @@ int main(int argc, char* argv[])
 		}
 
 		// Parse command line arguments.
-		try
+		variables_map vm;
+		store(parse_command_line(argc, argv, all_options), vm);
+		variable_value config_value = vm["config"];
+		if (!config_value.empty()) // If a configuration file is presented, parse it.
 		{
-			variables_map vm;
-			store(parse_command_line(argc, argv, all_options), vm);
-			variable_value config_value = vm["config"];
-			if (!config_value.empty()) // If a configuration file is presented, parse it.
-			{
-				ifstream config_file(config_value.as<path>());
-				store(parse_config_file(config_file, all_options), vm);
-			}
-			vm.notify(); // Notify the user if there are any parsing errors.
-
-			// Determine if the docking program is idock or vina.
-			if (docking_program == "idock")
-			{
-				idock = true;
-			}
-			else if (docking_program == "vina")
-			{
-				idock = false;
-			}
-			else
-			{
-				std::cerr << "Docking program must be either idock or vina\n";
-				return 1;
-			}
-
-			// Find the full path to the docking executable.
-			docking_program_path = boost::process::find_executable_in_path(docking_program);
+			ifstream config_file(config_value.as<path>());
+			store(parse_config_file(config_file, all_options), vm);
 		}
-		catch (const std::exception& e)
+		vm.notify(); // Notify the user if there are any parsing errors.
+
+		// Determine if the docking program is idock or vina.
+		if (docking_program == "idock")
 		{
-			std::cerr << e.what() << '\n';
+			idock = true;
+		}
+		else if (docking_program == "vina")
+		{
+			idock = false;
+		}
+		else
+		{
+			std::cerr << "Docking program must be either idock or vina\n";
 			return 1;
 		}
+
+		// Find the full path to the docking executable.
+		docking_program_path = boost::process::find_executable_in_path(docking_program);
 
 		// Validate fragment folder.
 		if (!exists(fragment_folder_path))
@@ -208,7 +201,8 @@ int main(int argc, char* argv[])
 		}
 
 		// Validate output folder.
-		if (!exists(output_folder_path) && !create_directories(output_folder_path))
+		remove_all(output_folder_path);
+		if (!create_directories(output_folder_path))
 		{
 			std::cerr << "Failed to create output folder " << output_folder_path << '\n';
 			return 1;
@@ -240,6 +234,11 @@ int main(int argc, char* argv[])
 			std::cerr << "Option max_mw must be larger than or equal to option min_mw\n";
 			return 1;
 		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return 1;
 	}
 
 	try
@@ -284,7 +283,8 @@ int main(int argc, char* argv[])
 		size_t num_failures = 0;
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
-		const size_t num_ligands = num_elitists + num_mutants + num_crossovers;
+		const size_t num_children = num_mutants + num_crossovers;
+		const size_t num_ligands = num_elitists + num_children;
 
 		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 		boost::ptr_vector<ligand> ligands(num_ligands);
@@ -387,12 +387,13 @@ int main(int argc, char* argv[])
 			{
 				// TODO: abstract into tasks for parallel execution.
 				// Create child ligands by mutating an elitist with a fragment.
-				for (size_t i = num_elitists; i < num_elitists + num_mutants; ++i)
+				for (size_t i = 0; i < num_mutants; ++i)
 				{
+					const size_t idx = num_elitists + i;
 					do
 					{
-						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligand_flyweight(fragments[uniform_fragment_gen()]), eng(), operation_mutation));
-						if (v(ligands[i])) break;
+						ligands.replace(idx, new ligand(ligands[uniform_elitist_gen()], ligand_flyweight(fragments[uniform_fragment_gen()]), eng(), operation_mutation));
+						if (v(ligands[idx])) break;
 						if (num_failures++ == max_failures)
 						{
 							log << maximum_failures_reached_string << '\n';
@@ -401,19 +402,20 @@ int main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligand& l = ligands[i];
+					ligand& l = ligands[idx];
 					l.save(ligand_folder / ligand_filenames[i]);
 					l.p =  output_folder / ligand_filenames[i];
 				}
 
 				// TODO: abstract into tasks for parallel execution.
 				// Create child ligands by crossovering two elitists.
-				for (size_t i = num_elitists + num_mutants; i < num_ligands; ++i)
+				for (size_t i = num_mutants; i < num_children; ++i)
 				{
+					const size_t idx = num_elitists + i;
 					do
 					{
-						ligands.replace(i, new ligand(ligands[uniform_elitist_gen()], ligands[uniform_elitist_gen()], eng(), operation_crossover));
-						if (v(ligands[i])) break;
+						ligands.replace(idx, new ligand(ligands[uniform_elitist_gen()], ligands[uniform_elitist_gen()], eng(), operation_crossover));
+						if (v(ligands[idx])) break;
 						if (num_failures++ == max_failures)
 						{
 							log << maximum_failures_reached_string << '\n';
@@ -422,7 +424,7 @@ int main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligand& l = ligands[i];
+					ligand& l = ligands[idx];
 					l.save(ligand_folder / ligand_filenames[i]);
 					l.p =  output_folder / ligand_filenames[i];
 				}
@@ -448,7 +450,7 @@ int main(int argc, char* argv[])
 			{
 				// Invoke vina.
 				log << "Calling vina to dock newly created ligands\n";
-				for (size_t i = (generation == 1 ? 0 : num_elitists); i < num_ligands; ++i)
+				for (size_t i = 0; i < (generation == 1 ? num_ligands : num_children); ++i)
 				{
 					docking_args[5] = (ligand_folder / ligand_filenames[i]).string();
 					docking_args[7] = (output_folder / ligand_filenames[i]).string();
