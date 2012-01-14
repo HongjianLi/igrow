@@ -47,7 +47,7 @@ namespace igrow
 	typedef boost::random::mt19937 mt19937eng;
 #endif
 
-	const fl epsilon = std::numeric_limits<fl>::epsilon(); ///< Tolerance for equality comparison of two floating point values.
+	const fl epsilon = 2 * std::numeric_limits<fl>::epsilon(); ///< Tolerance for equality comparison of two floating point values.
 
 	/// Returns true if the absolute difference between two floating point values is within the constant tolerance.
 	inline bool eq(const fl a, const fl b)

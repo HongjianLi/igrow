@@ -92,8 +92,11 @@ namespace igrow
 		/// Constructs a ligand by either mutation or crossover.
 		explicit ligand(const ligand& l1, const ligand& l2, const size_t seed, const operation op);
 
-		/// Updates the path and saves the current ligand to a file in pdbqt format.
-		void save(const path& p);
+		/// Saves the current ligand to a file in pdbqt format.
+		void save(const path& p) const;
+
+		/// Gets the frame and index to which a atom belongs to given its serial number.
+		std::pair<size_t, size_t> get_frame(const size_t srn) const;
 
 		/// Returns true if the current ligand is able to perform mutation.
 		bool mutation_feasible() const
@@ -118,31 +121,6 @@ namespace igrow
 		const bool operator<(const ligand& l) const
 		{
 			return efficacy < l.efficacy;
-		}
-
-		/// Gets the frame and index to which a atom belongs to given its serial number.
-		const std::pair<size_t, size_t> get_frame(const size_t srn) const
-		{
-			BOOST_ASSERT(num_rotatable_bonds == frames.size() - 1);
-			for (size_t k = 0; k <= num_rotatable_bonds; ++k)
-			{
-				const frame& f = frames[k];
-				const size_t srn_begin = atoms[f.begin].number;
-				const size_t srn_end = atoms[f.end - 1].number;
-				if ((f.end - f.begin) == (srn_end - srn_begin)) // The serial numbers are continuous, which is the most cases.
-				{
-					if ((srn_begin <= srn) && (srn <= srn_end)) return std::pair<size_t, size_t>(k, f.begin + srn - srn_begin);
-				}
-				else // The serial numbers are not continuous, but they are sorted. Binary search can be used.
-				{
-					// Linear search at the moment.
-					for (size_t i = f.begin; i < f.end; ++i)
-					{
-						if (srn == atoms[i].number) return std::pair<size_t,  size_t>(k, i);
-					}
-				}
-			}
-			BOOST_ASSERT(false);
 		}
 
 	private:

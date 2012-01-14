@@ -120,11 +120,8 @@ namespace igrow
 		frames.back().end = num_atoms;
 	}
 
-	void ligand::save(const path& p)
+	void ligand::save(const path& p) const
 	{
-		// Update the path to the current ligand.
-		this->p = p;
-
 		using namespace std;
 		ofstream out(p); // Dumping starts. Open the file stream as late as possible.
 		out.setf(ios::fixed, ios::floatfield);
@@ -179,6 +176,30 @@ namespace igrow
 		}
 		out << "TORSDOF " << num_rotatable_bonds << '\n';
 		out.close();
+	}
+
+	std::pair<size_t, size_t> ligand::get_frame(const size_t srn) const
+	{
+		BOOST_ASSERT(num_rotatable_bonds == frames.size() - 1);
+		for (size_t k = 0; k <= num_rotatable_bonds; ++k)
+		{
+			const frame& f = frames[k];
+			const size_t srn_begin = atoms[f.begin].number;
+			const size_t srn_end = atoms[f.end - 1].number;
+			if ((f.end - f.begin) == (srn_end - srn_begin)) // The serial numbers are continuous, which is the most cases.
+			{
+				if ((srn_begin <= srn) && (srn <= srn_end)) return std::pair<size_t, size_t>(k, f.begin + srn - srn_begin);
+			}
+			else // The serial numbers are not continuous, but they are sorted. Binary search can be used.
+			{
+				// Linear search at the moment.
+				for (size_t i = f.begin; i < f.end; ++i)
+				{
+					if (srn == atoms[i].number) return std::pair<size_t,  size_t>(k, i);
+				}
+			}
+		}
+		throw std::domain_error("Failed to find an atom with serial number " + lexical_cast<string>(srn));
 	}
 
 	ligand::ligand(const ligand& l1, const ligand& l2, const size_t seed, const operation op) : parent1(l1.p), parent2(l2.p)

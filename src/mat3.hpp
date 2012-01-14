@@ -24,9 +24,6 @@
 
 namespace igrow
 {
-	// (0 3 6)
-	// (1 4 7)
-	// (2 5 8)
 	/// Represents a row-major 3x3 matrix for vector transformation.
 	class mat3 : private array<fl, 9>
 	{
@@ -35,15 +32,6 @@ namespace igrow
 		mat3() {}
 
 		/// Constructs a matrix with specified values.
-		/// @param d00 The top left value.
-		/// @param d01 The middle left value.
-		/// @param d02 The bottom left value.
-		/// @param d10 The top center value.
-		/// @param d11 The middle center value.
-		/// @param d12 The bottom center value.
-		/// @param d20 The top right value.
-		/// @param d21 The middle right value.
-		/// @param d22 The bottom right value.
 		mat3(const fl d00, const fl d01, const fl d02,
 			 const fl d10, const fl d11, const fl d12,
 			 const fl d20, const fl d21, const fl d22)
@@ -101,9 +89,6 @@ namespace igrow
 			);
 		}
 	};
-
-	const mat3 mat3_identity(1, 0, 0, 0, 1, 0, 0, 0, 1); ///< Identity 3x3 transformation matrix.
-	const mat3 mat3_minus_identity(-1, 0, 0, 0, -1, 0, 0, 0, -1); ///< Minus identity 3x3 transformation matrix.
 }
 
 #endif

@@ -290,12 +290,17 @@ int main(int argc, char* argv[])
 		boost::ptr_vector<ligand> ligands(num_ligands);
 
 		// Initialize constant strings.
-		const string pdbqt_extension_string = ".pdbqt";
+		const char comma = ',';
 		const string ligand_folder_string = "ligand";
 		const string output_folder_string = "output";
 		const string maximum_failures_reached_string = "The number of failures has reached " + lexical_cast<string>(max_failures);
 		const string docking_failed_string = "Docking program exited with code ";
-		const char comma = ',';
+		vector<string> ligand_filenames;
+		ligand_filenames.reserve(num_ligands);
+		for (size_t i = 1; i <= num_ligands; ++i)
+		{
+			ligand_filenames.push_back(lexical_cast<string>(i) + ".pdbqt");
+		}
 
 		// Initialize process context.
 		const boost::process::context ctx;
@@ -353,10 +358,11 @@ int main(int argc, char* argv[])
 				initial_ligand.parent1 = initial_ligand_path;
 
 				// Save the initial ligand as 1.pdbqt into the ligand folder of generation 1.
-				initial_ligand.save(ligand_folder / "1.pdbqt");
+				initial_ligand.save(ligand_folder / ligand_filenames.front());
+				initial_ligand.p =  output_folder / ligand_filenames.front();
 
 				// Create mutants in parallel.
-				for (size_t i = 2; i <= num_ligands; ++i)
+				for (size_t i = 1; i < num_ligands; ++i)
 				{
 					// Create a child ligand by mutation.
 					do
@@ -372,7 +378,9 @@ int main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligands.back().save(ligand_folder / (lexical_cast<string>(i) + pdbqt_extension_string));
+					ligand& l = ligands.back();
+					l.save(ligand_folder / ligand_filenames[i]);
+					l.p =  output_folder / ligand_filenames[i];
 				}
 			}
 			else
@@ -393,7 +401,9 @@ int main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligands[i].save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
+					ligand& l = ligands[i];
+					l.save(ligand_folder / ligand_filenames[i]);
+					l.p =  output_folder / ligand_filenames[i];
 				}
 
 				// TODO: abstract into tasks for parallel execution.
@@ -412,7 +422,9 @@ int main(int argc, char* argv[])
 					} while (true);
 
 					// Save the newly created child ligand.
-					ligands[i].save(ligand_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
+					ligand& l = ligands[i];
+					l.save(ligand_folder / ligand_filenames[i]);
+					l.p =  output_folder / ligand_filenames[i];
 				}
 			}
 
@@ -436,11 +448,10 @@ int main(int argc, char* argv[])
 			{
 				// Invoke vina.
 				log << "Calling vina to dock newly created ligands\n";
-				for (size_t i = (generation == 1 ? 1 : num_elitists + 1); i <= num_ligands; ++i)
+				for (size_t i = (generation == 1 ? 0 : num_elitists); i < num_ligands; ++i)
 				{
-					const string filename = lexical_cast<string>(i) + pdbqt_extension_string;
-					docking_args[5] = (ligand_folder / filename).string();
-					docking_args[7] = (output_folder / filename).string();
+					docking_args[5] = (ligand_folder / ligand_filenames[i]).string();
+					docking_args[7] = (output_folder / ligand_filenames[i]).string();
 					const int exit_code = create_child(docking_program_path.string(), docking_args, ctx).wait();
 					if (exit_code)
 					{
@@ -455,7 +466,7 @@ int main(int argc, char* argv[])
 			{
 				ligand& l = ligands[i];
 				string line;
-				ifstream in(output_folder / (lexical_cast<string>(i + 1) + pdbqt_extension_string));
+				ifstream in(output_folder / ligand_filenames[i]);
 				getline(in, line); // MODEL        1 or MODEL 1
 				getline(in, line); // REMARK     FREE ENERGY PREDICATED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
 				l.evaluate_efficacy(idock ? right_cast<fl>(line, 45, 52) : right_cast<fl>(line, 21, 29));
