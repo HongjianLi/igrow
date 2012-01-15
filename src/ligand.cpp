@@ -203,31 +203,10 @@ namespace igrow
 		throw std::domain_error("Failed to find an atom with serial number " + lexical_cast<string>(srn));
 	}
 
-	ligand::ligand(const ligand& l1, const ligand& l2, const size_t seed, const operation op) : parent1(l1.p), parent2(l2.p)
+	ligand::ligand(const ligand& l1, const ligand& l2, const size_t g1, const size_t g2) : parent1(l1.p), parent2(l2.p)
 	{
-		switch (op)
-		{
-		case operation_mutation:
-			mutate(l1, l2, seed);
-			break;
-		case operation_crossover:
-			crossover(l1, l2, seed);
-			break;
-		}
-	}
-
-	void ligand::mutate(const ligand& l1, const ligand& l2, const size_t seed)
-	{
-		// Initialize random number generators for obtaining two random mutable atoms.
-		mt19937eng eng(seed);
-		using boost::random::variate_generator;
-		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_mutable_atom_gen_1(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_mutable_atom_gen_2(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1));
-
-		// Obtain a serial number of a random mutable atom from ligands 1 and 2 respectively.
-		const size_t g1 = uniform_mutable_atom_gen_1();
-		const size_t g2 = uniform_mutable_atom_gen_2();
+		BOOST_ASSERT(g1 < l1.mutable_atoms.size());
+		BOOST_ASSERT(g2 < l2.mutable_atoms.size());
 		const size_t m1srn = l1.mutable_atoms[g1];
 		const size_t m2srn = l2.mutable_atoms[g2];
 		BOOST_ASSERT(m1srn >= 1);
@@ -612,7 +591,7 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	void ligand::crossover(const ligand& l1, const ligand& l2, const size_t seed)
+	ligand::ligand(const ligand& l1, const ligand& l2, const size_t seed) : parent1(l1.p), parent2(l2.p)
 	{
 		// Initialize random number generators for obtaining two random mutable atoms.
 		mt19937eng eng(seed);

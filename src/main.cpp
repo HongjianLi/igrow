@@ -50,6 +50,8 @@
 #include "fstream.hpp"
 #include "tee.hpp"
 #include "ligand.hpp"
+#include "thread_pool.hpp"
+#include "mutation_task.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -270,12 +272,6 @@ int main(int argc, char* argv[])
 		log << "Using random seed " << seed << '\n';
 		mt19937eng eng(seed);
 
-		// Initialize random number generators for obtaining a random fragment and a random elitist.
-		using boost::random::variate_generator;
-		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen (eng, uniform_int_distribution<size_t>(0, num_elitists  - 1));
-
 		// Initialize a ligand validator.
 		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
 
@@ -287,7 +283,12 @@ int main(int argc, char* argv[])
 		const size_t num_ligands = num_elitists + num_children;
 
 		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
-		boost::ptr_vector<ligand> ligands(num_ligands);
+		boost::ptr_vector<ligand> ligands;
+		ligands.resize(num_ligands);
+		
+		// Reserve storage for task containers.
+		vector<packaged_task<int>> mutation_tasks;
+		mutation_tasks.reserve(num_ligands - 1);
 
 		// Initialize constant strings.
 		const char comma = ',';
@@ -328,7 +329,11 @@ int main(int argc, char* argv[])
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
 		docking_args[2] = "--seed";
-
+				
+		// Initialize a thread pool and create worker threads for later use.
+		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
+		thread_pool tp(num_threads);
+		
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
 		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,efficacy,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logP\n";
@@ -351,8 +356,8 @@ int main(int argc, char* argv[])
 			if (generation == 1)
 			{
 				// Parse the initial ligand.
-				ligands.push_back(new ligand(initial_ligand_path));
-				ligand& initial_ligand = ligands.back();
+				ligands.replace(0, new ligand(initial_ligand_path));
+				ligand& initial_ligand = ligands.front();
 
 				// Set the parent of 1/1.pdbqt to the initial ligand.
 				initial_ligand.parent1 = initial_ligand_path;
@@ -364,24 +369,13 @@ int main(int argc, char* argv[])
 				// Create mutants in parallel.
 				for (size_t i = 1; i < num_ligands; ++i)
 				{
-					// Create a child ligand by mutation.
-					do
-					{
-						ligands.push_back(new ligand(initial_ligand, ligand_flyweight(fragments[uniform_fragment_gen()]), eng(), operation_mutation));
-						if (v(ligands.back())) break;
-						ligands.pop_back();
-						if (num_failures++ == max_failures)
-						{
-							log << maximum_failures_reached_string << '\n';
-							return 1;
-						}
-					} while (true);
-
-					// Save the newly created child ligand.
-					ligand& l = ligands.back();
-					l.save(ligand_folder / ligand_filenames[i]);
-					l.p =  output_folder / ligand_filenames[i];
+					mutation_tasks.push_back(packaged_task<int>(boost::bind<int>(mutation_task, boost::ref(ligands), i, boost::cref(ligand_folder / ligand_filenames[i]), 1, boost::cref(fragments), boost::cref(v), eng(), max_failures, boost::ref(num_failures))));
 				}
+				// l.p = output_folder / filename;
+				
+				// Run the mutation tasks in parallel.
+				tp.run(mutation_tasks);
+				tp.sync();
 			}
 			else
 			{
@@ -389,44 +383,14 @@ int main(int argc, char* argv[])
 				// Create child ligands by mutating an elitist with a fragment.
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
-					const size_t idx = num_elitists + i;
-					do
-					{
-						ligands.replace(idx, new ligand(ligands[uniform_elitist_gen()], ligand_flyweight(fragments[uniform_fragment_gen()]), eng(), operation_mutation));
-						if (v(ligands[idx])) break;
-						if (num_failures++ == max_failures)
-						{
-							log << maximum_failures_reached_string << '\n';
-							return 1;
-						}
-					} while (true);
 
-					// Save the newly created child ligand.
-					ligand& l = ligands[idx];
-					l.save(ligand_folder / ligand_filenames[i]);
-					l.p =  output_folder / ligand_filenames[i];
 				}
 
 				// TODO: abstract into tasks for parallel execution.
 				// Create child ligands by crossovering two elitists.
 				for (size_t i = num_mutants; i < num_children; ++i)
 				{
-					const size_t idx = num_elitists + i;
-					do
-					{
-						ligands.replace(idx, new ligand(ligands[uniform_elitist_gen()], ligands[uniform_elitist_gen()], eng(), operation_crossover));
-						if (v(ligands[idx])) break;
-						if (num_failures++ == max_failures)
-						{
-							log << maximum_failures_reached_string << '\n';
-							return 1;
-						}
-					} while (true);
 
-					// Save the newly created child ligand.
-					ligand& l = ligands[idx];
-					l.save(ligand_folder / ligand_filenames[i]);
-					l.p =  output_folder / ligand_filenames[i];
 				}
 			}
 

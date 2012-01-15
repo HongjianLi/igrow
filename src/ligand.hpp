@@ -84,14 +84,19 @@ namespace igrow
 		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
 		fl efficacy; ///< Ligand efficacy
+		
+		explicit ligand() = default;
 
 		/// Constructs a ligand by parsing a given ligand file in pdbqt.
 		/// @exception parsing_error Thrown when error parsing the ligand file.
 		explicit ligand(const path& p);
 
-		/// Constructs a ligand by either mutation or crossover.
-		explicit ligand(const ligand& l1, const ligand& l2, const size_t seed, const operation op);
+		/// Constructs a ligand by mutation.
+		explicit ligand(const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
+		/// Constructs a ligand by crossover.
+		explicit ligand(const ligand& l1, const ligand& l2, const size_t seed);
+		
 		/// Saves the current ligand to a file in pdbqt format.
 		void save(const path& p) const;
 
@@ -122,13 +127,6 @@ namespace igrow
 		{
 			return efficacy < l.efficacy;
 		}
-
-	private:
-		/// Mutates ligand 1 with ligand 2.
-		void mutate(const ligand& l1, const ligand& l2, const size_t seed);
-
-		/// Crossovers ligand 1 with ligand 2.
-		void crossover(const ligand& l1, const ligand& l2, const size_t seed);
 	};
 
 	/// For extracting the path out of a ligand.
