@@ -79,7 +79,7 @@ namespace igrow
 		fl free_energy; ///< Predicted free energy obtained by external docking.
 		fl efficacy; ///< Ligand efficacy
 		
-		explicit ligand() = default;
+		explicit ligand() {}
 
 		/// Constructs a ligand by parsing a given ligand file in pdbqt.
 		/// @exception parsing_error Thrown when error parsing the ligand file.

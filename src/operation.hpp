@@ -36,19 +36,29 @@ namespace igrow
 	{
 	public:
 		/// Constructs a GA operation.
-		explicit operation(ptr_vector<ligand>& ligands, const validator& v, const size_t max_failures, size_t& num_failures) : ligands(ligands), v(v), max_failures(max_failures), num_failures(num_failures) {}
+		explicit operation(ptr_vector<ligand>& ligands, const vector<path>& fragments, const validator& v, const size_t max_failures, size_t& num_failures) : ligands(ligands), fragments(fragments), num_fragments(fragments.size()), v(v), max_failures(max_failures), num_failures(num_failures) {}
 	
 		/// Task for creating a child ligand from two parent ligands by mutation.
-		int mutation_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists, const vector<path>& fragments);
+		/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
+		void mutation_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists);
 
 		/// Task for creating a child ligand from two parent ligands by crossover.
-		int crossover_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists);
+		/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
+		void crossover_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists);
 	
 	protected:
 		ptr_vector<ligand>& ligands;
+		const vector<path>& fragments;
+		const size_t num_fragments;
 		const validator& v;		
 		const size_t max_failures;
 		size_t& num_failures;
+	};
+
+	class maximum_failures_reached_error : public std::domain_error
+	{
+	public:
+		maximum_failures_reached_error(const size_t max_failures) : std::domain_error("The number of failures has reached " + lexical_cast<string>(max_failures)) {}
 	};
 }
 

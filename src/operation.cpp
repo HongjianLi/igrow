@@ -20,7 +20,7 @@
 
 namespace igrow
 {
-	int operation::mutation_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists, const vector<path>& fragments)
+	void operation::mutation_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists)
 	{
 		// Initialize a Mersenne Twister random number generator.
 		mt19937eng eng(seed);
@@ -29,7 +29,7 @@ namespace igrow
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, fragments.size() - 1));
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
 
 		// Create a child ligand by mutation.
 		do
@@ -44,17 +44,16 @@ namespace igrow
 			
 			ligands.replace(index, new ligand(l1, l2, g1, g2));
 			if (v(ligands[index])) break;			
-			if (num_failures++ >= max_failures) return 1;
+			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
 		} while (true);
 
 		// Save the newly created child ligand.
 		ligand& l = ligands[index];
 		l.save(ligand_path);
 		l.p =  output_path;
-		return 0;
 	}
 	
-	int operation::crossover_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists)
+	void operation::crossover_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists)
 	{
 		// Initialize a Mersenne Twister random number generator.
 		mt19937eng eng(seed);
@@ -78,14 +77,13 @@ namespace igrow
 			const size_t g2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, 1))();
 			
 			ligands.replace(index, new ligand(l1, l2, f1, f2, g1, g2));
-			if (v(ligands[index])) break;			
-			if (num_failures++ >= max_failures) return 1;
+			if (v(ligands[index])) break;
+			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
 		} while (true);
 
 		// Save the newly created child ligand.
 		ligand& l = ligands[index];
 		l.save(ligand_path);
 		l.p =  output_path;
-		return 0;
 	}
 }

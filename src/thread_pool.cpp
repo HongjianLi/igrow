@@ -29,7 +29,7 @@ namespace igrow
 		}
 	}
 
-	void thread_pool::run(vector<packaged_task<int>>& tasks)
+	void thread_pool::run(vector<packaged_task<void>>& tasks)
 	{
 		// Initialize several task counters for scheduling.
 		tasks_ptr = &tasks;
@@ -43,14 +43,16 @@ namespace igrow
 
 	void thread_pool::operator()()
 	{
-		packaged_task<int>* task; // Declare a pointer to a task.
+		packaged_task<void>* task; // Declare a pointer to a task.
 		do // Threads loop inside.
 		{
 			// If there are no tasks to run, simply wait.
 			{
 				mutex::scoped_lock self_lk(self); // A scoped lock is a type associated to some mutex type whose objects do the locking/unlocking of a mutex on construction/destruction time.
 				while ((!exiting) && (num_started_tasks == num_tasks))
+				{
 					task_incoming.wait(self_lk);
+				}
 				if (exiting) return; // The only exit of this function.
 			}
 
