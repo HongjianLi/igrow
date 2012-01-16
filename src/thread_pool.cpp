@@ -24,7 +24,9 @@ namespace igrow
 	{
 		// Create threads to call (*this)().
 		for (size_t i = 0; i < num_threads; ++i)
+		{
 			create_thread(boost::ref(*this));
+		}
 	}
 
 	void thread_pool::run(vector<packaged_task<int>>& tasks)
@@ -82,7 +84,9 @@ namespace igrow
 	{
 		mutex::scoped_lock self_lk(self);
 		while (num_completed_tasks < num_tasks)
+		{
 			task_completion.wait(self_lk);
+		}
 	}
 
 	thread_pool::~thread_pool()
