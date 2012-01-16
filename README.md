@@ -115,7 +115,16 @@ Change Log
 
 ### 1.0
 
-* Under construction.
+* Supported using either idock or AutoDock Vina as backend docking engine.
+* Supported direct PDBQT manipulation without file format conversion.
+* Used dynamic pointer vector to cache ligands.
+* Used flyweight pattern to cache fragments.
+* Supported dumping statistics and traceability of created ligands.
+* Allowed users to specify the ranges of several chemical properties such as molecular weight.
+* Allowed users to specify the number of failures of GA operations as a stopping criterion.
+* Used docked atom coordinates to construct child ligands of the next generation.
+* Parallelized mutation and crossover operations.
+* Provided precompiled executables for both 32-bit and 64-bit Linux and Windows.
 
 
 Contact Author
