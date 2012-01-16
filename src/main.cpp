@@ -51,7 +51,7 @@
 #include "tee.hpp"
 #include "ligand.hpp"
 #include "thread_pool.hpp"
-#include "mutation_task.hpp"
+#include "operation.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -287,8 +287,11 @@ int main(int argc, char* argv[])
 		ligands.resize(num_ligands);
 		
 		// Reserve storage for task containers.
+		operation op(ligands, v, max_failures, num_failures);
 		vector<packaged_task<int>> mutation_tasks;
 		mutation_tasks.reserve(num_ligands - 1);
+		vector<packaged_task<int>> crossover_tasks;
+		crossover_tasks.reserve(num_crossovers - 1);
 
 		// Initialize constant strings.
 		const char comma = ',';
@@ -367,31 +370,42 @@ int main(int argc, char* argv[])
 				initial_ligand.p =  output_folder / ligand_filenames.front();
 
 				// Create mutants in parallel.
+				BOOST_ASSERT(mutation_tasks.empty());
 				for (size_t i = 1; i < num_ligands; ++i)
 				{
-					mutation_tasks.push_back(packaged_task<int>(boost::bind<int>(mutation_task, boost::ref(ligands), i, boost::cref(ligand_folder / ligand_filenames[i]), 1, boost::cref(fragments), boost::cref(v), eng(), max_failures, boost::ref(num_failures))));
-				}
-				// l.p = output_folder / filename;
+					mutation_tasks.push_back(packaged_task<int>(boost::bind<int>(&operation::mutation_task, boost::ref(op), i, boost::cref(ligand_folder / ligand_filenames[i]), boost::cref(output_folder / ligand_filenames[i]), eng(), 1, boost::cref(fragments))));
+				}				
 				
 				// Run the mutation tasks in parallel.
 				tp.run(mutation_tasks);
 				tp.sync();
+				mutation_tasks.clear();
 			}
 			else
-			{
-				// TODO: abstract into tasks for parallel execution.
+			{				
 				// Create child ligands by mutating an elitist with a fragment.
+				BOOST_ASSERT(mutation_tasks.empty());
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
-
+					mutation_tasks.push_back(packaged_task<int>(boost::bind<int>(&operation::mutation_task, boost::ref(op), i, boost::cref(ligand_folder / ligand_filenames[i]), boost::cref(output_folder / ligand_filenames[i]), eng(), num_elitists, boost::cref(fragments))));
 				}
-
-				// TODO: abstract into tasks for parallel execution.
+				
+				// Run the mutation tasks in parallel.
+				tp.run(mutation_tasks);
+				tp.sync();
+				mutation_tasks.clear();
+				
 				// Create child ligands by crossovering two elitists.
+				BOOST_ASSERT(crossover_tasks.empty());
 				for (size_t i = num_mutants; i < num_children; ++i)
 				{
-
+					crossover_tasks.push_back(packaged_task<int>(boost::bind<int>(&operation::crossover_task, boost::ref(op), i, boost::cref(ligand_folder / ligand_filenames[i]), boost::cref(output_folder / ligand_filenames[i]), eng(), num_elitists)));
 				}
+				
+				// Run the crossover tasks in parallel.
+				tp.run(crossover_tasks);
+				tp.sync();
+				crossover_tasks.clear();
 			}
 
 			// Call the docking program to dock ligands.

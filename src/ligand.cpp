@@ -591,28 +591,14 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	ligand::ligand(const ligand& l1, const ligand& l2, const size_t seed) : parent1(l1.p), parent2(l2.p)
+	ligand::ligand(const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2) : parent1(l1.p), parent2(l2.p)
 	{
-		// Initialize random number generators for obtaining two random mutable atoms.
-		mt19937eng eng(seed);
-		using boost::random::variate_generator;
-		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_1(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_rotatable_bond_gen_2(eng, uniform_int_distribution<size_t>(0, l2.num_rotatable_bonds - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_01_gen_1(eng, uniform_int_distribution<size_t>(0, 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_01_gen_2(eng, uniform_int_distribution<size_t>(0, 1));
-
-		// Obtain a random rotatable bond from the current ligand and the other ligand respectively.
-		const size_t g1 = uniform_rotatable_bond_gen_1();
-		const size_t g2 = uniform_rotatable_bond_gen_2();
-		const frame& f1 = l1.frames[g1];
-		const frame& f2 = l2.frames[g2];
-		const size_t r1 = uniform_01_gen_1();
-		const size_t r2 = uniform_01_gen_1();
+		const frame& f1 = l1.frames[f1idx];
+		const frame& f2 = l2.frames[f2idx];
 
 		// Set the connector atoms.
-		connector1 = r1 ? f1.rotorY : f1.rotorX;
-		connector2 = r2 ? f2.rotorY : f2.rotorX;
+		connector1 = (g1 ? f1.rotorY : f1.rotorX);
+		connector2 = (g2 ? f2.rotorY : f2.rotorX);
 	}
 
 /*

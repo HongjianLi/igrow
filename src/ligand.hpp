@@ -56,12 +56,6 @@ namespace igrow
 		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
 	};
 
-	enum operation
-	{
-		operation_mutation,
-		operation_crossover
-	};
-
 	/// Represents a ligand.
 	class ligand
 	{
@@ -95,7 +89,7 @@ namespace igrow
 		explicit ligand(const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
 		/// Constructs a ligand by crossover.
-		explicit ligand(const ligand& l1, const ligand& l2, const size_t seed);
+		explicit ligand(const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2);
 		
 		/// Saves the current ligand to a file in pdbqt format.
 		void save(const path& p) const;
