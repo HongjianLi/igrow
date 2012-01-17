@@ -275,7 +275,7 @@ int main(int argc, char* argv[])
 		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
 
 		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
-		size_t num_failures = 0;
+		boost::atomic<size_t> num_failures(0);
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 		const size_t num_children = num_mutants + num_crossovers;
