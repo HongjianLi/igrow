@@ -21,8 +21,8 @@ Supported operating systems and compilers
 * Ubuntu 11.10 x86_64 and GCC 4.6.1
 * Ubuntu 11.10 x86_64 and CLANG 2.9
 * Ubuntu 11.10 x86_64 and Intel C++ Compiler 12.0.5.220
-* Arch Linux 3.1.6 x86_64 and GCC 4.6.2
-* Arch Linux 3.1.6 x86_64 and CLANG 3.0
+* Arch Linux 3.2.1 x86_64 and GCC 4.6.2
+* Arch Linux 3.2.1 x86_64 and CLANG 3.0
 * Oracle Solaris 11 11/11 and GCC 4.5.2
 * Windows 7 SP1 x64 and Windows SDK 7.1
 * Windows 7 SP1 x64 and Visual Studio 2010
@@ -42,7 +42,7 @@ Unsupported operating systems and compilers
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The Boost libraries required by igrow are `System`, `Thread`, `Filesystem`, and `Program Options`. A slightly modified version of Boost.Process, an unofficial and header-only library, is also required by igrow. The file `process.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
+igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem`, and `Program Options`. Two unofficial and header-only libraries, Boost.Process and Boost.Atomic, are also required by igrow. The file `boost.process.tar.bz2` and `boost.atomic.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
 
 ### Compilation on Linux
 
