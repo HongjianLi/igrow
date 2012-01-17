@@ -285,12 +285,10 @@ int main(int argc, char* argv[])
 		boost::ptr_vector<ligand> ligands;
 		ligands.resize(num_ligands);
 		
-		// Reserve storage for task containers.
+		// Reserve storage for operation tasks.
 		operation op(ligands, fragments, v, max_failures, num_failures);
-		vector<packaged_task<void>> mutation_tasks;
-		mutation_tasks.reserve(num_ligands - 1);
-		vector<packaged_task<void>> crossover_tasks;
-		crossover_tasks.reserve(num_crossovers);
+		vector<packaged_task<void>> operation_tasks;
+		operation_tasks.reserve(num_ligands - 1);
 
 		// Initialize constant strings.
 		const char comma = ',';
@@ -368,66 +366,52 @@ int main(int argc, char* argv[])
 				initial_ligand.p =  output_folder / ligand_filenames.front();
 
 				// Create mutation tasks.
-				BOOST_ASSERT(mutation_tasks.empty());
+				BOOST_ASSERT(operation_tasks.empty());
 				for (size_t i = 1; i < num_ligands; ++i)
 				{
-					mutation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), 1)));
+					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), 1)));
 				}				
 				
 				// Run the mutation tasks in parallel asynchronously.
-				tp.run(mutation_tasks);
+				tp.run(operation_tasks);
 
 				// Propagate possible exceptions thrown by the mutation tasks.
 				for (size_t i = 0; i < num_mutants - 1; ++i)
 				{
-					mutation_tasks[i].get_future().get();
+					operation_tasks[i].get_future().get();
 				}
 
 				// Block until all the mutation tasks are completed.
 				tp.sync();
-				mutation_tasks.clear();
+				operation_tasks.clear();
 			}
 			else
 			{				
 				// Create mutation tasks.
-				BOOST_ASSERT(mutation_tasks.empty());
+				BOOST_ASSERT(operation_tasks.empty());
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
-					mutation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
+					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
 				}
-				
-				// Run the mutation tasks in parallel asynchronously.
-				tp.run(mutation_tasks);
-
-				// Propagate possible exceptions thrown by the mutation tasks.
-				for (size_t i = 0; i < num_mutants; ++i)
-				{
-					mutation_tasks[i].get_future().get();
-				}
-
-				// Block until all the mutation tasks are completed.
-				tp.sync();
-				mutation_tasks.clear();
 				
 				// Create crossover tasks.
-				BOOST_ASSERT(crossover_tasks.empty());
 				for (size_t i = num_mutants; i < num_children; ++i)
 				{
-					crossover_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
+					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
 				}
 				
-				// Run the crossover tasks in parallel asynchronously.
-				tp.run(crossover_tasks);
+				// Run the mutation and crossover tasks in parallel asynchronously.
+				tp.run(operation_tasks);
 
-				// Propagate possible exceptions thrown by the crossover tasks.
-				for (size_t i = 0; i < num_crossovers; ++i)
+				// Propagate possible exceptions thrown by the mutation and crossover tasks.
+				for (size_t i = 0; i < num_children; ++i)
 				{
-					crossover_tasks[i].get_future().get();
+					operation_tasks[i].get_future().get();
 				}
 
-				// Block until all the crossover tasks are completed.
+				// Block until all the mutation and crossover tasks are completed.
 				tp.sync();
-				crossover_tasks.clear();
+				operation_tasks.clear();
 			}
 
 			// Call the corresponding docking program to dock ligands.
