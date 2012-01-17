@@ -30,14 +30,14 @@ namespace igrow
 	using std::vector;
 	using boost::ptr_vector;
 	using boost::filesystem::path;
-	
+
 	/// Represents a GA operation, be it either mutation or crossover.
 	class operation
 	{
 	public:
 		/// Constructs a GA operation.
 		explicit operation(ptr_vector<ligand>& ligands, const vector<path>& fragments, const validator& v, const size_t max_failures, size_t& num_failures) : ligands(ligands), fragments(fragments), num_fragments(fragments.size()), v(v), max_failures(max_failures), num_failures(num_failures) {}
-	
+
 		/// Task for creating a child ligand from two parent ligands by mutation.
 		/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
 		void mutation_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists);
@@ -45,12 +45,12 @@ namespace igrow
 		/// Task for creating a child ligand from two parent ligands by crossover.
 		/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
 		void crossover_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists);
-	
+
 	protected:
 		ptr_vector<ligand>& ligands;
 		const vector<path>& fragments;
 		const size_t num_fragments;
-		const validator& v;		
+		const validator& v;
 		const size_t max_failures;
 		size_t& num_failures;
 	};

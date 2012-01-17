@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
 		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 		boost::ptr_vector<ligand> ligands;
 		ligands.resize(num_ligands);
-		
+
 		// Reserve storage for operation tasks.
 		operation op(ligands, fragments, v, max_failures, num_failures);
 		vector<packaged_task<void>> operation_tasks;
@@ -328,11 +328,11 @@ int main(int argc, char* argv[])
 		docking_args[0] = "--config";
 		docking_args[1] = docking_config_path.string();
 		docking_args[2] = "--seed";
-				
+
 		// Initialize a thread pool and create worker threads for later use.
 		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
 		thread_pool tp(num_threads);
-		
+
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
 		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,efficacy,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logP\n";
@@ -370,8 +370,8 @@ int main(int argc, char* argv[])
 				for (size_t i = 1; i < num_ligands; ++i)
 				{
 					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), 1)));
-				}				
-				
+				}
+
 				// Run the mutation tasks in parallel asynchronously.
 				tp.run(operation_tasks);
 
@@ -386,20 +386,20 @@ int main(int argc, char* argv[])
 				operation_tasks.clear();
 			}
 			else
-			{				
+			{
 				// Create mutation tasks.
 				BOOST_ASSERT(operation_tasks.empty());
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
 					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
 				}
-				
+
 				// Create crossover tasks.
 				for (size_t i = num_mutants; i < num_children; ++i)
 				{
 					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
 				}
-				
+
 				// Run the mutation and crossover tasks in parallel asynchronously.
 				tp.run(operation_tasks);
 
