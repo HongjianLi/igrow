@@ -29,7 +29,7 @@ namespace igrow
 		}
 	}
 
-	void thread_pool::run(vector<packaged_task<void>>& tasks)
+	void thread_pool::run(ptr_vector<packaged_task<void>>& tasks)
 	{
 		// Initialize several task counters for scheduling.
 		tasks_ptr = &tasks;

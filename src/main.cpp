@@ -287,8 +287,7 @@ int main(int argc, char* argv[])
 
 		// Reserve storage for operation tasks.
 		operation op(ligands, fragments, v, max_failures, num_failures);
-		vector<packaged_task<void>> operation_tasks;
-		operation_tasks.reserve(num_ligands - 1);
+		boost::ptr_vector<packaged_task<void>> operation_tasks(num_ligands - 1);
 
 		// Initialize constant strings.
 		const char comma = ',';
@@ -369,7 +368,7 @@ int main(int argc, char* argv[])
 				BOOST_ASSERT(operation_tasks.empty());
 				for (size_t i = 1; i < num_ligands; ++i)
 				{
-					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), 1)));
+					operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), 1)));
 				}
 
 				// Run the mutation tasks in parallel asynchronously.
@@ -391,13 +390,13 @@ int main(int argc, char* argv[])
 				BOOST_ASSERT(operation_tasks.empty());
 				for (size_t i = 0; i < num_mutants; ++i)
 				{
-					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
+					operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
 				}
 
 				// Create crossover tasks.
 				for (size_t i = num_mutants; i < num_children; ++i)
 				{
-					operation_tasks.push_back(packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
+					operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
 				}
 
 				// Run the mutation and crossover tasks in parallel asynchronously.
