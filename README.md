@@ -23,6 +23,7 @@ Supported operating systems and compilers
 * Ubuntu 11.10 x86_64 and Intel C++ Compiler 12.0.5.220
 * Arch Linux 3.2.1 x86_64 and GCC 4.6.2
 * Arch Linux 3.2.1 x86_64 and CLANG 3.0
+* Arch Linux 3.2.1 x86_64 and Intel C++ Compiler 12.1.2
 * Oracle Solaris 11 11/11 and GCC 4.5.2
 * Windows 7 SP1 x64 and Windows SDK 7.1
 * Windows 7 SP1 x64 and Visual Studio 2010
@@ -34,7 +35,7 @@ Unsupported operating systems and compilers
 
 * Windows 8 Developer Preview and Visual Studio 11 Developer Preview
 * Solaris 11 Express 2010.11 x86_64 and GCC 3.4.3
-* Mac OS X Lion 10.7.0 and Xcode 4.2
+* Mac OS X Lion 10.7.2 and Xcode 4.2.1
 * Mac OS X Lion 10.7.0 and GCC 4.6.1
 * Mac OS X Lion 10.7.0 and CLANG 3.0
 
@@ -48,15 +49,15 @@ igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The must-be-buil
 
 The Makefile uses GCC as the default compiler. To compile, simply run
 
-    make -j
+    make
 
 CLANG is also supported.
 
-    make -j TOOLSET=clang
+    make TOOLSET=clang
 
 Intel C++ Compiler is also supported.
 
-    make -j TOOLSET=intel-linux
+    make TOOLSET=intel
 
 One may modify the Makefile to use a different compiler or different compilation options.
 
@@ -66,7 +67,7 @@ The generated objects will be placed in the `obj` folder, and the generated exec
 
 Visual Studio 2010 solution and project files are provided in the `msvc` folder. The project file uses Windows 7.1 SDK as platform toolset by default. One may revert it to vc100. To compile, simply run
 
-    msbuild /t:Build /p:Configuration=Release /m
+    msbuild /t:Build /p:Configuration=Release
 
 Or one may open `igrow.sln` in Visual Studio 2010 and do a full rebuild.
 
