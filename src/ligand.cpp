@@ -145,7 +145,7 @@ namespace igrow
 		stack.reserve(num_rotatable_bonds); // The ROOT frame is excluded.
 		{
 			const frame& f = frames.front();
-			for (auto i = f.branches.crbegin(); i < f.branches.crend(); ++i)
+			for (auto i = f.branches.rbegin(); i < f.branches.rend(); ++i)
 			{
 				stack.push_back(*i);
 			}
@@ -163,7 +163,7 @@ namespace igrow
 					out << "ATOM  " << setw(5) << a.number << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
 				}
 				dump_branches[fn] = true;
-				for (auto i = f.branches.crbegin(); i < f.branches.crend(); ++i)
+				for (auto i = f.branches.rbegin(); i < f.branches.rend(); ++i)
 				{
 					stack.push_back(*i);
 				}
@@ -365,11 +365,11 @@ namespace igrow
 				l2_to_l4_mapping[k] = l4_to_l2_mapping.size();
 				l4_to_l2_mapping.push_back(k);
 				const frame& rf = l2.frames[k];
-				for (auto i = rf.branches.crbegin(); i < rf.branches.crend(); ++i)
+				for (auto i = rf.branches.rbegin(); i < rf.branches.rend(); ++i)
 				{
-					if (std::find(l4_to_l2_mapping.cbegin(), l4_to_l2_mapping.cend(), *i) == l4_to_l2_mapping.end()) stack.push_back(*i);
+					if (std::find(l4_to_l2_mapping.begin(), l4_to_l2_mapping.end(), *i) == l4_to_l2_mapping.end()) stack.push_back(*i);
 				}
-				if (std::find(l4_to_l2_mapping.cbegin(), l4_to_l2_mapping.cend(), rf.parent) == l4_to_l2_mapping.end()) stack.push_back(rf.parent);
+				if (std::find(l4_to_l2_mapping.begin(), l4_to_l2_mapping.end(), rf.parent) == l4_to_l2_mapping.end()) stack.push_back(rf.parent);
 			}
 		}
 		BOOST_ASSERT(l4_to_l2_mapping.size() == l2_num_frames);
