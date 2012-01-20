@@ -15,29 +15,20 @@ Features
 * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial ligand and fragments.
 
 
-Supported operating systems and compilers
+Tested operating systems and compilers
 -----------------------------------------
 
 * Ubuntu 11.10 x86_64 and GCC 4.6.1
 * Ubuntu 11.10 x86_64 and CLANG 2.9
 * Ubuntu 11.10 x86_64 and Intel C++ Compiler 12.0.5.220
+* Fedora 16 x86_64 and GCC 4.6.2
+* Fedora 16 x86_64 and Intel C++ Compiler 12.1.2
 * Arch Linux 3.2.1 x86_64 and GCC 4.6.2
 * Arch Linux 3.2.1 x86_64 and CLANG 3.0
 * Arch Linux 3.2.1 x86_64 and Intel C++ Compiler 12.1.2
-* Oracle Solaris 11 11/11 and GCC 4.5.2
 * Windows 7 SP1 x64 and Windows SDK 7.1
-* Windows 7 SP1 x64 and Visual Studio 2010
-* Windows 7 SP1 x64 and Intel C++ Compiler XE 12.1.1.258
-
-
-Unsupported operating systems and compilers
--------------------------------------------
-
-* Windows 8 Developer Preview and Visual Studio 11 Developer Preview
-* Solaris 11 Express 2010.11 x86_64 and GCC 3.4.3
-* Mac OS X Lion 10.7.2 and Xcode 4.2.1
-* Mac OS X Lion 10.7.0 and GCC 4.6.1
-* Mac OS X Lion 10.7.0 and CLANG 3.0
+* Windows 7 SP1 x64 and Visual Studio 2010 SP1
+* Windows 7 SP1 x64 and Intel C++ Compiler 12.1.2
 
 
 Compilation
