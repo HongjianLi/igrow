@@ -23,7 +23,7 @@
 
 namespace igrow
 {
-	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), connector1(0), connector2(0), logp(0) // TODO: comment logp(0)
+	ligand::ligand(const path& p) : p(p), connector1(0), connector2(0), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0) // TODO: comment logp(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.

@@ -162,49 +162,49 @@ namespace igrow
 		}
 		
 		/// Returns covalent radius from an AutoDock4 atom type.
-		const fl covalent_radius() const
+		fl covalent_radius() const
 		{
 			return ad_covalent_radii[ad];
 		}
 
 		/// Returns atomic weight from an AutoDock4 atom type.
-		const fl atomic_weight() const
+		fl atomic_weight() const
 		{
 			return ad_atomic_weights[ad];
 		}
 
 		/// Returns true if the current atom is a hydrogen.
-		const bool is_hydrogen() const
+		bool is_hydrogen() const
 		{
 			return (ad <= AD_TYPE_H);
 		}
 
 		/// Returns true if the current atom is a halogen.
-		const bool is_halogen() const
+		bool is_halogen() const
 		{
 			return ((AD_TYPE_F <= ad) && (ad <= AD_TYPE_I));
 		}
 
 		/// Returns true if the current atom is a mutable atom.
-		const bool is_mutable() const
+		bool is_mutable() const
 		{
 			return (is_hydrogen() || is_halogen());
 		}
 
 		/// Returns true is the current atom is a hydrogen bond donor, i.e. polar hydrogen.
-		const bool is_hb_donor() const
+		bool is_hb_donor() const
 		{
 			return (!ad);
 		}
 
 		/// Returns true is the current atom is a hydrogen bond acceptor.
-		const bool is_hb_acceptor() const
+		bool is_hb_acceptor() const
 		{
 			return ((AD_TYPE_NA <= ad) && (ad <= AD_TYPE_SA));
 		}
 
 		/// Returns true if the current atom is covalently bonded to a given atom.
-		const bool is_neighbor(const atom& a) const
+		bool is_neighbor(const atom& a) const
 		{
 			BOOST_ASSERT(this != &a);
 			return (distance_sqr(coordinate, a.coordinate) < sqr(1.1 * (covalent_radius() + a.covalent_radius())));

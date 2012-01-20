@@ -1,6 +1,6 @@
 CC = g++ -g -O1 -DDEBUG -fno-inline -Wall -std=gnu++0x
 
-bin/debug/igrow: obj/debug/ligand.o obj/debug/main.o
+bin/debug/igrow: obj/debug/thread_pool.o obj/debug/operation.o obj/debug/ligand.o obj/debug/main.o
 	$(CC) -o $@ $^ -pthread -lboost_system -lboost_thread -lboost_filesystem -lboost_program_options
 
 obj/debug/%.o: src/%.cpp 

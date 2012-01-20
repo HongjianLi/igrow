@@ -147,7 +147,7 @@ namespace igrow
 		}
 
 		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
-		const bool operator<(const ligand& l) const
+		bool operator<(const ligand& l) const
 		{
 			return efficacy < l.efficacy;
 		}
@@ -173,7 +173,7 @@ namespace igrow
 	public:
 		validator(const size_t max_rotatable_bonds, const size_t max_atoms, const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw, const fl max_logp, const fl min_logp) : max_rotatable_bonds(max_rotatable_bonds), max_atoms(max_atoms), max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw), max_logp(max_logp), min_logp(min_logp) {}
 
-		const bool operator()(const ligand& l) const
+		bool operator()(const ligand& l) const
 		{
 			if (l.num_rotatable_bonds > max_rotatable_bonds) return false;
 			if (l.num_atoms > max_atoms) return false;
