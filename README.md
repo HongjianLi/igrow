@@ -108,7 +108,7 @@ The generated PDF will be `refman.pdf`.
 Change Log
 ----------
 
-### 1.0
+### 1.0 (under construction)
 
 * Supported using either idock or AutoDock Vina as backend docking engine.
 * Supported direct PDBQT manipulation without file format conversion.
@@ -119,7 +119,7 @@ Change Log
 * Allowed users to specify the number of failures of GA operations as a stopping criterion.
 * Used docked atom coordinates to construct child ligands of the next generation.
 * Parallelized mutation and crossover operations.
-* Provided precompiled executables for both 32-bit and 64-bit Linux and Windows.
+* Provided precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X and FreeBSD.
 
 
 Contact Author
