@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
 		}
 		
 		// Scan the fragment folder to obtain a list of fragments.
-		log << "Scanning fragment folder " << fragment_folder_path.string() << '\n';
+		log << "Scanning fragment folder " << fragment_folder_path << '\n';
 		vector<path> fragments;
 		fragments.reserve(1000); // A fragment folder typically consists of <= 1000 fragments.
 		{
