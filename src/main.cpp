@@ -23,7 +23,7 @@
  * igrow is a multithreaded virtual screening tool for flexible ligand docking.
  *
  * \section features Features
- * igrow is inspired by AutoGrow. It uses either idock or AutoDock Vina as backend docking engine.
+ * igrow is inspired by AutoGrow. It uses idock as backend docking engine.
  * igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
  * igrow digests ligands and fragments in PDBQT format, saving the effort of frequently calling the prepare_ligand4 python script.
  * igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire synhsizing procedure. The thread pool parallelizes the creation of mutants and children in each generation.
@@ -34,7 +34,7 @@
  * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Both x86 and x64 binaries for Linux and Windows are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 10 January 2012
+ * \date 28 January 2012
  *
  * Copyright (C) 2011-2012 The Chinese University of Hong Kong.
  */
@@ -104,7 +104,6 @@ int main(int argc, char* argv[])
 			("csv", value<path>(&csv_path)->default_value(default_csv_path), "summary file in csv format")
 			;
 
-		string docking_program;
 		options_description miscellaneous_options("options (optional)");
 		miscellaneous_options.add_options()			
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
@@ -146,7 +145,10 @@ int main(int argc, char* argv[])
 		}
 		vm.notify(); // Notify the user if there are any parsing errors.
 
+		using namespace boost::filesystem;
+
 		// Validate initial generation csv.
+		initial_generation_csv_path = system_complete(initial_generation_csv_path);
 		if (!exists(initial_generation_csv_path))
 		{
 			std::cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist\n";
@@ -159,6 +161,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Validate fragment folder.
+		fragment_folder_path = system_complete(fragment_folder_path);
 		if (!exists(fragment_folder_path))
 		{
 			std::cerr << "Fragment folder " << fragment_folder_path << " does not exist\n";
@@ -171,6 +174,7 @@ int main(int argc, char* argv[])
 		}
 		
 		// Validate idock executable.
+		idock_path = system_complete(idock_path);
 		if (!exists(idock_path))
 		{
 			std::cerr << "idock executable " << idock_path << " does not exist\n";
@@ -183,6 +187,7 @@ int main(int argc, char* argv[])
 		}
 		
 		// Validate idock configuration file.
+		idock_config_path = system_complete(idock_config_path);
 		if (!exists(idock_config_path))
 		{
 			std::cerr << "idock configuration file " << idock_config_path << " does not exist\n";
@@ -195,10 +200,27 @@ int main(int argc, char* argv[])
 		}
 
 		// Validate output folder.
+		output_folder_path = system_complete(output_folder_path);
 		remove_all(output_folder_path);
 		if (!create_directories(output_folder_path))
 		{
 			std::cerr << "Failed to create output folder " << output_folder_path << '\n';
+			return 1;
+		}
+
+		// Validate log_path.
+		log_path = system_complete(log_path);
+		if (is_directory(log_path))
+		{
+			std::cerr << "Log path " << log_path << " is a directory\n";
+			return 1;
+		}
+
+		// Validate csv_path.
+		csv_path = system_complete(csv_path);
+		if (is_directory(csv_path))
+		{
+			std::cerr << "csv path " << csv_path << " is a directory\n";
 			return 1;
 		}
 
@@ -238,7 +260,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the log.
-		std::cout << "Logging to " << log_path.string() << '\n';
+		std::cout << "Logging to " << log_path << '\n';
 		igrow::tee log(log_path);
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
