@@ -25,7 +25,7 @@
  * \section features Features
  * igrow is inspired by AutoGrow. It uses either idock or AutoDock Vina as backend docking engine.
  * igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
- * igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
+ * igrow digests ligands and fragments in PDBQT format, saving the effort of frequently calling the prepare_ligand4 python script.
  * igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire synhsizing procedure. The thread pool parallelizes the creation of mutants and children in each generation.
  * igrow utilizes flyweight pattern for caching fragments and dynamic pointer vector for caching and sorting ligands.
  * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial ligand and fragments.
@@ -58,10 +58,9 @@ int main(int argc, char* argv[])
 	std::cout << "igrow 1.0\n";
 
 	using namespace igrow;
-	path fragment_folder_path, initial_ligand_path, docking_program_path, docking_config_path, output_folder_path, log_path, csv_path;
+	path initial_generation_csv_path, fragment_folder_path, idock_path, idock_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_generations, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp, min_logp;
-	bool idock; ///< True if the docking program is idock, false if vina.
 
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.txt";
@@ -71,8 +70,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the default values of optional arguments.
-		const path default_output_folder_path = "output";
-		const string default_docking_program = "idock";
+		const path default_output_folder_path = "output";		
 		const unsigned int concurrency = boost::thread::hardware_concurrency();
 		const size_t default_num_threads = concurrency ? concurrency : 1;
 		const size_t default_seed = random_seed();
@@ -92,10 +90,11 @@ int main(int argc, char* argv[])
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
-		input_options.add_options()
-			("fragment_folder", value<path>(&fragment_folder_path)->required(), "path to folder of fragments in pdbqt format")
-			("initial_ligand", value<path>(&initial_ligand_path)->required(), "path to initial ligand in pdbqt format")
-			("docking_config", value<path>(&docking_config_path)->required(), "path to docking configuration file")
+		input_options.add_options()			
+			("initial_generation_csv", value<path>(&initial_generation_csv_path)->required(), "path to initial generation csv")
+			("fragment_folder", value<path>(&fragment_folder_path)->required(), "path to folder of fragments in PDBQT format")
+			("idock", value<path>(&idock_path)->required(), "path to idock executable")
+			("idock_config", value<path>(&idock_config_path)->required(), "path to idock configuration file")
 			;
 
 		options_description output_options("output (optional)");
@@ -107,8 +106,7 @@ int main(int argc, char* argv[])
 
 		string docking_program;
 		options_description miscellaneous_options("options (optional)");
-		miscellaneous_options.add_options()
-			("docking_program", value<string>(&docking_program)->default_value(default_docking_program), "either idock or vina")
+		miscellaneous_options.add_options()			
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
 			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of GA generations")
@@ -148,23 +146,17 @@ int main(int argc, char* argv[])
 		}
 		vm.notify(); // Notify the user if there are any parsing errors.
 
-		// Determine if the docking program is idock or vina.
-		if (docking_program == "idock")
+		// Validate initial generation csv.
+		if (!exists(initial_generation_csv_path))
 		{
-			idock = true;
-		}
-		else if (docking_program == "vina")
-		{
-			idock = false;
-		}
-		else
-		{
-			std::cerr << "Docking program must be either idock or vina\n";
+			std::cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist\n";
 			return 1;
 		}
-
-		// Find the full path to the docking executable.
-		docking_program_path = boost::process::find_executable_in_path(docking_program);
+		if (!is_regular_file(initial_generation_csv_path))
+		{
+			std::cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file\n";
+			return 1;
+		}
 
 		// Validate fragment folder.
 		if (!exists(fragment_folder_path))
@@ -177,28 +169,28 @@ int main(int argc, char* argv[])
 			std::cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
 			return 1;
 		}
-
-		// Validate initial ligand.
-		if (!exists(initial_ligand_path))
+		
+		// Validate idock executable.
+		if (!exists(idock_path))
 		{
-			std::cerr << "Initial ligand " << initial_ligand_path << " does not exist\n";
+			std::cerr << "idock executable " << idock_path << " does not exist\n";
 			return 1;
 		}
-		if (!is_regular_file(initial_ligand_path))
+		if (!is_regular_file(idock_path))
 		{
-			std::cerr << "Initial ligand " << initial_ligand_path << " is not a regular file\n";
+			std::cerr << "idock executable " << idock_path << " is not a regular file\n";
 			return 1;
 		}
-
-		// Validate docking configuration file.
-		if (!exists(docking_config_path))
+		
+		// Validate idock configuration file.
+		if (!exists(idock_config_path))
 		{
-			std::cerr << "Docking configuration file " << docking_config_path << " does not exist\n";
+			std::cerr << "idock configuration file " << idock_config_path << " does not exist\n";
 			return 1;
 		}
-		if (!is_regular_file(docking_config_path))
+		if (!is_regular_file(idock_config_path))
 		{
-			std::cerr << "Docking configuration file " << docking_config_path << " is not a regular file\n";
+			std::cerr << "idock configuration file " << idock_config_path << " is not a regular file\n";
 			return 1;
 		}
 
@@ -249,6 +241,40 @@ int main(int argc, char* argv[])
 		std::cout << "Logging to " << log_path.string() << '\n';
 		igrow::tee log(log_path);
 
+		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
+		const size_t num_children = num_mutants + num_crossovers;
+		const size_t num_ligands = num_elitists + num_children;
+
+		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
+		boost::ptr_vector<ligand> ligands;
+		ligands.resize(num_ligands);
+
+		// Parse the initial generation csv to get initial elite ligands.
+		{
+			ifstream in(initial_generation_csv_path);
+			string line;
+			line.reserve(405);
+			getline(in, line); // ligand,no. of conformations,free energy in kcal/mol of conformation 1,...
+			for (size_t i = 0; i < num_elitists; ++i)
+			{
+				// Check if there are sufficient initial elite ligands.
+				if (!getline(in, line))
+				{
+					std::cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands.\n";
+					return 1;
+				}
+				
+				// Parse the elite ligand.
+				const size_t right_double_quotation_mark = line.find_last_of('"');
+				ligands.replace(i, new ligand(line.substr(1, right_double_quotation_mark - 1)));
+				
+				// Parse the free energy.
+				const size_t comma_before_free_energy = line.find_first_of(',', right_double_quotation_mark + 3);
+				const size_t comma_after_free_energy  = line.find_first_of(',', comma_before_free_energy + 5);
+				ligands[i].free_energy = right_cast<fl>(line, comma_before_free_energy + 2, comma_after_free_energy); // right_cast is 1-based.
+			}
+		}
+		
 		// Scan the fragment folder to obtain a list of fragments.
 		log << "Scanning fragment folder " << fragment_folder_path.string() << '\n';
 		vector<path> fragments;
@@ -265,7 +291,7 @@ int main(int argc, char* argv[])
 				fragments.push_back(dir_iter->path());
 			}
 		}
-		log << fragments.size() << " fragments found\n";
+		log << "Found " << fragments.size() << " fragments\n";
 
 		// Initialize a Mersenne Twister random number generator.
 		log << "Using random seed " << seed << '\n';
@@ -276,24 +302,12 @@ int main(int argc, char* argv[])
 
 		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
 		boost::atomic<size_t> num_failures(0);
-
-		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
-		const size_t num_children = num_mutants + num_crossovers;
-		const size_t num_ligands = num_elitists + num_children;
-
-		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
-		boost::ptr_vector<ligand> ligands;
-		ligands.resize(num_ligands);
-
+		
 		// Reserve storage for operation tasks.
-		operation op(ligands, fragments, v, max_failures, num_failures);
-		boost::ptr_vector<packaged_task<void>> operation_tasks(num_ligands - 1);
+		operation op(ligands, num_elitists, fragments, v, max_failures, num_failures);
+		boost::ptr_vector<packaged_task<void>> operation_tasks(num_children);
 
-		// Initialize constant strings.
-		const char comma = ',';
-		const string ligand_folder_string = "ligand";
-		const string output_folder_string = "output";
-		const string docking_failed_string = "Docking program exited with code ";
+		// Initialize ligand filenames.
 		vector<string> ligand_filenames;
 		ligand_filenames.reserve(num_ligands);
 		for (size_t i = 1; i <= num_ligands; ++i)
@@ -304,37 +318,24 @@ int main(int argc, char* argv[])
 		// Initialize process context.
 		const boost::process::context ctx;
 
-		// Initialize arguments to docking program.
-		vector<string> docking_args;
-		if (idock)
-		{
-			// Initialize argument to idock.
-			docking_args.resize(12);
-			docking_args[3]  = lexical_cast<string>(seed); // idock supports 64-bit seed.
-			docking_args[4]  = "--ligand_folder";
-			docking_args[6]  = "--output_folder";
-			docking_args[8]  = "--log";
-			docking_args[10] = "--csv";
-		}
-		else
-		{
-			// Initialize argument to vina.
-			docking_args.resize(8);
-			docking_args[3] = lexical_cast<string>(int(seed)); // AutoDock Vina does not support 64-bit seed.
-			docking_args[4] = "--ligand";
-			docking_args[6] = "--out";
-		}
-		docking_args[0] = "--config";
-		docking_args[1] = docking_config_path.string();
-		docking_args[2] = "--seed";
-
+		// Initialize argument to idock.
+		vector<string> idock_args(12);		
+		idock_args[0]  = "--ligand_folder";
+		idock_args[2]  = "--output_folder";
+		idock_args[4]  = "--log";
+		idock_args[6]  = "--csv";
+		idock_args[8]  = "--seed";
+		idock_args[9]  = lexical_cast<string>(seed);
+		idock_args[10] = "--config";
+		idock_args[11] = idock_config_path.string();
+		
 		// Initialize a thread pool and create worker threads for later use.
 		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
 		thread_pool tp(num_threads);
 
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
-		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,efficacy,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logP\n";
+		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logP\n";
 
 		for (size_t generation = 1; generation <= num_generations; ++generation)
 		{
@@ -342,134 +343,54 @@ int main(int argc, char* argv[])
 
 			// Initialize the paths to current generation folder and its two subfolders.
 			const path generation_folder(output_folder_path / lexical_cast<string>(generation));
-			const path ligand_folder(generation_folder / ligand_folder_string);
-			const path output_folder(generation_folder / output_folder_string);
+			const path ligand_folder(generation_folder / "ligand");
+			const path output_folder(generation_folder / "output");
 
 			// Create a new folder and two subfolders for current generation.
 			create_directory(generation_folder);
 			create_directory(ligand_folder);
 			create_directory(output_folder);
 
-			// Create ligands and save them into the ligand folder.
-			if (generation == 1)
+			// Create mutation and crossover tasks.
+			BOOST_ASSERT(operation_tasks.empty());
+			for (size_t i = 0; i < num_mutants; ++i)
 			{
-				// Parse the initial ligand.
-				ligands.replace(0, new ligand(initial_ligand_path));
-				ligand& initial_ligand = ligands.front();
-
-				// Set the parent of 1/1.pdbqt to the initial ligand.
-				initial_ligand.parent1 = initial_ligand_path;
-
-				// Save the initial ligand as 1.pdbqt into the ligand folder of generation 1.
-				initial_ligand.save(ligand_folder / ligand_filenames.front());
-				initial_ligand.p =  output_folder / ligand_filenames.front();
-
-				// Create mutation tasks.
-				BOOST_ASSERT(operation_tasks.empty());
-				for (size_t i = 1; i < num_ligands; ++i)
-				{
-					operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), 1)));
-				}
-
-				// Run the mutation tasks in parallel asynchronously.
-				tp.run(operation_tasks);
-
-				// Propagate possible exceptions thrown by the mutation tasks.
-				for (size_t i = 0; i < num_mutants - 1; ++i)
-				{
-					operation_tasks[i].get_future().get();
-				}
-
-				// Block until all the mutation tasks are completed.
-				tp.sync();
-				operation_tasks.clear();
+				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
-			else
+			for (size_t i = num_mutants; i < num_children; ++i)
 			{
-				// Create mutation tasks.
-				BOOST_ASSERT(operation_tasks.empty());
-				for (size_t i = 0; i < num_mutants; ++i)
-				{
-					operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
-				}
-
-				// Create crossover tasks.
-				for (size_t i = num_mutants; i < num_children; ++i)
-				{
-					operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], output_folder / ligand_filenames[i], eng(), num_elitists)));
-				}
-
-				// Run the mutation and crossover tasks in parallel asynchronously.
-				tp.run(operation_tasks);
-
-				// Propagate possible exceptions thrown by the mutation and crossover tasks.
-				for (size_t i = 0; i < num_children; ++i)
-				{
-					operation_tasks[i].get_future().get();
-				}
-
-				// Block until all the mutation and crossover tasks are completed.
-				tp.sync();
-				operation_tasks.clear();
+				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
 
-			// Call the corresponding docking program to dock ligands.
-			if (idock)
+			// Run the mutation and crossover tasks in parallel asynchronously.
+			tp.run(operation_tasks);
+
+			// Propagate possible exceptions thrown by the mutation and crossover tasks.
+			for (size_t i = 0; i < num_children; ++i)
 			{
-				// Invoke idock.
-				log << "Calling idock to dock newly created ligands\n";
-				docking_args[5]  = ligand_folder.string();
-				docking_args[7]  = output_folder.string();
-				docking_args[9]  = (generation_folder / default_log_path).string();
-				docking_args[11] = (generation_folder / default_csv_path).string();
-				const int exit_code = create_child(docking_program_path.string(), docking_args, ctx).wait();
-				if (exit_code)
-				{
-					log << docking_failed_string << exit_code << '\n';
-					return 1;
-				}
-			}
-			else
-			{
-				// Invoke vina.
-				log << "Calling vina to dock newly created ligands\n";
-				for (size_t i = 0; i < (generation == 1 ? num_ligands : num_children); ++i)
-				{
-					docking_args[5] = (ligand_folder / ligand_filenames[i]).string();
-					docking_args[7] = (output_folder / ligand_filenames[i]).string();
-					const int exit_code = create_child(docking_program_path.string(), docking_args, ctx).wait();
-					if (exit_code)
-					{
-						log << docking_failed_string << exit_code << '\n';
-						return 1;
-					}
-				}
+				operation_tasks[i].get_future().get();
 			}
 
-			// Parse output ligands to obtain predicted free energy and docked coordinates.
-			for (size_t i = (generation == 1 ? 0 : num_elitists); i < num_ligands; ++i)
+			// Block until all the mutation and crossover tasks are completed.
+			tp.sync();
+			operation_tasks.clear();
+
+			// Invoke idock.			
+			idock_args[1] = ligand_folder.string();
+			idock_args[3] = output_folder.string();
+			idock_args[5] = (generation_folder / default_log_path).string();
+			idock_args[7] = (generation_folder / default_csv_path).string();
+			const int exit_code = create_child(idock_path.string(), idock_args, ctx).wait();
+			if (exit_code)
 			{
-				ligand& l = ligands[i];
-				string line;
-				ifstream in(l.p);
-				getline(in, line); // MODEL        1 or MODEL 1
-				getline(in, line); // REMARK     FREE ENERGY PREDICTED BY IDOCK:    -4.07 KCAL/MOL or REMARK VINA RESULT:      -9.8      0.000      0.000
-				l.evaluate_efficacy(idock ? right_cast<fl>(line, 44, 51) : right_cast<fl>(line, 21, 29));
-				for (size_t i = 0; true;)
-				{
-					getline(in, line);
-					if (starts_with(line, "ATOM"))
-					{
-						BOOST_ASSERT(l.atoms[i].number == right_cast<size_t>(line, 7, 11));
-						l.atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));
-					}
-					else if (starts_with(line, "TORSDOF"))
-					{
-						BOOST_ASSERT(i == l.atoms.size());
-						break;
-					}
-				}
-				in.close();
+				log << "idock exited with code " << exit_code << '\n';
+				return 1;
+			}
+
+			// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands into the ligand subfolder.
+			for (size_t i = 0; i < num_children; ++i)
+			{
+				ligands[num_elitists + i].update(output_folder / ligand_filenames[i]);
 			}
 
 			// Sort ligands in ascending order of efficacy.
@@ -480,20 +401,19 @@ int main(int argc, char* argv[])
 			{
 				const ligand& l = ligands[i];
 				csv << generation
-					<< comma << l.p
-					<< comma << l.parent1
-					<< comma << l.connector1
-					<< comma << l.parent2
-					<< comma << l.connector2
-					<< comma << l.efficacy
-					<< comma << l.free_energy
-					<< comma << l.num_rotatable_bonds
-					<< comma << l.num_atoms
-					<< comma << l.num_heavy_atoms
-					<< comma << l.num_hb_donors
-					<< comma << l.num_hb_acceptors
-					<< comma << l.mw
-					<< comma << l.logp
+					<< ',' << l.p
+					<< ',' << l.parent1
+					<< ',' << l.connector1
+					<< ',' << l.parent2
+					<< ',' << l.connector2
+					<< ',' << l.free_energy
+					<< ',' << l.num_rotatable_bonds
+					<< ',' << l.num_atoms
+					<< ',' << l.num_heavy_atoms
+					<< ',' << l.num_hb_donors
+					<< ',' << l.num_hb_acceptors
+					<< ',' << l.mw
+					<< ',' << l.logp
 					<< '\n';
 			}
 		}

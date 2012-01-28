@@ -118,20 +118,20 @@ namespace igrow
 	class atom
 	{
 	public:
-		string columns_13_to_30; ///< Columns from 1-based [13, 30] of an ATOM/HETATM line in pdbqt format.
-		string columns_55_to_79; ///< Columns from 1-based [55, 79] of an ATOM/HETATM line in pdbqt format.
-		size_t number; ///< Serial number.
+		string columns_13_to_30; ///< Columns from 1-based [13, 30] of an ATOM/HETATM line in PDBQT format.
+		string columns_55_to_79; ///< Columns from 1-based [55, 79] of an ATOM/HETATM line in PDBQT format.
+		size_t srn; ///< Serial number.
 		vec3 coordinate; ///< 3D coordinate.
 		size_t ad; ///< AutoDock4 atom type.
 
 		/// Constructs an atoms.
-		explicit atom(const string& columns_13_to_30, const string columns_55_to_79, const size_t number, const vec3& coordinate, const size_t ad) : columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), number(number), coordinate(coordinate), ad(ad) {}
+		explicit atom(const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const vec3& coordinate, const size_t ad) : columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coordinate(coordinate), ad(ad) {}
 
 		/// Copy constructor.
-		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
+		atom(const atom& a) : columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), srn(a.srn), coordinate(a.coordinate), ad(a.ad) {}
 
 		/// Move constructor.
-		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), number(a.number), coordinate(a.coordinate), ad(a.ad) {}
+		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), srn(a.srn), coordinate(a.coordinate), ad(a.ad) {}
 
 #ifdef __clang__		
 		/// Copy assignment operator.

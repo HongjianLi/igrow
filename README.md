@@ -7,7 +7,7 @@ igrow is a multithreaded structure-based [drug design] tool for computational dr
 Features
 --------
 
-* igrow uses either [idock] or [AutoDock Vina] as backend docking engine.
+* igrow uses [idock] as backend docking engine.
 * igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
 * igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
 * igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire synhsizing procedure. The thread pool parallelizes the creation of mutants and children in each generation.
@@ -110,7 +110,7 @@ Change Log
 
 ### 1.0 (under construction)
 
-* Supported using either idock or AutoDock Vina as backend docking engine.
+* Used idock as backend docking engine.
 * Supported direct PDBQT manipulation without file format conversion.
 * Used dynamic pointer vector to cache ligands.
 * Used flyweight pattern to cache fragments.
@@ -138,7 +138,6 @@ Red grape is chosen as the logo for igrow because it is one of the author's favo
 
 [drug design]: http://en.wikipedia.org/wiki/Drug_design
 [AutoGrow]: http://autogrow.ucsd.edu
-[AutoDock Vina]: http://vina.scripps.edu
 [idock]: https://github.com/HongjianLi/idock
 [Apache License 2.0]: http://www.apache.org/licenses/LICENSE-2.0.html
 [C++11]: http://en.wikipedia.org/wiki/C++11

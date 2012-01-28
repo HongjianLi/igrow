@@ -65,9 +65,9 @@ namespace igrow
 	class ligand
 	{
 	public:
-		path p; ///< The path to the current ligand.
-		path parent1; ///< The first parent ligand to synthesize the current ligand.
-		path parent2; ///< The second parent ligand, if any, to synthesize the current ligand.
+		path p; ///< Path to the current ligand.
+		path parent1; ///< Parent ligand 1.
+		path parent2; ///< Parent ligand 2.
 		size_t connector1; ///< The serial number of the connecting atom of parent 1.
 		size_t connector2; ///< The serial number of the connecting atom of parent 2.
 		vector<frame> frames; ///< Frames.
@@ -82,22 +82,24 @@ namespace igrow
 		fl mw; ///< Molecular weight.
 		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
-		fl efficacy; ///< Ligand efficacy
 		
 		explicit ligand() {}
 
-		/// Constructs a ligand by parsing a given ligand file in pdbqt.
+		/// Constructs a ligand by parsing a given ligand file in PDBQT.
 		/// @exception parsing_error Thrown when error parsing the ligand file.
 		explicit ligand(const path& p);
 
 		/// Constructs a ligand by mutation.
-		explicit ligand(const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
+		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
 		/// Constructs a ligand by crossover.
-		explicit ligand(const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2);
+		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2);
 		
-		/// Saves the current ligand to a file in pdbqt format.
-		void save(const path& p) const;
+		/// Saves the current ligand to a file in PDBQT format.
+		void save() const;
+		
+		/// Parse the docked ligand to obtain predicted free energy and docked coordinates.
+		void update(const path& p);
 
 		/// Gets the frame and index to which a atom belongs to given its serial number.
 		std::pair<size_t, size_t> get_frame(const size_t srn) const;
@@ -114,17 +116,10 @@ namespace igrow
 			return num_rotatable_bonds > 0;
 		}
 
-		/// Evaluates ligand efficacy from free energy.
-		void evaluate_efficacy(const fl free_energy)
-		{
-			this->free_energy = free_energy;
-			efficacy = free_energy * pow(static_cast<fl>(num_heavy_atoms), static_cast<fl>(-0.4));
-		}
-
 		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
 		bool operator<(const ligand& l) const
 		{
-			return efficacy < l.efficacy;
+			return free_energy < l.free_energy;
 		}
 	};
 

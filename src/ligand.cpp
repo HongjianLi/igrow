@@ -35,7 +35,7 @@ namespace igrow
 		size_t current = 0; // Index of current frame, initialized to ROOT frame.
 		frame* f = &frames.front(); // Pointer to the current frame.
 		size_t num_lines = 0; // Used to track line number for reporting parsing errors, if any.
-		string line; // A line of ligand file in pdbqt format.
+		string line; // A line of ligand file in PDBQT format.
 		line.reserve(79); // According to PDBQT specification, the last item AutoDock4 atom type locates at 1-based [78, 79].
 
 		// Parse ATOM/HETATM, BRANCH, ENDBRANCH.
@@ -58,7 +58,7 @@ namespace igrow
 
 				// Update ligand properties.
 				const atom& a = atoms.back();
-				if (a.is_mutable()) mutable_atoms.push_back(a.number);
+				if (a.is_mutable()) mutable_atoms.push_back(a.srn);
 				if (!a.is_hydrogen()) ++num_heavy_atoms;
 				if (a.is_hb_donor()) ++num_hb_donors;
 				if (a.is_hb_acceptor()) ++num_hb_acceptors;
@@ -109,7 +109,7 @@ namespace igrow
 		BOOST_ASSERT(num_atoms + (num_rotatable_bonds << 1) + 3 <= num_lines); // ATOM/HETATM lines + BRANCH/ENDBRANCH lines + ROOT/ENDROOT/TORSDOF lines + REMARK lines (if any) == num_lines
 
 		// Determine the maximum atom serial number.
-		max_atom_number = atoms.back().number;
+		max_atom_number = atoms.back().srn;
 		BOOST_ASSERT(max_atom_number >= num_atoms);
 
 		// Set frames[i].end = frames[i + 1].begin
@@ -120,7 +120,7 @@ namespace igrow
 		frames.back().end = num_atoms;
 	}
 
-	void ligand::save(const path& p) const
+	void ligand::save() const
 	{
 		using namespace std;
 		ofstream out(p); // Dumping starts. Open the file stream as late as possible.
@@ -134,7 +134,7 @@ namespace igrow
 			for (size_t i = f.begin; i < f.end; ++i)
 			{
 				const atom& a = atoms[i];
-				out << "ATOM  " << setw(5) << a.number << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
+				out << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
 			}
 		}
 		out << "ENDROOT\n";
@@ -160,7 +160,7 @@ namespace igrow
 				for (size_t i = f.begin; i < f.end; ++i)
 				{
 					const atom& a = atoms[i];
-					out << "ATOM  " << setw(5) << a.number << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
+					out << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
 				}
 				dump_branches[fn] = true;
 				for (auto i = f.branches.rbegin(); i < f.branches.rend(); ++i)
@@ -177,6 +177,26 @@ namespace igrow
 		out << "TORSDOF " << num_rotatable_bonds << '\n';
 		out.close();
 	}
+	
+	void ligand::update(const path& p)
+	{
+		string line;
+		line.reserve(79);
+		ifstream in(p);
+		getline(in, line); // MODEL        1
+		getline(in, line); // REMARK     FREE ENERGY PREDICTED BY IDOCK:    -4.07 KCAL/MOL
+		free_energy = right_cast<fl>(line, 44, 51);
+		for (size_t i = 0; getline(in, line) && !starts_with(line, "TORSDOF");)
+		{
+			if (starts_with(line, "ATOM"))
+			{
+				BOOST_ASSERT(l.atoms[i].srn == right_cast<size_t>(line, 7, 11));
+				atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));
+			}
+		}
+		in.close();
+		save();
+	}
 
 	std::pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 	{
@@ -184,8 +204,8 @@ namespace igrow
 		for (size_t k = 0; k <= num_rotatable_bonds; ++k)
 		{
 			const frame& f = frames[k];
-			const size_t srn_begin = atoms[f.begin].number;
-			const size_t srn_end = atoms[f.end - 1].number;
+			const size_t srn_begin = atoms[f.begin].srn;
+			const size_t srn_end = atoms[f.end - 1].srn;
 			BOOST_ASSERT(srn_begin <= srn_end);
 			if ((f.end - f.begin) == (srn_end - srn_begin + 1)) // The serial numbers are continuous, which is the most cases.
 			{
@@ -196,14 +216,14 @@ namespace igrow
 				// Linear search at the moment.
 				for (size_t i = f.begin; i < f.end; ++i)
 				{
-					if (srn == atoms[i].number) return std::pair<size_t,  size_t>(k, i);
+					if (srn == atoms[i].srn) return std::pair<size_t,  size_t>(k, i);
 				}
 			}
 		}
 		throw std::domain_error("Failed to find an atom with serial number " + lexical_cast<string>(srn));
 	}
 
-	ligand::ligand(const ligand& l1, const ligand& l2, const size_t g1, const size_t g2) : parent1(l1.p), parent2(l2.p)
+	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2) : p(p), parent1(l1.p), parent2(l2.p)
 	{
 		BOOST_ASSERT(g1 < l1.mutable_atoms.size());
 		BOOST_ASSERT(g2 < l2.mutable_atoms.size());
@@ -247,12 +267,12 @@ namespace igrow
 		const atom& c2 = l2.atoms[c2idx];
 
 		// Both the connector and mutable atoms should be in the same frame.
-		BOOST_ASSERT(f1idx == l1.get_frame(c1.number).first);
-		BOOST_ASSERT(f2idx == l2.get_frame(c2.number).first);
+		BOOST_ASSERT(f1idx == l1.get_frame(c1.srn).first);
+		BOOST_ASSERT(f2idx == l2.get_frame(c2.srn).first);
 
 		// Set the connector atoms.
-		connector1 = c1.number;
-		connector2 = c2.number;
+		connector1 = c1.srn;
+		connector2 = c2.srn;
 
 		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
 		max_atom_number = l1.max_atom_number + l2.max_atom_number;
@@ -396,12 +416,12 @@ namespace igrow
 			for (size_t i = f2.begin; i < m2idx; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			for (size_t i = m2idx + 1; i < f2.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
@@ -464,7 +484,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -496,7 +516,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -525,7 +545,7 @@ namespace igrow
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.number, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
@@ -591,7 +611,7 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	ligand::ligand(const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2) : parent1(l1.p), parent2(l2.p)
+	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2) : p(p), parent1(l1.p), parent2(l2.p)
 	{
 		const frame& f1 = l1.frames[f1idx];
 		const frame& f2 = l2.frames[f2idx];

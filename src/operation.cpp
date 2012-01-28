@@ -20,7 +20,7 @@
 
 namespace igrow
 {
-	void operation::mutation_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists)
+	void operation::mutation_task(const size_t index, const path& p, const size_t seed)
 	{
 		// Initialize a Mersenne Twister random number generator.
 		mt19937eng eng(seed);
@@ -42,18 +42,16 @@ namespace igrow
 			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1))();
 			const size_t g2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1))();
 
-			ligands.replace(index, new ligand(l1, l2, g1, g2));
+			ligands.replace(index, new ligand(p, l1, l2, g1, g2));
 			if (v(ligands[index])) break;
 			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
 		} while (true);
 
 		// Save the newly created child ligand.
-		ligand& l = ligands[index];
-		l.save(ligand_path);
-		l.p =  output_path;
+		ligands[index].save();
 	}
 
-	void operation::crossover_task(const size_t index, const path& ligand_path, const path& output_path, const size_t seed, const size_t num_elitists)
+	void operation::crossover_task(const size_t index, const path& p, const size_t seed)
 	{
 		// Initialize a Mersenne Twister random number generator.
 		mt19937eng eng(seed);
@@ -76,14 +74,12 @@ namespace igrow
 			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, 1))();
 			const size_t g2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, 1))();
 
-			ligands.replace(index, new ligand(l1, l2, f1, f2, g1, g2));
+			ligands.replace(index, new ligand(p, l1, l2, f1, f2, g1, g2));
 			if (v(ligands[index])) break;
 			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
 		} while (true);
 
 		// Save the newly created child ligand.
-		ligand& l = ligands[index];
-		l.save(ligand_path);
-		l.p =  output_path;
+		ligands[index].save();
 	}
 }
