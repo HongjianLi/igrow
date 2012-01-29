@@ -40,7 +40,7 @@ namespace igrow
 
 		// Parse ATOM/HETATM, BRANCH, ENDBRANCH.
 		ifstream in(p); // Parsing starts. Open the file stream as late as possible.
-		while (getline(in, line))
+		while (getline(in, line) && !starts_with(line, "TORSDOF"))
 		{
 			++num_lines;
 			if (starts_with(line, "ATOM") || starts_with(line, "HETATM"))
@@ -78,6 +78,9 @@ namespace igrow
 				// Update the pointer to the current frame.
 				f = &frames[current];
 
+				// The ending index of atoms of previous frame is the starting index of atoms of current frame.
+				frames[current - 1].end = f->begin;
+
 				// Reserve enough capacity for storing BRANCH frames.
 				f->branches.reserve(4); // A frame typically consists of <= 4 BRANCH frames.
 			}
@@ -103,6 +106,7 @@ namespace igrow
 		num_atoms = atoms.size();
 		BOOST_ASSERT(num_atoms >= num_heavy_atoms);
 		BOOST_ASSERT(num_atoms <= num_heavy_atoms + mutable_atoms.size());
+		frames.back().end = num_atoms;
 
 		// Determine the number of rotatable bonds.
 		num_rotatable_bonds = frames.size() - 1;
@@ -111,13 +115,6 @@ namespace igrow
 		// Determine the maximum atom serial number.
 		max_atom_number = atoms.back().srn;
 		BOOST_ASSERT(max_atom_number >= num_atoms);
-
-		// Set frames[i].end = frames[i + 1].begin
-		for (size_t i = 0; i < num_rotatable_bonds; ++i)
-		{
-			frames[i].end = frames[i + 1].begin;
-		}
-		frames.back().end = num_atoms;
 	}
 
 	void ligand::save() const
@@ -141,7 +138,7 @@ namespace igrow
 
 		// Dump the BRANCH frames.
 		vector<bool> dump_branches(frames.size()); // dump_branches[0] is dummy. The ROOT frame has been dumped.
-		vector<size_t> stack; // Stack to track the l4_to_l2_mapping sequence of frames in order to avoid recursion.
+		vector<size_t> stack; // Stack to track the depth-first traversal sequence of frames in order to avoid recursion.
 		stack.reserve(num_rotatable_bonds); // The ROOT frame is excluded.
 		{
 			const frame& f = frames.front();
@@ -177,7 +174,7 @@ namespace igrow
 		out << "TORSDOF " << num_rotatable_bonds << '\n';
 		out.close();
 	}
-	
+
 	void ligand::update(const path& p)
 	{
 		string line;
@@ -190,7 +187,7 @@ namespace igrow
 		{
 			if (starts_with(line, "ATOM"))
 			{
-				BOOST_ASSERT(l.atoms[i].srn == right_cast<size_t>(line, 7, 11));
+				BOOST_ASSERT(atoms[i].srn == right_cast<size_t>(line, 7, 11));
 				atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));
 			}
 		}

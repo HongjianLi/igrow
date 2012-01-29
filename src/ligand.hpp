@@ -55,7 +55,7 @@ namespace igrow
 		/// Move constructor.
 		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
 
-#ifdef __clang__		
+#ifdef __clang__
 		/// Copy assignment operator.
 		frame& operator=(const frame&) = default;
 #endif
@@ -82,7 +82,6 @@ namespace igrow
 		fl mw; ///< Molecular weight.
 		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
-		
 		explicit ligand() {}
 
 		/// Constructs a ligand by parsing a given ligand file in PDBQT.
@@ -94,10 +93,10 @@ namespace igrow
 
 		/// Constructs a ligand by crossover.
 		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2);
-		
+
 		/// Saves the current ligand to a file in PDBQT format.
 		void save() const;
-		
+
 		/// Parse the docked ligand to obtain predicted free energy and docked coordinates.
 		void update(const path& p);
 

@@ -133,11 +133,11 @@ namespace igrow
 		/// Move constructor.
 		atom(atom&& a) : columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), srn(a.srn), coordinate(a.coordinate), ad(a.ad) {}
 
-#ifdef __clang__		
+#ifdef __clang__
 		/// Copy assignment operator.
 		atom& operator=(const atom&) = default;
 #endif
-		
+
 		/// Returns covalent radius from an AutoDock4 atom type.
 		fl covalent_radius() const
 		{

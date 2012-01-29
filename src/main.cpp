@@ -20,7 +20,7 @@
  * \mainpage igrow
  *
  * \section introduction Introduction
- * igrow is a multithreaded virtual screening tool for flexible ligand docking.
+ * igrow is a multithreaded ligand growing tool for structure-based molecule design.
  *
  * \section features Features
  * igrow is inspired by AutoGrow. It uses idock as backend docking engine.
@@ -31,10 +31,10 @@
  * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial ligand and fragments.
  *
  * \section availability Availability
- * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Both x86 and x64 binaries for Linux and Windows are provided.
+ * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X and FreeBSD are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 28 January 2012
+ * \date 29 January 2012
  *
  * Copyright (C) 2011-2012 The Chinese University of Hong Kong.
  */
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the default values of optional arguments.
-		const path default_output_folder_path = "output";		
+		const path default_output_folder_path = "output";
 		const unsigned int concurrency = boost::thread::hardware_concurrency();
 		const size_t default_num_threads = concurrency ? concurrency : 1;
 		const size_t default_seed = random_seed();
@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
-		input_options.add_options()			
+		input_options.add_options()
 			("initial_generation_csv", value<path>(&initial_generation_csv_path)->required(), "path to initial generation csv")
 			("fragment_folder", value<path>(&fragment_folder_path)->required(), "path to folder of fragments in PDBQT format")
 			("idock", value<path>(&idock_path)->required(), "path to idock executable")
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 			;
 
 		options_description miscellaneous_options("options (optional)");
-		miscellaneous_options.add_options()			
+		miscellaneous_options.add_options()
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
 			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of GA generations")
@@ -148,7 +148,6 @@ int main(int argc, char* argv[])
 		using namespace boost::filesystem;
 
 		// Validate initial generation csv.
-		initial_generation_csv_path = system_complete(initial_generation_csv_path);
 		if (!exists(initial_generation_csv_path))
 		{
 			std::cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist\n";
@@ -159,9 +158,9 @@ int main(int argc, char* argv[])
 			std::cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file\n";
 			return 1;
 		}
+		initial_generation_csv_path = canonical(initial_generation_csv_path);
 
 		// Validate fragment folder.
-		fragment_folder_path = system_complete(fragment_folder_path);
 		if (!exists(fragment_folder_path))
 		{
 			std::cerr << "Fragment folder " << fragment_folder_path << " does not exist\n";
@@ -172,9 +171,9 @@ int main(int argc, char* argv[])
 			std::cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
 			return 1;
 		}
-		
+		fragment_folder_path = canonical(fragment_folder_path);
+
 		// Validate idock executable.
-		idock_path = system_complete(idock_path);
 		if (!exists(idock_path))
 		{
 			std::cerr << "idock executable " << idock_path << " does not exist\n";
@@ -185,9 +184,9 @@ int main(int argc, char* argv[])
 			std::cerr << "idock executable " << idock_path << " is not a regular file\n";
 			return 1;
 		}
-		
+		idock_path = canonical(idock_path);
+
 		// Validate idock configuration file.
-		idock_config_path = system_complete(idock_config_path);
 		if (!exists(idock_config_path))
 		{
 			std::cerr << "idock configuration file " << idock_config_path << " does not exist\n";
@@ -198,9 +197,9 @@ int main(int argc, char* argv[])
 			std::cerr << "idock configuration file " << idock_config_path << " is not a regular file\n";
 			return 1;
 		}
+		idock_config_path = canonical(idock_config_path);
 
 		// Validate output folder.
-		output_folder_path = system_complete(output_folder_path);
 		remove_all(output_folder_path);
 		if (!create_directories(output_folder_path))
 		{
@@ -209,7 +208,6 @@ int main(int argc, char* argv[])
 		}
 
 		// Validate log_path.
-		log_path = system_complete(log_path);
 		if (is_directory(log_path))
 		{
 			std::cerr << "Log path " << log_path << " is a directory\n";
@@ -217,7 +215,6 @@ int main(int argc, char* argv[])
 		}
 
 		// Validate csv_path.
-		csv_path = system_complete(csv_path);
 		if (is_directory(csv_path))
 		{
 			std::cerr << "csv path " << csv_path << " is a directory\n";
@@ -260,8 +257,8 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the log.
-		std::cout << "Logging to " << log_path << '\n';
 		igrow::tee log(log_path);
+		std::cout << "Logging to " << canonical(log_path) << '\n';
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 		const size_t num_children = num_mutants + num_crossovers;
@@ -285,18 +282,18 @@ int main(int argc, char* argv[])
 					std::cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands.\n";
 					return 1;
 				}
-				
+
 				// Parse the elite ligand.
 				const size_t right_double_quotation_mark = line.find_last_of('"');
 				ligands.replace(i, new ligand(line.substr(1, right_double_quotation_mark - 1)));
-				
+
 				// Parse the free energy.
 				const size_t comma_before_free_energy = line.find_first_of(',', right_double_quotation_mark + 3);
 				const size_t comma_after_free_energy  = line.find_first_of(',', comma_before_free_energy + 5);
 				ligands[i].free_energy = right_cast<fl>(line, comma_before_free_energy + 2, comma_after_free_energy); // right_cast is 1-based.
 			}
 		}
-		
+
 		// Scan the fragment folder to obtain a list of fragments.
 		log << "Scanning fragment folder " << fragment_folder_path << '\n';
 		vector<path> fragments;
@@ -324,7 +321,7 @@ int main(int argc, char* argv[])
 
 		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
 		boost::atomic<size_t> num_failures(0);
-		
+
 		// Reserve storage for operation tasks.
 		operation op(ligands, num_elitists, fragments, v, max_failures, num_failures);
 		boost::ptr_vector<packaged_task<void>> operation_tasks(num_children);
@@ -341,7 +338,7 @@ int main(int argc, char* argv[])
 		const boost::process::context ctx;
 
 		// Initialize argument to idock.
-		vector<string> idock_args(12);		
+		vector<string> idock_args(12);
 		idock_args[0]  = "--ligand_folder";
 		idock_args[2]  = "--output_folder";
 		idock_args[4]  = "--log";
@@ -350,7 +347,7 @@ int main(int argc, char* argv[])
 		idock_args[9]  = lexical_cast<string>(seed);
 		idock_args[10] = "--config";
 		idock_args[11] = idock_config_path.string();
-		
+
 		// Initialize a thread pool and create worker threads for later use.
 		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
 		thread_pool tp(num_threads);
@@ -397,7 +394,7 @@ int main(int argc, char* argv[])
 			tp.sync();
 			operation_tasks.clear();
 
-			// Invoke idock.			
+			// Invoke idock.
 			idock_args[1] = ligand_folder.string();
 			idock_args[3] = output_folder.string();
 			idock_args[5] = (generation_folder / default_log_path).string();

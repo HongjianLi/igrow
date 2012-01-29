@@ -55,20 +55,20 @@ namespace igrow
 		const validator& v;
 		const size_t max_failures;
 		boost::atomic<size_t>& num_failures;
-		
-		/// Represent a GA operation for removal of ligand duplicates.
-		class operation_code
-		{
-		public:
-			size_t operation; ///< 0 for mutation and 1 for crossover.
-			path parent1; ///< Parent ligand 1.
-			path parent2; ///< Parent ligand 2.
-			size_t connector1; ///< Serial number of the connecting atom of parent 1.
-			size_t connector2; ///< Serial number of the connecting atom of parent 2.
-			
-			/// Constructs an operation code, which is uniquely identified by the type of GA operation, the two parent ligands and the two connector atoms. Note that operation is required because both mutation and crossover can occur on the same parent ligands and connector atoms but result in different child ligands.
-			operation_code(const size_t operation, const path& parent1, const path& parent2, const size_t connector1, const size_t connector2) : operation(operation), parent1(parent1), parent2(parent2), connector1(connector1), connector2(connector2) {}
-		};
+
+//		/// Represent a GA operation for removal of ligand duplicates.
+//		class operation_code
+//		{
+//		public:
+//			size_t operation; ///< 0 for mutation and 1 for crossover.
+//			path parent1; ///< Parent ligand 1.
+//			path parent2; ///< Parent ligand 2.
+//			size_t connector1; ///< Serial number of the connecting atom of parent 1.
+//			size_t connector2; ///< Serial number of the connecting atom of parent 2.
+//
+//			/// Constructs an operation code, which is uniquely identified by the type of GA operation, the two parent ligands and the two connector atoms. Note that operation is required because both mutation and crossover can occur on the same parent ligands and connector atoms but result in different child ligands.
+//			operation_code(const size_t operation, const path& parent1, const path& parent2, const size_t connector1, const size_t connector2) : operation(operation), parent1(parent1), parent2(parent2), connector1(connector1), connector2(connector2) {}
+//		};
 	};
 
 	class maximum_failures_reached_error : public std::domain_error
