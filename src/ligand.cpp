@@ -47,6 +47,7 @@ namespace igrow
 			{
 				// Whenever an ATOM/HETATM line shows up, the current frame must be the last one.
 				BOOST_ASSERT(current == frames.size() - 1);
+				BOOST_ASSERT(f == &frames.back());
 
 				// Validate the AutoDock4 atom type.
 				const string ad_type_string = line.substr(77, isspace(line[78]) ? 1 : 2);
@@ -181,8 +182,8 @@ namespace igrow
 		line.reserve(79);
 		ifstream in(p);
 		getline(in, line); // MODEL        1
-		getline(in, line); // REMARK     FREE ENERGY PREDICTED BY IDOCK:    -4.07 KCAL/MOL
-		free_energy = right_cast<fl>(line, 44, 51);
+		getline(in, line); // REMARK     FREE ENERGY PREDICTED BY IDOCK:   -4.07 KCAL/MOL
+		free_energy = right_cast<fl>(line, 43, 50);
 		for (size_t i = 0; getline(in, line) && !starts_with(line, "TORSDOF");)
 		{
 			if (starts_with(line, "ATOM"))

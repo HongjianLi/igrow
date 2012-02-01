@@ -34,7 +34,7 @@
  * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X and FreeBSD are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 29 January 2012
+ * \date 1 February 2012
  *
  * Copyright (C) 2011-2012 The Chinese University of Hong Kong.
  */
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 	std::cout << "igrow 1.0\n";
 
 	using namespace igrow;
-	path initial_generation_csv_path, fragment_folder_path, idock_path, idock_config_path, output_folder_path, log_path, csv_path;
+	path initial_generation_csv_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_generations, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp, min_logp;
 
@@ -93,7 +93,6 @@ int main(int argc, char* argv[])
 		input_options.add_options()
 			("initial_generation_csv", value<path>(&initial_generation_csv_path)->required(), "path to initial generation csv")
 			("fragment_folder", value<path>(&fragment_folder_path)->required(), "path to folder of fragments in PDBQT format")
-			("idock", value<path>(&idock_path)->required(), "path to idock executable")
 			("idock_config", value<path>(&idock_config_path)->required(), "path to idock configuration file")
 			;
 
@@ -158,7 +157,7 @@ int main(int argc, char* argv[])
 			std::cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file\n";
 			return 1;
 		}
-		initial_generation_csv_path = canonical(initial_generation_csv_path);
+		initial_generation_csv_path = canonical(initial_generation_csv_path).make_preferred();
 
 		// Validate fragment folder.
 		if (!exists(fragment_folder_path))
@@ -171,20 +170,7 @@ int main(int argc, char* argv[])
 			std::cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
 			return 1;
 		}
-		fragment_folder_path = canonical(fragment_folder_path);
-
-		// Validate idock executable.
-		if (!exists(idock_path))
-		{
-			std::cerr << "idock executable " << idock_path << " does not exist\n";
-			return 1;
-		}
-		if (!is_regular_file(idock_path))
-		{
-			std::cerr << "idock executable " << idock_path << " is not a regular file\n";
-			return 1;
-		}
-		idock_path = canonical(idock_path);
+		fragment_folder_path = canonical(fragment_folder_path).make_preferred();
 
 		// Validate idock configuration file.
 		if (!exists(idock_config_path))
@@ -197,7 +183,7 @@ int main(int argc, char* argv[])
 			std::cerr << "idock configuration file " << idock_config_path << " is not a regular file\n";
 			return 1;
 		}
-		idock_config_path = canonical(idock_config_path);
+		idock_config_path = canonical(idock_config_path).make_preferred();
 
 		// Validate output folder.
 		remove_all(output_folder_path);
@@ -206,6 +192,7 @@ int main(int argc, char* argv[])
 			std::cerr << "Failed to create output folder " << output_folder_path << '\n';
 			return 1;
 		}
+		output_folder_path = canonical(output_folder_path).make_preferred();
 
 		// Validate log_path.
 		if (is_directory(log_path))
@@ -258,7 +245,7 @@ int main(int argc, char* argv[])
 	{
 		// Initialize the log.
 		igrow::tee log(log_path);
-		std::cout << "Logging to " << canonical(log_path) << '\n';
+		std::cout << "Logging to " << canonical(log_path).make_preferred() << '\n';
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 		const size_t num_children = num_mutants + num_crossovers;
@@ -334,8 +321,9 @@ int main(int argc, char* argv[])
 			ligand_filenames.push_back(lexical_cast<string>(i) + ".pdbqt");
 		}
 
-		// Initialize process context.
-		const boost::process::context ctx;
+		// Find the full path to idock executable.
+		const path idock_path = path(boost::process::find_executable_in_path("idock")).make_preferred();
+		log << "Using idock executable at " << idock_path << '\n';
 
 		// Initialize argument to idock.
 		vector<string> idock_args(12);
@@ -347,6 +335,9 @@ int main(int argc, char* argv[])
 		idock_args[9]  = lexical_cast<string>(seed);
 		idock_args[10] = "--config";
 		idock_args[11] = idock_config_path.string();
+
+		// Initialize process context.
+		const boost::process::context ctx;
 
 		// Initialize a thread pool and create worker threads for later use.
 		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
