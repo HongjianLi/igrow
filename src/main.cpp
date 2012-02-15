@@ -34,7 +34,7 @@
  * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X and FreeBSD are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 1 February 2012
+ * \date 15 February 2012
  *
  * Copyright (C) 2011-2012 The Chinese University of Hong Kong.
  */
@@ -42,7 +42,6 @@
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/process/context.hpp>
 #include <boost/process/operations.hpp>
 #include <boost/process/child.hpp>
@@ -59,7 +58,7 @@ int main(int argc, char* argv[])
 
 	using namespace igrow;
 	path initial_generation_csv_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
-	size_t num_threads, seed, num_generations, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
+	size_t num_threads, seed, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp, min_logp;
 
 	// Initialize the default path to log files. They will be reused when calling idock.
@@ -74,7 +73,6 @@ int main(int argc, char* argv[])
 		const unsigned int concurrency = boost::thread::hardware_concurrency();
 		const size_t default_num_threads = concurrency ? concurrency : 1;
 		const size_t default_seed = random_seed();
-		const size_t default_num_generations = 8;
 		const size_t default_num_mutants = 20;
 		const size_t default_num_crossovers = 20;
 		const size_t default_num_elitists = 10;
@@ -107,7 +105,6 @@ int main(int argc, char* argv[])
 		miscellaneous_options.add_options()
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
-			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of GA generations")
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
 			("mutants", value<size_t>(&num_mutants)->default_value(default_num_mutants), "number of child ligands created by mutation")
 			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
@@ -212,11 +209,6 @@ int main(int argc, char* argv[])
 		if (!num_threads)
 		{
 			std::cerr << "Option threads must be 1 or greater\n";
-			return 1;
-		}
-		if (!num_generations)
-		{
-			std::cerr << "Option generations must be 1 or greater\n";
 			return 1;
 		}
 		if (!num_mutants)
@@ -347,7 +339,7 @@ int main(int argc, char* argv[])
 		ofstream csv(csv_path);
 		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logP\n";
 
-		for (size_t generation = 1; generation <= num_generations; ++generation)
+		for (size_t generation = 1; true; ++generation)
 		{
 			log << "Running generation " << generation << '\n';
 
