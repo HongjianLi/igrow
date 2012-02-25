@@ -182,8 +182,8 @@ namespace igrow
 		line.reserve(79);
 		ifstream in(p);
 		getline(in, line); // MODEL        1
-		getline(in, line); // REMARK     FREE ENERGY PREDICTED BY IDOCK:   -4.07 KCAL/MOL
-		free_energy = right_cast<fl>(line, 43, 50);
+		getline(in, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -6.088 KCAL/MOL
+		free_energy = right_cast<fl>(line, 56, 63);
 		for (size_t i = 0; getline(in, line) && !starts_with(line, "TORSDOF");)
 		{
 			if (starts_with(line, "ATOM"))
