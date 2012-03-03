@@ -31,13 +31,13 @@ Supported operating systems and compilers
 * Windows 7 SP1 x64 and Windows SDK 7.1
 * Windows 7 SP1 x64 and Visual Studio 2010 SP1
 * Windows 7 SP1 x64 and Intel C++ Compiler 12.1.2
-* Windows 8 Developer Preview x64 and Visual Studio 11 Express
+* Windows 8 Consumer Preview x64 and Visual Studio 11 Ultimate Beta
 
 
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.48.0 is tested. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem`, and `Program Options`. Two unofficial and header-only libraries, Boost.Process and Boost.Atomic, are also required by igrow. The file `boost.process.tar.bz2` and `boost.atomic.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
+igrow depends on [Boost C++ Libraries]. Boost 1.48.0 and 1.49.0 are tested. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem` and `Program Options`. Two unofficial and header-only libraries, Boost.Process and Boost.Atomic, are also required by igrow. The file `boost.process.tar.bz2` and `boost.atomic.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
 
 ### Compilation on Linux
 
@@ -83,7 +83,7 @@ The `examples` folder contains several use cases. For example, to grow TMC278 an
 
 One can supply the options from command line arguments
 
-    igrow --fragment_folder ../../fragments --initial_ligand ../../fragments/CH4.pdbqt --docking_program idock --docking_config docking.cfg
+    igrow --initial_generation_csv ../../../idock/examples/2ZD1/ZINC/log.csv --fragment_folder ../../fragments --idock_config idock.cfg
 
 Or one can instruct igrow to load the options from a configuration file
 
