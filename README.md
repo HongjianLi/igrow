@@ -27,6 +27,7 @@ Supported operating systems and compilers
 * Arch Linux 3.2.2 x86_64 and CLANG 3.0
 * Arch Linux 3.2.2 x86_64 and Intel C++ Compiler 12.1.2
 * FreeBSD 9.0 x86_64 and CLANG 3.0
+* Solaris 11 11/11 and GCC 4.5.2
 * Mac OS X 10.7.2 x86_64 and CLANG 3.0
 * Windows 7 SP1 x64 and Windows SDK 7.1
 * Windows 7 SP1 x64 and Visual Studio 2010 SP1
@@ -119,7 +120,7 @@ Change Log
 * Allowed users to specify the number of failures of GA operations as a stopping criterion.
 * Used docked atom coordinates to construct child ligands of the next generation.
 * Parallelized mutation and crossover operations.
-* Provided precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X and FreeBSD.
+* Provided precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X, FreeBSD and Solaris.
 
 
 Contact Author

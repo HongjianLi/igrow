@@ -31,10 +31,10 @@
  * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial ligand and fragments.
  *
  * \section availability Availability
- * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X and FreeBSD are provided.
+ * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X, FreeBSD and Solaris are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 15 February 2012
+ * \date 4 March 2012
  *
  * Copyright (C) 2011-2012 The Chinese University of Hong Kong.
  */
