@@ -34,7 +34,7 @@
  * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X, FreeBSD and Solaris are provided.
  *
  * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 4 March 2012
+ * \date 15 April 2012
  *
  * Copyright (C) 2011-2012 The Chinese University of Hong Kong.
  */
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 	std::cout << "igrow 1.0\n";
 
 	using namespace igrow;
-	path initial_generation_csv_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
+	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw, max_logp, min_logp;
 
@@ -90,6 +90,7 @@ int main(int argc, char* argv[])
 		options_description input_options("input (required)");
 		input_options.add_options()
 			("initial_generation_csv", value<path>(&initial_generation_csv_path)->required(), "path to initial generation csv")
+			("initial_generation_folder", value<path>(&initial_generation_folder_path)->required(), "path to initial generation folder")
 			("fragment_folder", value<path>(&fragment_folder_path)->required(), "path to folder of fragments in PDBQT format")
 			("idock_config", value<path>(&idock_config_path)->required(), "path to idock configuration file")
 			;
@@ -154,8 +155,19 @@ int main(int argc, char* argv[])
 			std::cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file\n";
 			return 1;
 		}
-		initial_generation_csv_path = canonical(initial_generation_csv_path).make_preferred();
 
+		// Validate initial generation folder.
+		if (!exists(initial_generation_folder_path))
+		{
+			std::cerr << "Initial generation folder " << initial_generation_folder_path << " does not exist\n";
+			return 1;
+		}
+		if (!is_directory(initial_generation_folder_path))
+		{
+			std::cerr << "Initial generation folder " << initial_generation_folder_path << " is not a directory\n";
+			return 1;
+		}
+		
 		// Validate fragment folder.
 		if (!exists(fragment_folder_path))
 		{
@@ -167,7 +179,6 @@ int main(int argc, char* argv[])
 			std::cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
 			return 1;
 		}
-		fragment_folder_path = canonical(fragment_folder_path).make_preferred();
 
 		// Validate idock configuration file.
 		if (!exists(idock_config_path))
@@ -180,7 +191,6 @@ int main(int argc, char* argv[])
 			std::cerr << "idock configuration file " << idock_config_path << " is not a regular file\n";
 			return 1;
 		}
-		idock_config_path = canonical(idock_config_path).make_preferred();
 
 		// Validate output folder.
 		remove_all(output_folder_path);
@@ -189,7 +199,6 @@ int main(int argc, char* argv[])
 			std::cerr << "Failed to create output folder " << output_folder_path << '\n';
 			return 1;
 		}
-		output_folder_path = canonical(output_folder_path).make_preferred();
 
 		// Validate log_path.
 		if (is_directory(log_path))
@@ -237,7 +246,7 @@ int main(int argc, char* argv[])
 	{
 		// Initialize the log.
 		igrow::tee log(log_path);
-		std::cout << "Logging to " << canonical(log_path).make_preferred() << '\n';
+		std::cout << "Logging to " << log_path << '\n';
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 		const size_t num_children = num_mutants + num_crossovers;
@@ -251,8 +260,8 @@ int main(int argc, char* argv[])
 		{
 			ifstream in(initial_generation_csv_path);
 			string line;
-			line.reserve(405);
-			getline(in, line); // ligand,no. of conformations,free energy in kcal/mol of conformation 1,...
+			line.reserve(80);
+			getline(in, line); // Ligand,Conf,FE1,FE2,FE3,FE4,FE5,FE6,FE7,FE8,FE9
 			for (size_t i = 0; i < num_elitists; ++i)
 			{
 				// Check if there are sufficient initial elite ligands.
@@ -263,13 +272,13 @@ int main(int argc, char* argv[])
 				}
 
 				// Parse the elite ligand.
-				const size_t right_double_quotation_mark = line.find_last_of('"');
-				ligands.replace(i, new ligand(line.substr(1, right_double_quotation_mark - 1)));
+				const size_t comma1 = line.find_first_of(',', 1);
+				ligands.replace(i, new ligand(initial_generation_folder_path / (line.substr(0, comma1) + ".pdbqt")));
 
 				// Parse the free energy.
-				const size_t comma_before_free_energy = line.find_first_of(',', right_double_quotation_mark + 3);
-				const size_t comma_after_free_energy  = line.find_first_of(',', comma_before_free_energy + 5);
-				ligands[i].free_energy = right_cast<fl>(line, comma_before_free_energy + 2, comma_after_free_energy); // right_cast is 1-based.
+				const size_t comma2 = line.find_first_of(',', comma1 + 2);
+				const size_t comma3 = line.find_first_of(',', comma2 + 6);
+				ligands[i].free_energy = right_cast<fl>(line, comma2 + 2, comma3); // right_cast is 1-based.
 			}
 		}
 
