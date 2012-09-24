@@ -38,6 +38,8 @@ namespace igrow
 			using namespace std;
 			cout.setf(ios::fixed, ios::floatfield);
 			file.setf(ios::fixed, ios::floatfield);
+			cout << std::setprecision(3);
+			file << std::setprecision(3);
 		}
 
 		/// Logs a generic left-value reference.

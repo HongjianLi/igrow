@@ -251,6 +251,7 @@ int main(int argc, char* argv[])
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 		const size_t num_children = num_mutants + num_crossovers;
 		const size_t num_ligands = num_elitists + num_children;
+		const fl num_ligands_inv = static_cast<fl>(1) / num_ligands;
 
 		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 		boost::ptr_vector<ligand> ligands;
@@ -407,7 +408,8 @@ int main(int argc, char* argv[])
 			// Sort ligands in ascending order of efficacy.
 			ligands.sort();
 
-			// Write summaries to csv.
+			// Write summaries to csv and calculate average statistics.
+			fl avg_mw = 0, avg_logp = 0, avg_free_energy = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
 			for (size_t i = 0; i < num_ligands; ++i)
 			{
 				const ligand& l = ligands[i];
@@ -426,7 +428,33 @@ int main(int argc, char* argv[])
 					<< ',' << l.mw
 					<< ',' << l.logp
 					<< '\n';
+				avg_mw += l.mw;
+				avg_logp += l.logp;
+				avg_free_energy += l.free_energy;
+				avg_rotatable_bonds += l.num_rotatable_bonds;
+				avg_atoms += l.num_atoms;
+				avg_heavy_atoms += l.num_heavy_atoms;
+				avg_hb_donors += l.num_hb_donors;
+				avg_hb_acceptors += l.num_hb_acceptors;
 			}
+			avg_mw *= num_ligands_inv;
+			avg_logp *= num_ligands_inv;
+			avg_free_energy *= num_ligands_inv;
+			avg_rotatable_bonds *= num_ligands_inv;
+			avg_atoms *= num_ligands_inv;
+			avg_heavy_atoms *= num_ligands_inv;
+			avg_hb_donors *= num_ligands_inv;
+			avg_hb_acceptors *= num_ligands_inv;
+			log << "Failures |      FE |       A |      HA |     MWT |     NRB |     HBD |     HBA |    LogP\n"
+			    << std::setw(8) << num_failures << "   "
+				<< std::setw(7) << avg_free_energy << "   "
+				<< std::setw(7) << avg_atoms << "   "
+				<< std::setw(7) << avg_heavy_atoms << "   "
+				<< std::setw(7) << avg_mw << "   "
+				<< std::setw(7) << avg_rotatable_bonds << "   "
+				<< std::setw(7) << avg_hb_donors << "   "
+				<< std::setw(7) << avg_hb_acceptors << "   "
+				<< std::setw(7) << avg_logp << '\n';
 		}
 	}
 	catch (const std::exception& e)
