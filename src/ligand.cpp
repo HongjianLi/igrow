@@ -609,14 +609,14 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2) : p(p), parent1(l1.p), parent2(l2.p)
+	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2, const bool dummy) : p(p), parent1(l1.p), parent2(l2.p)
 	{
-		const frame& f1 = l1.frames[f1idx];
-		const frame& f2 = l2.frames[f2idx];
-
-		// Set the connector atoms.
-		connector1 = (g1 ? f1.rotorY : f1.rotorX);
-		connector2 = (g2 ? f2.rotorY : f2.rotorX);
+//		const frame& f1 = l1.frames[f1idx];
+//		const frame& f2 = l2.frames[f2idx];
+//
+//		// Set the connector atoms.
+//		connector1 = (g1 ? f1.rotorY : f1.rotorX);
+//		connector2 = (g2 ? f2.rotorY : f2.rotorX);
 	}
 
 /*

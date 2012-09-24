@@ -69,12 +69,10 @@ namespace igrow
 			const ligand& l2 = ligands[uniform_elitist_gen()];
 
 			// Obtain a random mutable atom from the two parent ligands respectively.
-			const size_t f1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1))();
-			const size_t f2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l2.num_rotatable_bonds - 1))();
-			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, 1))();
-			const size_t g2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, 1))();
+			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l1.num_rotatable_bonds - 1))();
+			const size_t g2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l2.num_rotatable_bonds - 1))();
 
-			ligands.replace(index, new ligand(p, l1, l2, f1, f2, g1, g2));
+			ligands.replace(index, new ligand(p, l1, l2, g1, g2, true));
 			if (v(ligands[index])) break;
 			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
 		} while (true);

@@ -92,7 +92,7 @@ namespace igrow
 		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
 		/// Constructs a ligand by crossover.
-		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const size_t g1, const size_t g2);
+		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2, const bool dummy);
 
 		/// Saves the current ligand to a file in PDBQT format.
 		void save() const;
