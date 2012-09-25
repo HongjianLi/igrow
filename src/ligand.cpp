@@ -609,243 +609,62 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2, const bool dummy) : p(p), parent1(l1.p), parent2(l2.p)
+	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx const bool dummy) : p(p), parent1(l1.p), parent2(l2.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0)
 	{
-//		const frame& f1 = l1.frames[f1idx];
-//		const frame& f2 = l2.frames[f2idx];
-//
-//		// Set the connector atoms.
-//		connector1 = (g1 ? f1.rotorY : f1.rotorX);
-//		connector2 = (g2 ? f2.rotorY : f2.rotorX);
-	}
+		const frame& f1 = l1.frames[f1idx];
+		const frame& f2 = l2.frames[f2idx];
 
-/*
-	// add a fragment to the position of a randomly selected hydrogen
+		// Set the connector atoms.
+		connector1 = f1.rotorX;
+		connector2 = f2.rotorY;
+		
+		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
+		max_atom_number = l1.max_atom_number + l2.max_atom_number;
 
-	void ligand::mutate(ligand fragment)
-	{
-		// select hydrogen
-		int count(0), connectIndex, fragHydrogen(-1), fragIndex, linkerHydrogen(-1);
-		// atom copy and atom reference
-		atom curHydrogen, *fragHydrogenAtom, *fragConnectAtom;
-		string element1, element2;
-		Vec3d delta;
+		// The number of rotatable bonds of child ligand is equal to the sum of its parent ligands plus 1.
+		num_rotatable_bonds = l1.num_rotatable_bonds + l2.num_rotatable_bonds + 1;
 
-		linkerHydrogen = IndexOfRandomHydrogen();
-		// obtain information on hydrogens
-		curHydrogen = atoms[linkerHydrogen];
-		// hydrogen has only 1 connection, get the first index in array
-		connectIndex = *(curHydrogen.IndexArray.begin());
-		const atom connectAtom = atoms[connectIndex];
-		// do the same on the fragment, there must be so hydrogen in the library...
-		fragHydrogen = fragment.IndexOfRandomHydrogen();
-		// these atoms would be updated, get reference instead of copying
-		fragHydrogenAtom = &fragment.atoms[fragHydrogen];
-		fragIndex = *(fragHydrogenAtom->IndexArray.begin());
-		fragConnectAtom = &fragment.atoms[fragIndex];
+		// Reserve enough capacity for storing atoms.
+		atoms.reserve(l1.num_atoms + l2.num_atoms);
 
-		// move fragment in place
-		// pick the bond to be adjusted
-		element1 = connectAtom.element;
-		element2 = fragConnectAtom->element;
-		delta = curHydrogen.coordinates - connectAtom.coordinates;
-		delta.normalize();
-		bond_library library;
-		// scale it to reflect real molecular bond length
-		delta *= library.length(element1, element2);
-		// move fragment in place
-		fragment.Translate(fragIndex, (connectAtom.coordinates + delta));
+		// Reserve enough capacity for storing frames.
+		frames.reserve(l1.frames.size() + l2.frames.size());
 
-		// rotate fragment to minimise distance between fragment's hydrogen and connected atom
-		// Rotating the fragment so it has the correct orientation...
+		// Determine the number of ligand 1's frames up to f1.
+		const size_t f1_num_frames = f1idx + 1;
+		BOOST_ASSERT(f1_num_frames <= l1_num_frames);
 
-		// use geometry to calculate the angle necessary to achieve minimum distance
-		Vec3d A = connectAtom.coordinates - fragConnectAtom->coordinates;
-		Vec3d B = fragHydrogenAtom->coordinates - fragConnectAtom->coordinates;
-		double dist = (fragHydrogenAtom->coordinates - connectAtom.coordinates).length();
-		// normal to the 3 points
-		Vec3d normal = B^A;
-		// angle between 3 points with respect to fragment connected atom
-		double angle = acos((A * B) / sqrt(A.length2() * B.length2()));
-		// rotate along the line using connected atom as pivot
-		// prevent the situation when it is already in place in the beginning
-		if (normal != Vec3d())
-			fragment.RotateLine(normal, fragIndex, angle);
-		// rotate the other side if the dist increased
-		if ((fragHydrogenAtom->coordinates - connectAtom.coordinates).length() > dist)
-			fragment.RotateLine(normal, fragIndex, -2 * angle);
-
-		// SP2 bond pair appears in planar
-		// The fragment bond is SP2-SP2, so planarizing...
-		if (connectAtom.isSP2() && fragConnectAtom->isSP2())
+		// Create new frames for ligand 1's frames that are before f1.
+		for (size_t k = 0; k < f1idx; ++k)
 		{
-			int cur_dihedral(-1), frag_dihedral(-1);
-			double dihedral, dist;
-			set<int>::iterator it;
-			map<double, double> best_angles;
-			// find reference atoms for both connected atoms
-			for (it = connectAtom.IndexArray.begin(); it != connectAtom.IndexArray.end(); ++it)
+			// Obtain a constant reference to the corresponding frame of ligand 1.
+			const frame& rf = l1.frames[k];
+			const size_t rf_num_branches = rf.branches.size();
+
+			// Create a new frame based on the reference frame.
+			frames.push_back(frame(rf.parent, rf.rotorX, rf.rotorY, atoms.size()));
+			frame& f = frames.back();
+
+			// Populate branches.
+			f.branches.reserve(rf_num_branches); // This frame exactly consists of rf_num_branches BRANCH frames.
+			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
-				if (*it != linkerHydrogen)
-					cur_dihedral = *it;
+				const size_t b = rf.branches[i];
+				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);
 			}
-			for (it = fragConnectAtom->IndexArray.begin(); it != fragConnectAtom->IndexArray.end(); ++it)
+
+			// Populate atoms.
+			BOOST_ASSERT(f.begin == rf.begin);
+			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
-				if (*it != fragHydrogen)
-					frag_dihedral = *it;
+				atoms.push_back(l1.atoms[i]);
 			}
-			// calculate dihedral angle on these four atoms
-			dihedral = DihedralAngle(atoms[cur_dihedral].coordinates, connectAtom.coordinates, (*fragConnectAtom).coordinates, fragment.atoms[frag_dihedral].coordinates);
-			// rotate so that the two planes are now parallel
-			fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -dihedral);
-			// calculate distance in this orientation
-			dist = MolecularDistance(fragment);
-			best_angles.insert(pair<double, double>(dist, -dihedral));
-			// try the opposite
-			fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, pi);
-			dist = MolecularDistance(fragment);
-			best_angles.insert(pair<double, double>(dist, pi - dihedral));
-			// try the other set of orientations
-			fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -pi + 2 * dihedral);
-			dist = MolecularDistance(fragment);
-			best_angles.insert(pair<double, double>(dist, dihedral));
-			fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, pi);
-			dist = MolecularDistance(fragment);
-			best_angles.insert(pair<double, double>(dist, pi + dihedral));
-			fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, -pi - dihedral);
-			fragment.RotateLine(connectAtom.coordinates, fragConnectAtom->coordinates, fragIndex, best_angles.rbegin()->second); // maximize intra-molecular distance
-		}
-			// minimise hinderance for SP3 and SP bond
-		else
-		{
-			// Rotating fragment around connecting bond to minimize steric hindrance...
-			double BadContact, BestContact(0), BestAngle(0), Angle(0), delta(pi / 25);
-			Vec3d normal = connectAtom.coordinates - fragConnectAtom->coordinates;
-			// try a whole circle with definite steps
-			while (Angle < 2 * pi)
-			{
-				Angle += delta;
-				if (normal == Vec3d()) break; // impossible, useless
-				fragment.RotateLine(normal, fragIndex, delta);
-				BadContact = MolecularDistance(fragment);
-				// maximize the distance
-				if (BadContact > BestContact)
-				{
-					BestContact = BadContact;
-					BestAngle = Angle;
-				}
-			}
-			// rotate to least hindered orientation
-			if (normal != Vec3d())
-				fragment.RotateLine(normal, fragIndex, BestAngle);
+			f.end = atoms.size();
+			BOOST_ASSERT(f.begin < f.end);
 		}
 
-		// Merging the fragment with the original molecule...
-		// remove hydrogen atom from both molecule
-		DeleteAtom(linkerHydrogen);
-		fragment.DeleteAtom(fragHydrogen);
-
-		int updateIndex, cascadeIndex(MaxIndex());
-		set<int> tempIndice;
-		ostringstream output;
-
-		for (map<int, atom>::iterator it = fragment.atoms.begin(); it != fragment.atoms.end(); ++it)
-		{
-			// copy the atom
-			atom toAdd(it->second);
-			updateIndex = atoi(toAdd.PDBIndex.c_str());
-			// append to the largest index of this molecule
-			updateIndex += cascadeIndex;
-			output.str(string());
-			output << updateIndex;
-			toAdd.PDBIndex = output.str();
-			tempIndice.clear();
-			// produce a set of pending indice
-			for (set<int>::iterator iter = toAdd.IndexArray.begin(); iter != toAdd.IndexArray.end(); ++iter)
-				tempIndice.insert(*iter + cascadeIndex);
-			// clear the original indice
-			toAdd.IndexArray.clear();
-			// move the indice to the original set
-			for (set<int>::iterator iter = tempIndice.begin(); iter != tempIndice.end(); ++iter)
-				toAdd.IndexArray.insert(*iter);
-			// add atom to the current molecule
-			atoms.insert(pair<int, atom > (updateIndex, toAdd));
-		}
-
-		// at last connect the fragment and molecule at the selected position
-		atoms[connectIndex].IndexArray.insert(fragIndex + cascadeIndex);
-		atoms[fragIndex + cascadeIndex].IndexArray.insert(connectIndex);
+		// The number of atoms of child ligand is equal to the sum of its parent ligands minus 2.
+		num_atoms = atoms.size();
+		
 	}
-
-	void ligand::Translate(int index, Vec3d origin)
-	{
-		// calculate real displacement to move
-		Vec3d delta = origin - atoms[index].coordinates;
-		// move all atoms in the molecule
-		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-			it->second.coordinates = it->second.coordinates + delta;
-	}
-
-	void ligand::RotateLine(Vec3d v1, Vec3d v2, int index, double radian)
-	{
-		Vec3d location, delta = atoms[index].coordinates;
-		Mat4d rot;
-		// create rotation matrix
-		rot = rot.createRotation(radian, v1 - v2);
-		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-		{
-			// shift to indexed atom position
-			location = it->second.coordinates - delta;
-			// perform rotation
-			location = rot * location;
-			// move back by delta amount
-			it->second.coordinates = location + delta;
-		}
-	}
-
-	// same method by calculating normal beforehand
-
-	void ligand::RotateLine(Vec3d normal, int index, double radian)
-	{
-		Vec3d location, delta = atoms[index].coordinates;
-		Mat4d rot;
-		rot = rot.createRotation(radian, normal);
-		for (map<int, atom>::iterator it = atoms.begin(); it != atoms.end(); ++it)
-		{
-			location = it->second.coordinates - delta;
-			location = rot * location;
-			it->second.coordinates = location + delta;
-		}
-	}
-
-	// total minimum distance for all atoms, quadratic
-
-	double ligand::MolecularDistance(ligand& other)
-	{
-		double min, dist, total_dist = 0;
-		map<int, atom>::iterator it1, it2;
-		for (it1 = atoms.begin(); it1 != atoms.end(); ++it1)
-		{
-			min = DBL_MAX;
-			for (it2 = other.atoms.begin(); it2 != other.atoms.end(); ++it2)
-			{
-				dist = it1->second.DistanceTo(it2->second);
-				if (dist < min)
-					min = dist;
-			}
-			total_dist += dist;
-		}
-		return total_dist;
-	}
-
-	// in radian, angle between 2 planes (a1-a2-a3, a2-a3-a4) with respect to vector a2-a3
-
-	double ligand::DihedralAngle(const Vec3d& a1, const Vec3d& a2, const Vec3d& a3, const Vec3d& a4)
-	{
-		Vec3d v1 = a2 - a1;
-		Vec3d v2 = a3 - a2;
-		Vec3d v3 = a4 - a3;
-		return atan2((v1 * v2.length())*(v2^v3), (v1^v2)*(v2^v3));
-	}
-*/
 }
