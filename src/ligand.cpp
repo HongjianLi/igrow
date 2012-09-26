@@ -609,7 +609,7 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx const bool dummy) : p(p), parent1(l1.p), parent2(l2.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0)
+	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const bool dummy) : p(p), parent1(l1.p), parent2(l2.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0)
 	{
 		const frame& f1 = l1.frames[f1idx];
 		const frame& f2 = l2.frames[f2idx];
@@ -621,18 +621,17 @@ namespace igrow
 		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
 		max_atom_number = l1.max_atom_number + l2.max_atom_number;
 
-		// The number of rotatable bonds of child ligand is equal to the sum of its parent ligands plus 1.
-		num_rotatable_bonds = l1.num_rotatable_bonds + l2.num_rotatable_bonds + 1;
+		// Determine the number of ligand 1's frames up to f1.
+		const size_t f1_num_frames = f1idx + 1;
+		BOOST_ASSERT(f1_num_frames <= l1_num_frames);
 
-		// Reserve enough capacity for storing atoms.
-		atoms.reserve(l1.num_atoms + l2.num_atoms);
+		size_t l4_num_frames = 0;
 
 		// Reserve enough capacity for storing frames.
 		frames.reserve(l1.frames.size() + l2.frames.size());
 
-		// Determine the number of ligand 1's frames up to f1.
-		const size_t f1_num_frames = f1idx + 1;
-		BOOST_ASSERT(f1_num_frames <= l1_num_frames);
+		// Reserve enough capacity for storing atoms.
+		atoms.reserve(l1.num_atoms + l2.num_atoms);
 
 		// Create new frames for ligand 1's frames that are before f1.
 		for (size_t k = 0; k < f1idx; ++k)
@@ -650,7 +649,7 @@ namespace igrow
 			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
 				const size_t b = rf.branches[i];
-				f.branches.push_back(b > f1idx ? l2_num_frames + b : b);
+				f.branches.push_back(b > f1idx ? l4_num_frames + b : b);
 			}
 
 			// Populate atoms.
@@ -665,6 +664,18 @@ namespace igrow
 
 		// The number of atoms of child ligand is equal to the sum of its parent ligands minus 2.
 		num_atoms = atoms.size();
+
+		// The number of rotatable bonds of child ligand is equal to the sum of its parent ligands plus 1.
+		num_rotatable_bonds = frames.size() - 1;
 		
+		mutable_atoms.reserve(num_atoms);
+		for (const auto& a : atoms)
+		{
+			if (a.is_mutable()) mutable_atoms.push_back(a.srn);
+			if (!a.is_hydrogen()) ++num_heavy_atoms;
+			if (a.is_hb_donor()) ++num_hb_donors; // TODO: use neighbor.
+			if (a.is_hb_acceptor()) ++num_hb_acceptors;
+			mw += a.atomic_weight();
+		}
 	}
 }
