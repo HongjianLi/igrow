@@ -617,7 +617,7 @@ namespace igrow
 		// Set the connector atoms.
 		c1srn = f1.rotorX;
 		c2srn = f2.rotorY;
-		
+
 		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
 		max_atom_number = l1.max_atom_number + l2.max_atom_number;
 
@@ -627,7 +627,7 @@ namespace igrow
 		frames.reserve(l1_num_frames + l2_num_frames);
 
 		// Reserve enough capacity for storing atoms.
-		atoms.reserve(l1.num_atoms + l2.num_atoms);		
+		atoms.reserve(l1.num_atoms + l2.num_atoms);
 
 		// Determine the number of frames of ligand 5 and ligand 4. Here, ligand 5 = ligand 1 - ligand 3.
 		size_t child;
@@ -680,7 +680,7 @@ namespace igrow
 		const atom& c2 = l2.atoms[p2.second];
 		BOOST_ASSERT(c1.srn == c1srn);
 		BOOST_ASSERT(c2.srn == c2srn);
-		
+
 		// Obtain the frames and indices of the two virtual mutable atoms.
 		const std::pair<size_t, size_t> q1 = l1.get_frame(f1.rotorY);
 		const std::pair<size_t, size_t> q2 = l2.get_frame(f2.rotorX);
@@ -691,7 +691,7 @@ namespace igrow
 		const atom& m1 = l1.atoms[q1.second];
 		const atom& m2 = l2.atoms[q2.second];
 		BOOST_ASSERT(m1.srn == f1.rotorY);
-		BOOST_ASSERT(m2.srn == f2.rotorX);		
+		BOOST_ASSERT(m2.srn == f2.rotorX);
 
 		// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
 		const vec3 c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
@@ -758,13 +758,13 @@ namespace igrow
 		// Refresh the number of atoms.
 		num_atoms = atoms.size();
 		BOOST_ASSERT(num_atoms >= 1);
-		BOOST_ASSERT(num_atoms < l1.num_atoms + l1.num_atoms);
+		BOOST_ASSERT(num_atoms < l1.num_atoms + l2.num_atoms);
 
 		// Refresh the number of rotatable bonds.
 		num_rotatable_bonds = frames.size() - 1;
 		BOOST_ASSERT(num_rotatable_bonds >= 1);
 		BOOST_ASSERT(num_rotatable_bonds <= l1.num_rotatable_bonds + l2.num_rotatable_bonds - 1);
-		
+
 		// Refresh mutable_atoms, num_heavy_atoms, num_hb_donors, num_hb_acceptors and mw.
 		mutable_atoms.reserve(num_atoms);
 		for (const auto& a : atoms)
