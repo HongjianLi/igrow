@@ -416,9 +416,9 @@ int main(int argc, char* argv[])
 				csv << generation
 					<< ',' << l.p
 					<< ',' << l.parent1
-					<< ',' << l.connector1
+					<< ',' << l.c1srn
 					<< ',' << l.parent2
-					<< ',' << l.connector2
+					<< ',' << l.c2srn
 					<< ',' << l.free_energy
 					<< ',' << l.num_rotatable_bonds
 					<< ',' << l.num_atoms
