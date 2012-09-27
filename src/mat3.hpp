@@ -47,7 +47,7 @@ namespace igrow
 			if (a.zero()) BOOST_ASSERT(eq(c, 1) || eq(c, -1));
 			else BOOST_ASSERT(a.normalized());
 			BOOST_ASSERT(c >= -1);
-			BOOST_ASSERT(c <=  1);			
+			BOOST_ASSERT(c <=  1);
 			const fl t = 1 - c;
 			const fl ta0a0 = t * a[0] * a[0];
 			const fl ta1a1 = t * a[1] * a[1];
