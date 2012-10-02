@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 	using namespace igrow;
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
-	fl max_mw, max_logp, min_logp;
+	fl max_mw;
 
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.txt";
@@ -332,7 +332,7 @@ int main(int argc, char* argv[])
 
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
-		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight,logP\n";
+		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight\n";
 
 		for (size_t generation = 1; true; ++generation)
 		{
