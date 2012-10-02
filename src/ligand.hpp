@@ -80,7 +80,6 @@ namespace igrow
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
 		fl mw; ///< Molecular weight.
-		fl logp; ///< Predicted LogP obtained by external XLOGP3.
 		fl free_energy; ///< Predicted free energy obtained by external docking.
 		explicit ligand() {}
 
@@ -140,7 +139,7 @@ namespace igrow
 	class validator
 	{
 	public:
-		validator(const size_t max_rotatable_bonds, const size_t max_atoms, const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw, const fl max_logp, const fl min_logp) : max_rotatable_bonds(max_rotatable_bonds), max_atoms(max_atoms), max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw), max_logp(max_logp), min_logp(min_logp) {}
+		validator(const size_t max_rotatable_bonds, const size_t max_atoms, const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw) : max_rotatable_bonds(max_rotatable_bonds), max_atoms(max_atoms), max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw) {}
 
 		bool operator()(const ligand& l) const
 		{
@@ -150,8 +149,6 @@ namespace igrow
 			if (l.num_hb_donors > max_hb_donors) return false;
 			if (l.num_hb_acceptors > max_hb_acceptors) return false;
 			if (l.mw > max_mw) return false;
-			if (l.logp > max_logp) return false;
-			if (l.logp < min_logp) return false;
 			return true;
 		}
 
@@ -162,8 +159,6 @@ namespace igrow
 		const size_t max_hb_donors;
 		const size_t max_hb_acceptors;
 		const fl max_mw;
-		const fl max_logp;
-		const fl min_logp;
 	};
 }
 

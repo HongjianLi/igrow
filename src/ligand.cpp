@@ -27,7 +27,7 @@ namespace igrow
 {
 	using namespace boost::filesystem;
 
-	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0) // TODO: comment logp(0)
+	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
@@ -299,9 +299,6 @@ namespace igrow
 
 		// The molecular weight of child ligand is equal to the sum of its parent ligands minus the two mutable atoms.
 		mw = l1.mw + l2.mw - (m1.atomic_weight() + m2.atomic_weight());
-
-		// The logP of child ligand is equal to the sum of its parent ligands minus the two mutable atoms.
-		logp = l1.logp + l2.logp;
 
 		// Reserve enough capacity for storing atoms.
 		atoms.reserve(num_atoms);
@@ -616,7 +613,7 @@ namespace igrow
 		BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
 	}
 
-	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const bool dummy) : p(p), parent1(l1.p), parent2(l2.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0)
+	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const bool dummy) : p(p), parent1(l1.p), parent2(l2.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
 	{
 		const frame& f1 = l1.frames[f1idx];
 		const frame& f2 = l2.frames[f2idx];

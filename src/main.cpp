@@ -82,8 +82,6 @@ int main(int argc, char* argv[])
 		const size_t default_max_hb_donors = 5;
 		const size_t default_max_hb_acceptors = 10;
 		const fl default_max_mw = 500;
-		const fl default_max_logp = 5;
-		const fl default_min_logp = -5;
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
@@ -115,8 +113,6 @@ int main(int argc, char* argv[])
 			("max_hb_donors", value<size_t>(&max_hb_donors)->default_value(default_max_hb_donors), "maximum number of hydrogen bond donors")
 			("max_hb_acceptors", value<size_t>(&max_hb_acceptors)->default_value(default_max_hb_acceptors), "maximum number of hydrogen bond acceptors")
 			("max_mw", value<fl>(&max_mw)->default_value(default_max_mw), "maximum molecular weight")
-			("max_logp", value<fl>(&max_logp)->default_value(default_max_logp), "maximum logP")
-			("min_logp", value<fl>(&min_logp)->default_value(default_min_logp), "minimum logP")
 			("config", value<path>(), "options can be loaded from a configuration file")
 			;
 
@@ -224,11 +220,6 @@ int main(int argc, char* argv[])
 			std::cerr << "Option max_mw must be positive\n";
 			return 1;
 		}
-		if (min_logp > max_logp)
-		{
-			std::cerr << "Option max_mw must be larger than or equal to option min_mw\n";
-			return 1;
-		}
 	}
 	catch (const std::exception& e)
 	{
@@ -300,7 +291,7 @@ int main(int argc, char* argv[])
 		mt19937eng eng(seed);
 
 		// Initialize a ligand validator.
-		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw, max_logp, min_logp);
+		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw);
 
 		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
 		boost::atomic<size_t> num_failures(0);
@@ -419,17 +410,15 @@ int main(int argc, char* argv[])
 					<< ',' << l.num_hb_donors
 					<< ',' << l.num_hb_acceptors
 					<< ',' << l.mw
-					<< ',' << l.logp
 					<< '\n';
 			}
 
 			// Calculate average statistics of elite ligands.
-			fl avg_mw = 0, avg_logp = 0, avg_free_energy = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
+			fl avg_mw = 0, avg_free_energy = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
 			for (size_t i = 0; i < num_elitists; ++i)
 			{
 				const ligand& l = ligands[i];
 				avg_mw += l.mw;
-				avg_logp += l.logp;
 				avg_free_energy += l.free_energy;
 				avg_rotatable_bonds += l.num_rotatable_bonds;
 				avg_atoms += l.num_atoms;
@@ -438,14 +427,13 @@ int main(int argc, char* argv[])
 				avg_hb_acceptors += l.num_hb_acceptors;
 			}
 			avg_mw *= num_elitists_inv;
-			avg_logp *= num_elitists_inv;
 			avg_free_energy *= num_elitists_inv;
 			avg_rotatable_bonds *= num_elitists_inv;
 			avg_atoms *= num_elitists_inv;
 			avg_heavy_atoms *= num_elitists_inv;
 			avg_hb_donors *= num_elitists_inv;
 			avg_hb_acceptors *= num_elitists_inv;
-			log << "Failures |  Avg FE |   Avg A |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA | Avg LogP\n"
+			log << "Failures |  Avg FE |   Avg A |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
 			    << std::setw(8) << num_failures << "   "
 				<< std::setw(7) << avg_free_energy << "   "
 				<< std::setw(7) << avg_atoms << "   "
@@ -453,8 +441,7 @@ int main(int argc, char* argv[])
 				<< std::setw(7) << avg_mw << "   "
 				<< std::setw(7) << avg_rotatable_bonds << "   "
 				<< std::setw(7) << avg_hb_donors << "   "
-				<< std::setw(7) << avg_hb_acceptors << "   "
-				<< std::setw(8) << avg_logp << '\n';
+				<< std::setw(7) << avg_hb_acceptors << '\n';
 		}
 	}
 	catch (const std::exception& e)
