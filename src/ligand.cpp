@@ -17,13 +17,14 @@
  */
 
 #include <iomanip>
+#include <boost/algorithm/string.hpp>
 #include "fstream.hpp"
 #include "mat3.hpp"
 #include "ligand.hpp"
 
 namespace igrow
 {
-	ligand::ligand(const path& p) : p(p), c1srn(0), c2srn(0), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0) // TODO: comment logp(0)
+	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0) // TODO: comment logp(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
 		frames.reserve(30); // A ligand typically consists of <= 30 frames.
@@ -55,7 +56,9 @@ namespace igrow
 				if (ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + ad_type_string + " is not supported by igrow.");
 
 				// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
-				atoms.push_back(atom(line.substr(12, 18), line.substr(54), right_cast<size_t>(line, 7, 11), vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54)), ad));
+				string name = line.substr(12, 4);
+				boost::algorithm::trim(name);
+				atoms.push_back(atom(name, line.substr(12, 18), line.substr(54), right_cast<size_t>(line, 7, 11), vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54)), ad));
 
 				// Update ligand properties.
 				const atom& a = atoms.back();
@@ -178,6 +181,11 @@ namespace igrow
 
 	void ligand::update(const path& p)
 	{
+		if (!exists(p))
+		{
+			free_energy = 0;
+			return;
+		}
 		string line;
 		line.reserve(79);
 		ifstream in(p);
@@ -255,22 +263,18 @@ namespace igrow
 		size_t c1idx, c2idx;
 		for (c1idx = f1.begin; (c1idx == m1idx) || (!m1.is_neighbor(l1.atoms[c1idx])); ++c1idx);
 		for (c2idx = f2.begin; (c2idx == m2idx) || (!m2.is_neighbor(l2.atoms[c2idx])); ++c2idx);
-
-		// The connector atom should be in the same frame as the mutable atom.
 		BOOST_ASSERT(c1idx < f1.end);
 		BOOST_ASSERT(c2idx < f2.end);
 
 		// Obtain constant references to the connector atoms.
 		const atom& c1 = l1.atoms[c1idx];
 		const atom& c2 = l2.atoms[c2idx];
-
-		// Both the connector and mutable atoms should be in the same frame.
 		BOOST_ASSERT(f1idx == l1.get_frame(c1.srn).first);
 		BOOST_ASSERT(f2idx == l2.get_frame(c2.srn).first);
 
-		// Set the connector atoms.
-		c1srn = c1.srn;
-		c2srn = c2.srn;
+		// Set the connector bonds.
+		connector1 = lexical_cast<string>(c1.srn) + ":" + c1.name + " - " + lexical_cast<string>(m1.srn) + ":" + m1.name;
+		connector2 = lexical_cast<string>(c2.srn) + ":" + c2.name + " - " + lexical_cast<string>(m2.srn) + ":" + m2.name;
 
 		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
 		max_atom_number = l1.max_atom_number + l2.max_atom_number;
@@ -407,19 +411,19 @@ namespace igrow
 			BOOST_ASSERT(&f2 == &l2.frames[l4_to_l2_mapping[0]]);
 
 			// Create a new frame based on the reference frame.
-			frames.push_back(frame(f1idx, c1srn, l1.max_atom_number + c2srn, atoms.size()));
+			frames.push_back(frame(f1idx, c1.srn, l1.max_atom_number + c2.srn, atoms.size()));
 			frame& f = frames.back();
 
 			// Populate atoms.
 			for (size_t i = f2.begin; i < m2idx; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+				atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			for (size_t i = m2idx + 1; i < f2.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+				atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
@@ -482,7 +486,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+					atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -514,7 +518,7 @@ namespace igrow
 				for (size_t i = rf.begin; i < rf.end; ++i)
 				{
 					const atom& ra = l2.atoms[i];
-					atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+					atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 				}
 				f.end = atoms.size();
 				BOOST_ASSERT(f.begin < f.end);
@@ -543,7 +547,7 @@ namespace igrow
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+				atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
@@ -614,10 +618,6 @@ namespace igrow
 		const frame& f1 = l1.frames[f1idx];
 		const frame& f2 = l2.frames[f2idx];
 
-		// Set the connector atoms.
-		c1srn = f1.rotorX;
-		c2srn = f2.rotorY;
-
 		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
 		max_atom_number = l1.max_atom_number + l2.max_atom_number;
 
@@ -670,16 +670,16 @@ namespace igrow
 		}
 
 		// Obtain the frames and indices of the two connector atoms.
-		const std::pair<size_t, size_t> p1 = l1.get_frame(c1srn);
-		const std::pair<size_t, size_t> p2 = l2.get_frame(c2srn);
+		const std::pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
+		const std::pair<size_t, size_t> p2 = l2.get_frame(f2.rotorY);
 		BOOST_ASSERT(p1.first == f1.parent);
 		BOOST_ASSERT(p2.first == f2idx);
 
 		// Obtain constant references to the connector atoms.
 		const atom& c1 = l1.atoms[p1.second];
 		const atom& c2 = l2.atoms[p2.second];
-		BOOST_ASSERT(c1.srn == c1srn);
-		BOOST_ASSERT(c2.srn == c2srn);
+		BOOST_ASSERT(c1.srn == f1.rotorX);
+		BOOST_ASSERT(c2.srn == f2.rotorY);
 
 		// Obtain the frames and indices of the two virtual mutable atoms.
 		const std::pair<size_t, size_t> q1 = l1.get_frame(f1.rotorY);
@@ -692,6 +692,10 @@ namespace igrow
 		const atom& m2 = l2.atoms[q2.second];
 		BOOST_ASSERT(m1.srn == f1.rotorY);
 		BOOST_ASSERT(m2.srn == f2.rotorX);
+
+		// Set the connector bonds.
+		connector1 = lexical_cast<string>(c1.srn) + ":" + c1.name + " - " + lexical_cast<string>(m1.srn) + ":" + m1.name;
+		connector2 = lexical_cast<string>(c2.srn) + ":" + c2.name + " - " + lexical_cast<string>(m2.srn) + ":" + m2.name;
 
 		// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
 		const vec3 c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
@@ -722,7 +726,7 @@ namespace igrow
 			for (size_t i = rf.begin; i < rf.end; ++i)
 			{
 				const atom& ra = l2.atoms[i];
-				atoms.push_back(atom(ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+				atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);

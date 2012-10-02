@@ -410,9 +410,9 @@ int main(int argc, char* argv[])
 				csv << generation
 					<< ',' << l.p
 					<< ',' << l.parent1
-					<< ',' << l.c1srn
+					<< ',' << l.connector1
 					<< ',' << l.parent2
-					<< ',' << l.c2srn
+					<< ',' << l.connector2
 					<< ',' << l.free_energy
 					<< ',' << l.num_rotatable_bonds
 					<< ',' << l.num_atoms

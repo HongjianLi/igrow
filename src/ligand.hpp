@@ -68,8 +68,8 @@ namespace igrow
 		path p; ///< Path to the current ligand.
 		path parent1; ///< Parent ligand 1.
 		path parent2; ///< Parent ligand 2.
-		size_t c1srn; ///< The serial number of the connecting atom of parent 1.
-		size_t c2srn; ///< The serial number of the connecting atom of parent 2.
+		string connector1; ///< The connecting bond of parent 1.
+		string connector2; ///< The connecting bond of parent 2.
 		vector<frame> frames; ///< Frames.
 		vector<atom> atoms; ///< Atoms.
 		vector<size_t> mutable_atoms; ///< Hydrogens or halogens.
