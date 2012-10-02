@@ -22,10 +22,12 @@
 
 #include <iostream>
 #include <iomanip>
-#include "fstream.hpp"
+#include <boost/filesystem/fstream.hpp>
 
 namespace igrow
 {
+	using namespace boost::filesystem;
+
 	/// Represents a log with both stdout and a custom log file as output.
 	class tee
 	{

@@ -17,13 +17,16 @@
  */
 
 #include <iomanip>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem/operations.hpp>
 #include <boost/algorithm/string.hpp>
-#include "fstream.hpp"
 #include "mat3.hpp"
 #include "ligand.hpp"
 
 namespace igrow
 {
+	using namespace boost::filesystem;
+
 	ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0), logp(0) // TODO: comment logp(0)
 	{
 		// Initialize necessary variables for constructing a ligand.
@@ -123,8 +126,8 @@ namespace igrow
 
 	void ligand::save() const
 	{
-		using namespace std;
 		ofstream out(p); // Dumping starts. Open the file stream as late as possible.
+		using namespace std;
 		out.setf(ios::fixed, ios::floatfield);
 		out << setprecision(3);
 
