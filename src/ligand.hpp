@@ -55,10 +55,10 @@ namespace igrow
 		/// Move constructor.
 		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
 
-#ifdef __clang__
+//#ifdef __clang__
 		/// Copy assignment operator.
 		frame& operator=(const frame&) = default;
-#endif
+//#endif
 	};
 
 	/// Represents a ligand.
@@ -112,12 +112,6 @@ namespace igrow
 		bool crossover_feasible() const
 		{
 			return num_rotatable_bonds > 0;
-		}
-
-		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
-		bool operator<(const ligand& l) const
-		{
-			return free_energy < l.free_energy;
 		}
 	};
 

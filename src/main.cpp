@@ -326,6 +326,10 @@ int main(int argc, char* argv[])
 		// Initialize process context.
 		const boost::process::context ctx;
 
+		// Initialize sorters.
+		const auto sort_by_fe = [] (const ligand& l1, const ligand& l2) -> bool { return l1.free_energy < l2.free_energy; };
+		const auto sort_by_le = [] (const ligand& l1, const ligand& l2) -> bool { return l1.free_energy < l2.free_energy; };
+
 		// Initialize a thread pool and create worker threads for later use.
 		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
 		thread_pool tp(num_threads);
@@ -391,7 +395,7 @@ int main(int argc, char* argv[])
 			}
 
 			// Sort ligands in ascending order of efficacy.
-			ligands.sort();
+			std::sort(ligands.begin(), ligands.end(), sort_by_fe);
 
 			// Write summaries to csv and calculate average statistics.
 			for (size_t i = 0; i < num_ligands; ++i)
