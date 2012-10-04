@@ -24,7 +24,6 @@
   <ItemGroup>
     <ClInclude Include="..\src\atom.hpp" />
     <ClInclude Include="..\src\common.hpp" />
-    <ClInclude Include="..\src\fstream.hpp" />
     <ClInclude Include="..\src\ligand.hpp" />
     <ClInclude Include="..\src\mat3.hpp" />
     <ClInclude Include="..\src\operation.hpp" />
