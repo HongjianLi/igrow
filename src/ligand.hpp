@@ -80,7 +80,8 @@ namespace igrow
 		size_t num_hb_donors; ///< Number of hydrogen bond donors.
 		size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
 		fl mw; ///< Molecular weight.
-		fl free_energy; ///< Predicted free energy obtained by external docking.
+		fl fe; ///< Predicted free energy obtained by external docking.
+		fl le; ///< Predicted ligand efficiency obtained by external docking.
 		explicit ligand() {}
 
 		/// Constructs a ligand by parsing a given ligand file in PDBQT.
@@ -112,6 +113,12 @@ namespace igrow
 		bool crossover_feasible() const
 		{
 			return num_rotatable_bonds > 0;
+		}
+
+		/// Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
+		bool operator<(const ligand& l) const
+		{
+			return fe < l.fe;
 		}
 	};
 

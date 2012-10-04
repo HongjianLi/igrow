@@ -59,6 +59,7 @@ int main(int argc, char* argv[])
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw;
+//	string sort;
 
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.txt";
@@ -82,6 +83,7 @@ int main(int argc, char* argv[])
 		const size_t default_max_hb_donors = 5;
 		const size_t default_max_hb_acceptors = 10;
 		const fl default_max_mw = 500;
+//		const string default_sort = "fe";
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
@@ -106,6 +108,7 @@ int main(int argc, char* argv[])
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
 			("mutants", value<size_t>(&num_mutants)->default_value(default_num_mutants), "number of child ligands created by mutation")
 			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
+//			("sort", value<string>(&sort)->default_value(default_sort), "sorting ligands ascendingly by free energy (fe) or ligand efficiency (le)")
 			("max_failures", value<size_t>(&max_failures)->default_value(default_max_failures), "maximum number of operational failures to tolerate")
 			("max_rotatable_bonds", value<size_t>(&max_rotatable_bonds)->default_value(default_max_rotatable_bonds), "maximum number of rotatable bonds")
 			("max_atoms", value<size_t>(&max_atoms)->default_value(default_max_atoms), "maximum number of atoms")
@@ -220,6 +223,11 @@ int main(int argc, char* argv[])
 			std::cerr << "Option max_mw must be positive\n";
 			return 1;
 		}
+//		if (!((sort == "fe") || (sort == "le")))
+//		{
+//			std::cerr << "Option sort must be either fe or le\n";
+//			return 1;
+//		}
 	}
 	catch (const std::exception& e)
 	{
@@ -258,13 +266,15 @@ int main(int argc, char* argv[])
 				}
 
 				// Parse the elite ligand.
-				const size_t comma1 = line.find_first_of(',', 1);
+				const size_t comma1 = line.find(',', 1);
 				ligands.replace(i, new ligand(initial_generation_folder_path / (line.substr(0, comma1) + ".pdbqt")));
 
-				// Parse the free energy.
-				const size_t comma2 = line.find_first_of(',', comma1 + 2);
-				const size_t comma3 = line.find_first_of(',', comma2 + 6);
-				ligands[i].free_energy = right_cast<fl>(line, comma2 + 2, comma3); // right_cast is 1-based.
+				// Parse the free energy and ligand efficiency.
+				const size_t comma2 = line.find(',', comma1 + 2);
+				const size_t comma3 = line.find(',', comma2 + 6);
+				const size_t comma4 = line.find(',', comma3 + 6);
+				ligands[i].fe = lexical_cast<fl>(line.substr(comma2 + 1, comma3 - comma2 - 1));
+				ligands[i].le = lexical_cast<fl>(line.substr(comma3 + 1, comma4 - comma3 - 1));
 			}
 		}
 
@@ -327,8 +337,9 @@ int main(int argc, char* argv[])
 		const boost::process::context ctx;
 
 		// Initialize sorters.
-		const auto sort_by_fe = [] (const ligand& l1, const ligand& l2) -> bool { return l1.free_energy < l2.free_energy; };
-		const auto sort_by_le = [] (const ligand& l1, const ligand& l2) -> bool { return l1.free_energy < l2.free_energy; };
+//		const auto sort_by_fe = [] (const ligand& l1, const ligand& l2) -> bool { return l1.fe < l2.fe; };
+//		const auto sort_by_le = [] (const ligand& l1, const ligand& l2) -> bool { return l1.le < l2.le; };
+//		const auto sort_by = sort == "fe" ? sort_by_fe : sort_by_le;
 
 		// Initialize a thread pool and create worker threads for later use.
 		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
@@ -336,7 +347,7 @@ int main(int argc, char* argv[])
 
 		// Initialize csv file for dumping statistics.
 		ofstream csv(csv_path);
-		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight\n";
+		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
 
 		for (size_t generation = 1; true; ++generation)
 		{
@@ -395,7 +406,8 @@ int main(int argc, char* argv[])
 			}
 
 			// Sort ligands in ascending order of efficacy.
-			std::sort(ligands.begin(), ligands.end(), sort_by_fe);
+			ligands.sort();
+//			std::sort(ligands.begin(), ligands.end(), sort_by);
 
 			// Write summaries to csv and calculate average statistics.
 			for (size_t i = 0; i < num_ligands; ++i)
@@ -407,7 +419,8 @@ int main(int argc, char* argv[])
 					<< ',' << l.connector1
 					<< ',' << l.parent2
 					<< ',' << l.connector2
-					<< ',' << l.free_energy
+					<< ',' << l.fe
+					<< ',' << l.le
 					<< ',' << l.num_rotatable_bonds
 					<< ',' << l.num_atoms
 					<< ',' << l.num_heavy_atoms
@@ -418,12 +431,13 @@ int main(int argc, char* argv[])
 			}
 
 			// Calculate average statistics of elite ligands.
-			fl avg_mw = 0, avg_free_energy = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
+			fl avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
 			for (size_t i = 0; i < num_elitists; ++i)
 			{
 				const ligand& l = ligands[i];
 				avg_mw += l.mw;
-				avg_free_energy += l.free_energy;
+				avg_fe += l.fe;
+				avg_le += l.le;
 				avg_rotatable_bonds += l.num_rotatable_bonds;
 				avg_atoms += l.num_atoms;
 				avg_heavy_atoms += l.num_heavy_atoms;
@@ -431,16 +445,17 @@ int main(int argc, char* argv[])
 				avg_hb_acceptors += l.num_hb_acceptors;
 			}
 			avg_mw *= num_elitists_inv;
-			avg_free_energy *= num_elitists_inv;
+			avg_fe *= num_elitists_inv;
+			avg_le *= num_elitists_inv;
 			avg_rotatable_bonds *= num_elitists_inv;
 			avg_atoms *= num_elitists_inv;
 			avg_heavy_atoms *= num_elitists_inv;
 			avg_hb_donors *= num_elitists_inv;
 			avg_hb_acceptors *= num_elitists_inv;
-			log << "Failures |  Avg FE |   Avg A |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
+			log << "Failures |  Avg FE |  Avg LE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
 			    << std::setw(8) << num_failures << "   "
-				<< std::setw(7) << avg_free_energy << "   "
-				<< std::setw(7) << avg_atoms << "   "
+				<< std::setw(7) << avg_fe << "   "
+				<< std::setw(7) << avg_le << "   "
 				<< std::setw(7) << avg_heavy_atoms << "   "
 				<< std::setw(7) << avg_mw << "   "
 				<< std::setw(7) << avg_rotatable_bonds << "   "

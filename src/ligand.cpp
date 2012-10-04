@@ -186,15 +186,21 @@ namespace igrow
 	{
 		if (!exists(p))
 		{
-			free_energy = 0;
+			fe = 0;
+			le = 0;
 			return;
 		}
 		string line;
 		line.reserve(79);
 		ifstream in(p);
 		getline(in, line); // MODEL        1
-		getline(in, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -6.088 KCAL/MOL
-		free_energy = right_cast<fl>(line, 56, 63);
+		getline(in, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.976 KCAL/MOL
+		fe = right_cast<fl>(line, 56, 63);
+		getline(in, line); // REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.722 KCAL/MOL
+		getline(in, line); // REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.740 KCAL/MOL
+		getline(in, line); // REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.018 KCAL/MOL
+		getline(in, line); // REMARK            LIGAND EFFICIENCY PREDICTED BY IDOCK:  -0.280 KCAL/MOL
+		le = right_cast<fl>(line, 56, 63);
 		for (size_t i = 0; getline(in, line) && !starts_with(line, "TORSDOF");)
 		{
 			if (starts_with(line, "ATOM"))
