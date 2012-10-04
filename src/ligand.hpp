@@ -55,10 +55,27 @@ namespace igrow
 		/// Move constructor.
 		frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
 
-//#ifdef __clang__
 		/// Copy assignment operator.
-		frame& operator=(const frame&) = default;
-//#endif
+		frame& operator=(const frame& f)
+		{
+			this->parent = f.parent;
+			this->rotorX = f.rotorX;
+			this->rotorY = f.rotorY;
+			this->begin = f.begin;
+			this->end = f.end;
+			this->branches = f.branches;
+		}
+
+		/// Move assignment operator.
+		frame& operator=(frame&& f)
+		{
+			this->parent = f.parent;
+			this->rotorX = f.rotorX;
+			this->rotorY = f.rotorY;
+			this->begin = f.begin;
+			this->end = f.end;
+			this->branches = static_cast<vector<size_t>&&>(f.branches);
+		}
 	};
 
 	/// Represents a ligand.
