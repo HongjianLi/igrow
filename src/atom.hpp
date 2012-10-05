@@ -143,6 +143,7 @@ namespace igrow
 			this->srn = a.srn;
 			this->coordinate = a.coordinate;
 			this->ad = a.ad;
+			return *this;
 		}
 
 		/// Move assignment operator.
@@ -154,6 +155,7 @@ namespace igrow
 			this->srn = a.srn;
 			this->coordinate = a.coordinate;
 			this->ad = a.ad;
+			return *this;
 		}
 
 		/// Returns covalent radius from an AutoDock4 atom type.

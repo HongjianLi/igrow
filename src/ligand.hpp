@@ -64,6 +64,7 @@ namespace igrow
 			this->begin = f.begin;
 			this->end = f.end;
 			this->branches = f.branches;
+			return *this;
 		}
 
 		/// Move assignment operator.
@@ -75,6 +76,7 @@ namespace igrow
 			this->begin = f.begin;
 			this->end = f.end;
 			this->branches = static_cast<vector<size_t>&&>(f.branches);
+			return *this;
 		}
 	};
 
