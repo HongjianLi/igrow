@@ -20,7 +20,7 @@
 
 namespace igrow
 {
-	void operation::mutation_task(const size_t index, const path& p, const size_t seed)
+	void operation::addition_task(const size_t index, const path& p, const size_t seed)
 	{
 		// Initialize a Mersenne Twister random number generator.
 		mt19937eng eng(seed);
@@ -31,7 +31,7 @@ namespace igrow
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
 
-		// Create a child ligand by mutation.
+		// Create a child ligand by addition.
 		do
 		{
 			// Obtain constant references to the two parent ligands.
@@ -51,7 +51,7 @@ namespace igrow
 		ligands[index].save();
 	}
 
-	void operation::split_task(const size_t index, const path& p, const size_t seed)
+	void operation::subtraction_task(const size_t index, const path& p, const size_t seed)
 	{
 		// Initialize a Mersenne Twister random number generator.
 		mt19937eng eng(seed);
@@ -61,7 +61,7 @@ namespace igrow
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
-		// Create a child ligand by mutation.
+		// Create a child ligand by addition.
 		do
 		{
 			// Obtain constant references to the two parent ligands.
@@ -89,7 +89,7 @@ namespace igrow
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
-		// Create a child ligand by mutation.
+		// Create a child ligand by addition.
 		do
 		{
 			// Obtain constant references to the two parent ligands.

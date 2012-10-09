@@ -107,10 +107,10 @@ namespace igrow
 		/// @exception parsing_error Thrown when error parsing the ligand file.
 		explicit ligand(const path& p);
 
-		/// Constructs a ligand by mutation.
+		/// Constructs a ligand by addition.
 		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
-		/// Constructs a ligand by splitting.
+		/// Constructs a ligand by subtraction.
 		explicit ligand(const path& p, const ligand& l1, const size_t g1);
 
 		/// Constructs a ligand by crossover.
@@ -125,14 +125,14 @@ namespace igrow
 		/// Gets the frame and index to which a atom belongs to given its serial number.
 		std::pair<size_t, size_t> get_frame(const size_t srn) const;
 
-		/// Returns true if the current ligand is able to perform mutation.
-		bool mutation_feasible() const
+		/// Returns true if the current ligand is able to perform addition.
+		bool addition_feasible() const
 		{
 			return mutable_atoms.size() > 0;
 		}
 
-		/// Returns true if the current ligand is able to perform splitting.
-		bool split_feasible() const
+		/// Returns true if the current ligand is able to perform subtraction.
+		bool subtraction_feasible() const
 		{
 			return num_rotatable_bonds > 0;
 		}

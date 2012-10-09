@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 
 	using namespace igrow;
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
-	size_t num_threads, seed, num_elitists, num_mutants, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
+	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw;
 //	string sort;
 
@@ -73,7 +73,8 @@ int main(int argc, char* argv[])
 		const unsigned int concurrency = boost::thread::hardware_concurrency();
 		const size_t default_num_threads = concurrency ? concurrency : 1;
 		const size_t default_seed = random_seed();
-		const size_t default_num_mutants = 20;
+		const size_t default_num_additions = 20;
+		const size_t default_num_subtractions = 20;
 		const size_t default_num_crossovers = 20;
 		const size_t default_num_elitists = 10;
 		const size_t default_max_failures = 1000;
@@ -106,7 +107,8 @@ int main(int argc, char* argv[])
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
-			("mutants", value<size_t>(&num_mutants)->default_value(default_num_mutants), "number of child ligands created by mutation")
+			("additions", value<size_t>(&num_additions)->default_value(default_num_additions), "number of child ligands created by addition")
+			("subtractions", value<size_t>(&num_subtractions)->default_value(default_num_subtractions), "number of child ligands created by subtraction")
 			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
 //			("sort", value<string>(&sort)->default_value(default_sort), "sorting ligands ascendingly by free energy (fe) or ligand efficiency (le)")
 			("max_failures", value<size_t>(&max_failures)->default_value(default_max_failures), "maximum number of operational failures to tolerate")
@@ -242,7 +244,7 @@ int main(int argc, char* argv[])
 		std::cout << "Logging to " << log_path << '\n';
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
-		const size_t num_children = num_mutants + num_crossovers;
+		const size_t num_children = num_additions + num_subtractions + num_crossovers;
 		const size_t num_ligands = num_elitists + num_children;
 		const fl num_elitists_inv = static_cast<fl>(1) / num_elitists;
 
@@ -363,27 +365,31 @@ int main(int argc, char* argv[])
 			create_directory(ligand_folder);
 			create_directory(output_folder);
 
-			// Create mutation and crossover tasks.
+			// Create addition, subtraction and crossover tasks.
 			BOOST_ASSERT(operation_tasks.empty());
-			for (size_t i = 0; i < num_mutants; ++i)
+			for (size_t i = 0; i < num_additions; ++i)
 			{
-				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::mutation_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::addition_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
-			for (size_t i = num_mutants; i < num_children; ++i)
+			for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
+			{
+				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::subtraction_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+			}
+			for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
 			{
 				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
 
-			// Run the mutation and crossover tasks in parallel asynchronously.
+			// Run the addition and crossover tasks in parallel asynchronously.
 			tp.run(operation_tasks);
 
-			// Propagate possible exceptions thrown by the mutation and crossover tasks.
+			// Propagate possible exceptions thrown by the addition and crossover tasks.
 			for (size_t i = 0; i < num_children; ++i)
 			{
 				operation_tasks[i].get_future().get();
 			}
 
-			// Block until all the mutation and crossover tasks are completed.
+			// Block until all the addition and crossover tasks are completed.
 			tp.sync();
 			operation_tasks.clear();
 

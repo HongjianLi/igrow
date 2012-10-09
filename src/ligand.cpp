@@ -652,10 +652,11 @@ namespace igrow
 			frame& f = frames.back();
 
 			// Populate branches.
-			f.branches.reserve(rf_num_branches); // This frame exactly consists of rf_num_branches BRANCH frames.
+			f.branches.reserve(rf_num_branches);
 			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
 				const size_t b = rf.branches[i];
+				if (b == f1idx) continue;
 				f.branches.push_back(b > f1idx ? b - l5_num_frames : b);
 			}
 
@@ -711,7 +712,8 @@ namespace igrow
 			for (size_t i = 0; i < rf_num_branches; ++i)
 			{
 				const size_t b = rf.branches[i];
-				f.branches.push_back(b > f1idx ? b - l5_num_frames : b);
+				BOOST_ASSERT(b > f1idx);
+				f.branches.push_back(b - l5_num_frames);
 			}
 
 			// Populate atoms.
@@ -743,7 +745,7 @@ namespace igrow
 			if (a.is_hb_acceptor()) ++num_hb_acceptors;
 			mw += a.atomic_weight();
 		}
-		BOOST_ASSERT(mutable_atoms.size() <= l1.mutable_atoms.size());
+		BOOST_ASSERT(mutable_atoms.size() <= l1.mutable_atoms.size() + 1);
 	}
 
 	ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const bool dummy) : p(p), parent1(l1.p), parent2(l2.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
