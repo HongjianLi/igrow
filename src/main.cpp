@@ -389,7 +389,7 @@ int main(int argc, char* argv[])
 				operation_tasks[i].get_future().get();
 			}
 
-			// Block until all the addition and crossover tasks are completed.
+			// Block until all the addition, subtraction and crossover tasks are completed.
 			tp.sync();
 			operation_tasks.clear();
 
