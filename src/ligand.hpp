@@ -110,6 +110,9 @@ namespace igrow
 		/// Constructs a ligand by mutation.
 		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
+		/// Constructs a ligand by splitting.
+		explicit ligand(const path& p, const ligand& l1, const size_t g1);
+
 		/// Constructs a ligand by crossover.
 		explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2, const bool dummy);
 

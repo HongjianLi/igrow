@@ -43,6 +43,10 @@ namespace igrow
 		/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
 		void mutation_task(const size_t index, const path& p, const size_t seed);
 
+		/// Task for creating a child ligand from one parent ligands by splitting.
+		/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
+		void split_task(const size_t index, const path& p, const size_t seed);
+
 		/// Task for creating a child ligand from two parent ligands by crossover.
 		/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
 		void crossover_task(const size_t index, const path& p, const size_t seed);

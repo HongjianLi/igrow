@@ -51,6 +51,34 @@ namespace igrow
 		ligands[index].save();
 	}
 
+	void operation::split_task(const size_t index, const path& p, const size_t seed)
+	{
+		// Initialize a Mersenne Twister random number generator.
+		mt19937eng eng(seed);
+
+		// Initialize random number generators for obtaining a random fragment and a random elitist.
+		using boost::random::variate_generator;
+		using boost::random::uniform_int_distribution;
+		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
+
+		// Create a child ligand by mutation.
+		do
+		{
+			// Obtain constant references to the two parent ligands.
+			const ligand& l1 = ligands[uniform_elitist_gen()];
+
+			// Obtain a random mutable atom from the two parent ligands respectively.
+			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
+
+			ligands.replace(index, new ligand(p, l1, g1));
+			if (v(ligands[index])) break;
+			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
+		} while (true);
+
+		// Save the newly created child ligand.
+		ligands[index].save();
+	}
+
 	void operation::crossover_task(const size_t index, const path& p, const size_t seed)
 	{
 		// Initialize a Mersenne Twister random number generator.
