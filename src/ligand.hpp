@@ -131,6 +131,12 @@ namespace igrow
 			return mutable_atoms.size() > 0;
 		}
 
+		/// Returns true if the current ligand is able to perform splitting.
+		bool split_feasible() const
+		{
+			return num_rotatable_bonds > 0;
+		}
+
 		/// Returns true if the current ligand is able to perform crossover.
 		bool crossover_feasible() const
 		{
