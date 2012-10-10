@@ -28,8 +28,8 @@ namespace igrow
 		// Initialize random number generators for obtaining a random fragment and a random elitist.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
+		variate_generator<mt19937eng&, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
+		variate_generator<mt19937eng&, uniform_int_distribution<size_t>> uniform_fragment_gen(eng, uniform_int_distribution<size_t>(0, num_fragments - 1));
 
 		// Create a child ligand by addition.
 		do
@@ -39,8 +39,8 @@ namespace igrow
 			const ligand& l2 = ligand_flyweight(fragments[uniform_fragment_gen()]);
 
 			// Obtain a random mutable atom from the two parent ligands respectively.
-			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1))();
-			const size_t g2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1))();
+			const size_t g1 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1))();
+			const size_t g2 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1))();
 
 			ligands.replace(index, new ligand(p, l1, l2, g1, g2));
 			if (v(ligands[index])) break;
@@ -59,7 +59,7 @@ namespace igrow
 		// Initialize random number generators for obtaining a random fragment and a random elitist.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
+		variate_generator<mt19937eng&, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
 		// Create a child ligand by addition.
 		do
@@ -68,7 +68,7 @@ namespace igrow
 			const ligand& l1 = ligands[uniform_elitist_gen()];
 
 			// Obtain a random mutable atom from the two parent ligands respectively.
-			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
+			const size_t g1 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
 
 			ligands.replace(index, new ligand(p, l1, g1));
 			if (v(ligands[index])) break;
@@ -87,7 +87,7 @@ namespace igrow
 		// Initialize random number generators for obtaining a random fragment and a random elitist.
 		using boost::random::variate_generator;
 		using boost::random::uniform_int_distribution;
-		variate_generator<mt19937eng, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
+		variate_generator<mt19937eng&, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
 		// Create a child ligand by addition.
 		do
@@ -97,8 +97,8 @@ namespace igrow
 			const ligand& l2 = ligands[uniform_elitist_gen()];
 
 			// Obtain a random mutable atom from the two parent ligands respectively.
-			const size_t g1 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
-			const size_t g2 = variate_generator<mt19937eng, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds))();
+			const size_t g1 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
+			const size_t g2 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds))();
 
 			ligands.replace(index, new ligand(p, l1, l2, g1, g2, true));
 			if (v(ligands[index])) break;
