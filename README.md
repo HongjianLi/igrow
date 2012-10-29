@@ -123,7 +123,7 @@ Change Log
 * Provided precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X, FreeBSD and Solaris.
 
 
-Contact Author
+Author
 --------------
 
 [Jacky Lee]
@@ -134,8 +134,6 @@ Logo
 
 ![igrow logo](https://github.com/HongjianLi/igrow/raw/master/logo.png)
 
-Red grape is chosen as the logo for igrow because it is one of the author's favorite fruit. The logo image is collected from [Open Clip Art].
-
 
 [drug design]: http://en.wikipedia.org/wiki/Drug_design
 [AutoGrow]: http://autogrow.ucsd.edu
@@ -145,5 +143,3 @@ Red grape is chosen as the logo for igrow because it is one of the author's favo
 [Boost C++ Libraries]: http://www.boost.org
 [doxygen]: http://www.doxygen.org
 [Jacky Lee]: http://www.cse.cuhk.edu.hk/~hjli
-[Open Clip Art]: http://www.openclipart.org
-
