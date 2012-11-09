@@ -1,10 +1,10 @@
-BOOST_ROOT = $(HOME)/boost_1_51_0
-CC = g++ -O3 -DNDEBUG -std=gnu++0x
+BOOST_ROOT = $(HOME)/boost_1_52_0
+CC = g++ -O3 -DNDEBUG -std=c++11
 
 ifeq ($(TOOLSET), clang)
-  CC = clang++ -O3 -DNDEBUG -std=gnu++11
+  CC = clang++ -O3 -DNDEBUG -std=c++11
 else ifeq ($(TOOLSET), intel)
-  CC = icpc -O3 -DNDEBUG -std=gnu++0x
+  CC = icpc -O3 -DNDEBUG -std=c++11
 endif
 
 bin/igrow: obj/thread_pool.o obj/operation.o obj/ligand.o obj/main.o
