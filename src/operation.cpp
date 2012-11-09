@@ -34,9 +34,14 @@ namespace igrow
 		// Create a child ligand by addition.
 		do
 		{
-			// Obtain constant references to the two parent ligands.
-			const ligand& l1 = ligands[uniform_elitist_gen()];
-			const ligand& l2 = ligand_flyweight(fragments[uniform_fragment_gen()]);
+			// Obtain references to the two parent ligands.
+			ligand& l1 = ligands[uniform_elitist_gen()];
+			ligand l2 = ligand_flyweight(fragments[uniform_fragment_gen()]);
+			while (!(l1.addition_feasible() && l2.addition_feasible()))
+			{
+				l1 = ligands[uniform_elitist_gen()];
+				l2 = ligand_flyweight(fragments[uniform_fragment_gen()]);
+			}
 
 			// Obtain a random mutable atom from the two parent ligands respectively.
 			const size_t g1 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1))();
@@ -61,11 +66,15 @@ namespace igrow
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng&, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
-		// Create a child ligand by addition.
+		// Create a child ligand by subtraction.
 		do
 		{
-			// Obtain constant references to the two parent ligands.
-			const ligand& l1 = ligands[uniform_elitist_gen()];
+			// Obtain reference to the parent ligand.
+			ligand& l1 = ligands[uniform_elitist_gen()];
+			while (!l1.subtraction_feasible())
+			{
+				l1 = ligands[uniform_elitist_gen()];
+			}
 
 			// Obtain a random mutable atom from the two parent ligands respectively.
 			const size_t g1 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
@@ -89,12 +98,17 @@ namespace igrow
 		using boost::random::uniform_int_distribution;
 		variate_generator<mt19937eng&, uniform_int_distribution<size_t>> uniform_elitist_gen(eng, uniform_int_distribution<size_t>(0, num_elitists - 1));
 
-		// Create a child ligand by addition.
+		// Create a child ligand by crossover.
 		do
 		{
 			// Obtain constant references to the two parent ligands.
-			const ligand& l1 = ligands[uniform_elitist_gen()];
-			const ligand& l2 = ligands[uniform_elitist_gen()];
+			ligand& l1 = ligands[uniform_elitist_gen()];
+			ligand& l2 = ligands[uniform_elitist_gen()];
+			while (!(l1.crossover_feasible() && l2.crossover_feasible()))
+			{
+				l1 = ligands[uniform_elitist_gen()];
+				l2 = ligands[uniform_elitist_gen()];
+			}
 
 			// Obtain a random mutable atom from the two parent ligands respectively.
 			const size_t g1 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
