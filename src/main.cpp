@@ -380,18 +380,17 @@ int main(int argc, char* argv[])
 				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
 
-			// Run the addition and crossover tasks in parallel asynchronously.
+			// Run the tasks in parallel asynchronously.
 			tp.run(operation_tasks);
-
-			// Propagate possible exceptions thrown by the addition and crossover tasks.
-			for (size_t i = 0; i < num_children; ++i)
-			{
-				operation_tasks[i].get_future().get();
-			}
-
-			// Block until all the addition, subtraction and crossover tasks are completed.
 			tp.sync();
 			operation_tasks.clear();
+
+			// Check if the maximum number of failures has been reached.
+			if (num_failures >= max_failures)
+			{
+				log << "The number of failures has reached " << max_failures << '\n';
+				return 0;
+			}
 
 			// Invoke idock.
 			idock_args[1] = ligand_folder.string();

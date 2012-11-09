@@ -44,7 +44,7 @@ namespace igrow
 
 			ligands.replace(index, new ligand(p, l1, l2, g1, g2));
 			if (v(ligands[index])) break;
-			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
+			if (num_failures++ >= max_failures) return;
 		} while (true);
 
 		// Save the newly created child ligand.
@@ -72,7 +72,7 @@ namespace igrow
 
 			ligands.replace(index, new ligand(p, l1, g1));
 			if (v(ligands[index])) break;
-			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
+			if (num_failures++ >= max_failures) return;
 		} while (true);
 
 		// Save the newly created child ligand.
@@ -102,7 +102,7 @@ namespace igrow
 
 			ligands.replace(index, new ligand(p, l1, l2, g1, g2, true));
 			if (v(ligands[index])) break;
-			if (num_failures++ >= max_failures) throw maximum_failures_reached_error(max_failures);
+			if (num_failures++ >= max_failures) return;
 		} while (true);
 
 		// Save the newly created child ligand.

@@ -74,12 +74,6 @@ namespace igrow
 //			operation_code(const size_t operation, const path& parent1, const path& parent2, const size_t connector1, const size_t connector2) : operation(operation), parent1(parent1), parent2(parent2), connector1(connector1), connector2(connector2) {}
 //		};
 	};
-
-	class maximum_failures_reached_error : public std::domain_error
-	{
-	public:
-		maximum_failures_reached_error(const size_t max_failures) : std::domain_error("The number of failures has reached " + lexical_cast<string>(max_failures)) {}
-	};
 }
 
 #endif
