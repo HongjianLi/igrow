@@ -67,7 +67,7 @@ namespace igrow
 				const atom& a = atoms.back();
 				if (a.is_mutable()) mutable_atoms.push_back(a.srn);
 				if (!a.is_hydrogen()) ++num_heavy_atoms;
-				if (a.is_hb_donor()) ++num_hb_donors; // TODO: use neighbor.
+				if (a.is_hb_donor()) ++num_hb_donors;
 				if (a.is_hb_acceptor()) ++num_hb_acceptors;
 				mw += a.atomic_weight();
 			}
@@ -792,7 +792,7 @@ namespace igrow
 		{
 			if (a.is_mutable()) mutable_atoms.push_back(a.srn);
 			if (!a.is_hydrogen()) ++num_heavy_atoms;
-			if (a.is_hb_donor()) ++num_hb_donors; // TODO: use neighbor.
+			if (a.is_hb_donor()) ++num_hb_donors;
 			if (a.is_hb_acceptor()) ++num_hb_acceptors;
 			mw += a.atomic_weight();
 		}
@@ -962,7 +962,7 @@ namespace igrow
 		{
 			if (a.is_mutable()) mutable_atoms.push_back(a.srn);
 			if (!a.is_hydrogen()) ++num_heavy_atoms;
-			if (a.is_hb_donor()) ++num_hb_donors; // TODO: use neighbor.
+			if (a.is_hb_donor()) ++num_hb_donors;
 			if (a.is_hb_acceptor()) ++num_hb_acceptors;
 			mw += a.atomic_weight();
 		}

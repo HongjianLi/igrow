@@ -60,7 +60,6 @@ namespace igrow
 			do
 			{
 				// Fetch a task to run atomically.
-				// TODO: Consider using boost/atomic.hpp, i.e. atomic<size_t> num_started_tasks; num_started_tasks.fetch_add(1);
 				{
 					mutex::scoped_lock self_lk(self);
 					if (num_started_tasks == num_tasks) break; // Break the loop when all the tasks are distributed.
