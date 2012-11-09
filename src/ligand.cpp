@@ -624,27 +624,56 @@ namespace igrow
 		const frame& f1 = l1.frames[f1idx];
 
 		// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
-		max_atom_number = l1.max_atom_number;
+		max_atom_number = l1.max_atom_number + 1;
 
 		// Reserve enough capacity for storing frames.
 		const size_t l1_num_frames = l1.frames.size();
-		frames.reserve(l1_num_frames);
+		frames.reserve(l1_num_frames - 1);
 
 		// Reserve enough capacity for storing atoms.
-		atoms.reserve(l1.num_atoms);
+		atoms.reserve(l1.num_atoms - 1);
 
 		// Determine the number of frames of ligand 5. Here, ligand 5 = ligand 1 - ligand 3.
 		size_t child;
 		for (child = f1idx; l1.frames[child].branches.size(); child = l1.frames[child].branches.back());
-		BOOST_ASSERT(child <= l1_num_frames);
+		BOOST_ASSERT(child < l1_num_frames);
 		const size_t l5_num_frames = child - f1idx + 1;
 		BOOST_ASSERT(l5_num_frames < l1_num_frames);
 
-		// Create new frames for ligand 1's frames that are before f1.
-		for (size_t k = 0; k < f1idx; ++k)
+		// Create new frames for ligand 1's frames that are before f1's parent frame.
+		for (size_t k = 0; k < f1.parent; ++k)
 		{
 			// Obtain a constant reference to the corresponding frame of ligand 1.
 			const frame& rf = l1.frames[k];
+			const size_t rf_num_branches = rf.branches.size();
+
+			// Create a new frame based on the reference frame.
+			frames.push_back(frame(rf.parent, rf.rotorX, rf.rotorY, atoms.size()));
+			frame& f = frames.back();
+
+			// Populate branches.
+			f.branches.reserve(rf_num_branches);
+			for (size_t i = 0; i < rf_num_branches; ++i)
+			{
+				const size_t b = rf.branches[i];
+				f.branches.push_back(b > f1idx ? b - l5_num_frames : b);
+			}
+
+			// Populate atoms.
+			BOOST_ASSERT(f.begin == rf.begin);
+			for (size_t i = rf.begin; i < rf.end; ++i)
+			{
+				atoms.push_back(l1.atoms[i]);
+			}
+			f.end = atoms.size();
+			BOOST_ASSERT(f.begin < f.end);
+		}
+
+
+		// Create a new frame for ligand 1's f1's parent frame.
+		{
+			// Obtain a constant reference to the corresponding frame of ligand 1.
+			const frame& rf = l1.frames[f1.parent];
 			const size_t rf_num_branches = rf.branches.size();
 
 			// Create a new frame based on the reference frame.
@@ -666,32 +695,55 @@ namespace igrow
 			{
 				atoms.push_back(l1.atoms[i]);
 			}
+
+			// Obtain the frames and indices of the two connector atoms.
+			const std::pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
+			const std::pair<size_t, size_t> p2 = l1.get_frame(f1.rotorY);
+			BOOST_ASSERT(p1.first == f1.parent);
+			BOOST_ASSERT(p2.first == f1idx);
+
+			// Obtain constant references to the connector atoms.
+			const atom& c1 = l1.atoms[p1.second];
+			const atom& m1 = l1.atoms[p2.second];
+			BOOST_ASSERT(c1.srn == f1.rotorX);
+			BOOST_ASSERT(m1.srn == f1.rotorY);
+
+			// Set the connector bonds.
+			connector1 = lexical_cast<string>(c1.srn) + ":" + c1.name + " - " + lexical_cast<string>(m1.srn) + ":" + m1.name;
+
+			// Add a hydrogen.
+			const vec3 c1_to_c2 = ((c1.covalent_radius() + ad_covalent_radii[0]) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
+			const vec3 origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
+			atoms.push_back(atom("H", " H   <0> d        ", "  0.00  0.00     0.085 H ", max_atom_number, origin_to_c2, 0)); // c2 is a hydrogen.
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
 		}
 
-		// Obtain the frames and indices of the two connector atoms.
-		const std::pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
-		const std::pair<size_t, size_t> p2 = l1.get_frame(f1.rotorY);
-		BOOST_ASSERT(p1.first == f1.parent);
-		BOOST_ASSERT(p2.first == f1idx);
-
-		// Obtain constant references to the connector atoms.
-		const atom& c1 = l1.atoms[p1.second];
-		const atom& m1 = l1.atoms[p2.second];
-		BOOST_ASSERT(c1.srn == f1.rotorX);
-		BOOST_ASSERT(m1.srn == f1.rotorY);
-
-		// Set the connector bonds.
-		connector1 = lexical_cast<string>(c1.srn) + ":" + c1.name + " - " + lexical_cast<string>(m1.srn) + ":" + m1.name;
-
-		// Add a hydrogen to the last frame.
+		// Create new frames for ligand 1's frames that are after f1's parent frame and before f1.
+		for (size_t k = f1.parent + 1; k < f1idx; ++k)
 		{
+			// Obtain a constant reference to the corresponding frame of ligand 1.
+			const frame& rf = l1.frames[k];
+			const size_t rf_num_branches = rf.branches.size();
 
-			const vec3 c1_to_c2 = ((c1.covalent_radius() + ad_covalent_radii[0]) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
-			const vec3 origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
-			atoms.push_back(atom("H", " H   <0> d        ", "  0.00  0.00     0.085 H ", atoms.back().srn + 1, origin_to_c2, 0)); // c2 is a hydrogen.
+			// Create a new frame based on the reference frame.
+			frames.push_back(frame(rf.parent, rf.rotorX, rf.rotorY, atoms.size()));
 			frame& f = frames.back();
+
+			// Populate branches.
+			f.branches.reserve(rf_num_branches);
+			for (size_t i = 0; i < rf_num_branches; ++i)
+			{
+				const size_t b = rf.branches[i];
+				f.branches.push_back(b);
+			}
+
+			// Populate atoms.
+			BOOST_ASSERT(f.begin == rf.begin + 1);
+			for (size_t i = rf.begin; i < rf.end; ++i)
+			{
+				atoms.push_back(l1.atoms[i]);
+			}
 			f.end = atoms.size();
 			BOOST_ASSERT(f.begin < f.end);
 		}
@@ -732,7 +784,6 @@ namespace igrow
 
 		// Refresh the number of rotatable bonds.
 		num_rotatable_bonds = frames.size() - 1;
-		BOOST_ASSERT(num_rotatable_bonds >= 1);
 		BOOST_ASSERT(num_rotatable_bonds < l1.num_rotatable_bonds);
 
 		// Refresh mutable_atoms, num_heavy_atoms, num_hb_donors, num_hb_acceptors and mw.
@@ -767,11 +818,11 @@ namespace igrow
 		// Determine the number of frames of ligand 5 and ligand 4. Here, ligand 5 = ligand 1 - ligand 3.
 		size_t child;
 		for (child = f1idx; l1.frames[child].branches.size(); child = l1.frames[child].branches.back());
-		BOOST_ASSERT(child <= l1_num_frames);
+		BOOST_ASSERT(child < l1_num_frames);
 		const size_t l5_num_frames = child - f1idx + 1;
 		BOOST_ASSERT(l5_num_frames < l1_num_frames);
 		for (child = f2idx; l2.frames[child].branches.size(); child = l2.frames[child].branches.back());
-		BOOST_ASSERT(child <= l2_num_frames);
+		BOOST_ASSERT(child < l2_num_frames);
 		const size_t l4_num_frames = child - f2idx + 1;
 		BOOST_ASSERT(l4_num_frames <= l2_num_frames);
 
