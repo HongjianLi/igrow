@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
 		const path idock_path = path(boost::process::find_executable_in_path("idock")).make_preferred();
 		log << "Using idock executable at " << idock_path << '\n';
 
-		// Initialize argument to idock.
+		// Initialize arguments to idock.
 		vector<string> idock_args(12);
 		idock_args[0]  = "--ligand_folder";
 		idock_args[2]  = "--output_folder";
