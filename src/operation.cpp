@@ -48,12 +48,13 @@ namespace igrow
 			const size_t g2 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1))();
 
 			ligands.replace(index, new ligand(p, l1, l2, g1, g2));
-			if (v(ligands[index])) break;
-			if (num_failures++ >= max_failures) return;
-		} while (true);
-
-		// Save the newly created child ligand.
-		ligands[index].save();
+			if (v(ligands[index]))
+			{
+				// Save the newly created child ligand.
+				ligands[index].save();
+				return;
+			}
+		} while (++num_failures < max_failures);
 	}
 
 	void operation::subtraction_task(const size_t index, const path& p, const size_t seed)
@@ -80,12 +81,13 @@ namespace igrow
 			const size_t g1 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds))();
 
 			ligands.replace(index, new ligand(p, l1, g1));
-			if (v(ligands[index])) break;
-			if (num_failures++ >= max_failures) return;
-		} while (true);
-
-		// Save the newly created child ligand.
-		ligands[index].save();
+			if (v(ligands[index]))
+			{
+				// Save the newly created child ligand.
+				ligands[index].save();
+				return;
+			}
+		} while (++num_failures < max_failures);
 	}
 
 	void operation::crossover_task(const size_t index, const path& p, const size_t seed)
@@ -115,11 +117,12 @@ namespace igrow
 			const size_t g2 = variate_generator<mt19937eng&, uniform_int_distribution<size_t>>(eng, uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds))();
 
 			ligands.replace(index, new ligand(p, l1, l2, g1, g2, true));
-			if (v(ligands[index])) break;
-			if (num_failures++ >= max_failures) return;
-		} while (true);
-
-		// Save the newly created child ligand.
-		ligands[index].save();
+			if (v(ligands[index]))
+			{
+				// Save the newly created child ligand.
+				ligands[index].save();
+				return;
+			}
+		} while (++num_failures < max_failures);
 	}
 }
