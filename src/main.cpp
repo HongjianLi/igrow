@@ -53,8 +53,6 @@
 
 int main(int argc, char* argv[])
 {
-	std::cout << "igrow 1.0\n";
-
 	using namespace igrow;
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
@@ -118,6 +116,8 @@ int main(int argc, char* argv[])
 			("max_hb_donors", value<size_t>(&max_hb_donors)->default_value(default_max_hb_donors), "maximum number of hydrogen bond donors")
 			("max_hb_acceptors", value<size_t>(&max_hb_acceptors)->default_value(default_max_hb_acceptors), "maximum number of hydrogen bond acceptors")
 			("max_mw", value<fl>(&max_mw)->default_value(default_max_mw), "maximum molecular weight")
+			("help", "help information")
+			("version", "version information")
 			("config", value<path>(), "options can be loaded from a configuration file")
 			;
 
@@ -134,13 +134,30 @@ int main(int argc, char* argv[])
 		// Parse command line arguments.
 		variables_map vm;
 		store(parse_command_line(argc, argv, all_options), vm);
-		variable_value config_value = vm["config"];
-		if (!config_value.empty()) // If a configuration file is presented, parse it.
+
+		// If no command line argument is supplied or help is requested, print the usage and exit.
+		if (argc == 1 || vm.count("help"))
 		{
-			ifstream config_file(config_value.as<path>());
+			std::cout << all_options;
+			return 0;
+		}
+
+		// If version is requested, print the version and exit.
+		if (vm.count("version"))
+		{
+			std::cout << "1.0.0" << std::endl;
+			return 0;
+		}
+
+		// If a configuration file is presented, parse it.
+		if (vm.count("config"))
+		{
+			boost::filesystem::ifstream config_file(vm["config"].as<path>());
 			store(parse_config_file(config_file, all_options), vm);
 		}
-		vm.notify(); // Notify the user if there are any parsing errors.
+
+		// Notify the user of parsing errors, if any.
+		vm.notify();
 
 		using namespace boost::filesystem;
 
