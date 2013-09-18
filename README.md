@@ -38,21 +38,13 @@ Supported operating systems and compilers
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.48.0 and 1.49.0 are tested. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem` and `Program Options`. Two unofficial and header-only libraries, Boost.Process and Boost.Atomic, are also required by igrow. The file `boost.process.tar.bz2` and `boost.atomic.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
+igrow depends on [Boost C++ Libraries]. Boost 1.54.0 is supported. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem` and `Program Options`. An unofficial and header-only library, Boost.Process, is also required by igrow. The file `boost.process.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
 
 ### Compilation on Linux
 
-The Makefile uses GCC as the default compiler. To compile, simply run
+The Makefile uses clang as the default compiler. To compile, simply run
 
     make
-
-CLANG is also supported.
-
-    make TOOLSET=clang
-
-Intel C++ Compiler is also supported.
-
-    make TOOLSET=intel
 
 One may modify the Makefile to use a different compiler or different compilation options.
 
@@ -64,7 +56,7 @@ Visual Studio 2012 solution and project files are provided. To compile, simply r
 
     msbuild /t:Build /p:Configuration=Release
 
-Or one may open `igrow.sln` in Visual Studio 2010 and do a full rebuild.
+Or one may open `igrow.sln` in Visual Studio 2012 and do a full rebuild.
 
 The generated objects will be placed in the `obj` folder, and the generated executable will be placed in the `bin` folder.
 
