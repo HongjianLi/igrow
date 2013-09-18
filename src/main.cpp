@@ -16,7 +16,7 @@
 
  */
 
-#include <boost/thread/thread.hpp>
+#include <thread>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/process/context.hpp>
@@ -44,8 +44,7 @@ int main(int argc, char* argv[])
 	{
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
-		const unsigned int concurrency = boost::thread::hardware_concurrency();
-		const size_t default_num_threads = concurrency ? concurrency : 1;
+		const size_t default_num_threads = boost::thread::hardware_concurrency();
 		const size_t default_seed = random_seed();
 		const size_t default_num_additions = 20;
 		const size_t default_num_subtractions = 20;
