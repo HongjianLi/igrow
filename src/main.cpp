@@ -16,29 +16,6 @@
 
  */
 
-/**
- * \mainpage igrow
- *
- * \section introduction Introduction
- * igrow is a multithreaded ligand growing tool for structure-based molecule design.
- *
- * \section features Features
- * igrow is inspired by AutoGrow. It uses idock as backend docking engine.
- * igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
- * igrow digests ligands and fragments in PDBQT format, saving the effort of frequently calling the prepare_ligand4 python script.
- * igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire synhsizing procedure. The thread pool parallelizes the creation of mutants and children in each generation.
- * igrow utilizes flyweight pattern for caching fragments and dynamic pointer vector for caching and sorting ligands.
- * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial ligand and fragments.
- *
- * \section availability Availability
- * igrow is free and open source available at https://GitHub.com/HongjianLi/igrow under Apache License 2.0. Precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X, FreeBSD and Solaris are provided.
- *
- * \author Hongjian Li, The Chinese University of Hong Kong.
- * \date 2 Oct 2012
- *
- * Copyright (C) 2012 The Chinese University of Hong Kong.
- */
-
 #include <boost/thread/thread.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
