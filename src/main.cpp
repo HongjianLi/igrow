@@ -19,31 +19,31 @@
 #include <thread>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <boost/process/context.hpp>
 #include <boost/process/operations.hpp>
 #include <boost/process/child.hpp>
-#include "tee.hpp"
 #include "ligand.hpp"
 #include "thread_pool.hpp"
 #include "operation.hpp"
 
 int main(int argc, char* argv[])
 {
-	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
-	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
-	fl max_mw;
-//	string sort;
-
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.txt";
 	const path default_csv_path = "log.csv";
+
+	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, csv_path;
+	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
+	fl max_mw;
+//	string sort;
 
 	// Process program options.
 	try
 	{
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
-		const size_t default_num_threads = boost::thread::hardware_concurrency();
+		const size_t default_num_threads = std::thread::hardware_concurrency();
 		const size_t default_seed = time(0);
 		const size_t default_num_additions = 20;
 		const size_t default_num_subtractions = 20;
@@ -70,7 +70,6 @@ int main(int argc, char* argv[])
 		options_description output_options("output (optional)");
 		output_options.add_options()
 			("output_folder", value<path>(&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
-			("log", value<path>(&log_path)->default_value(default_log_path), "log file in plain text")
 			("csv", value<path>(&csv_path)->default_value(default_csv_path), "summary file in csv format")
 			;
 
@@ -191,13 +190,6 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Validate log_path.
-		if (is_directory(log_path))
-		{
-			std::cerr << "Log path " << log_path << " is a directory\n";
-			return 1;
-		}
-
 		// Validate csv_path.
 		if (is_directory(csv_path))
 		{
@@ -230,10 +222,6 @@ int main(int argc, char* argv[])
 
 	try
 	{
-		// Initialize the log.
-		class tee log(log_path);
-		std::cout << "Logging to " << log_path << '\n';
-
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 		const size_t num_children = num_additions + num_subtractions + num_crossovers;
 		const size_t num_ligands = num_elitists + num_children;
@@ -245,7 +233,7 @@ int main(int argc, char* argv[])
 
 		// Parse the initial generation csv to get initial elite ligands.
 		{
-			ifstream in(initial_generation_csv_path);
+			boost::filesystem::ifstream in(initial_generation_csv_path);
 			string line;
 			line.reserve(80);
 			getline(in, line); // Ligand,Conf,FE1,FE2,FE3,FE4,FE5,FE6,FE7,FE8,FE9
@@ -272,7 +260,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Scan the fragment folder to obtain a list of fragments.
-		log << "Scanning fragment folder " << fragment_folder_path << '\n';
+		std::cout << "Scanning fragment folder " << fragment_folder_path << '\n';
 		vector<path> fragments;
 		fragments.reserve(1000); // A fragment folder typically consists of <= 1000 fragments.
 		{
@@ -287,10 +275,10 @@ int main(int argc, char* argv[])
 				fragments.push_back(dir_iter->path());
 			}
 		}
-		log << "Found " << fragments.size() << " fragments\n";
+		std::cout << "Found " << fragments.size() << " fragments\n";
 
 		// Initialize a Mersenne Twister random number generator.
-		log << "Using random seed " << seed << '\n';
+		std::cout << "Using random seed " << seed << '\n';
 		mt19937eng eng(seed);
 
 		// Initialize a ligand validator.
@@ -313,7 +301,7 @@ int main(int argc, char* argv[])
 
 		// Find the full path to idock executable.
 		const path idock_path = path(boost::process::find_executable_in_path("idock")).make_preferred();
-		log << "Using idock executable at " << idock_path << '\n';
+		std::cout << "Using idock executable at " << idock_path << '\n';
 
 		// Initialize arguments to idock.
 		vector<string> idock_args(12);
@@ -335,16 +323,16 @@ int main(int argc, char* argv[])
 //		const auto sort_by = sort == "fe" ? sort_by_fe : sort_by_le;
 
 		// Initialize a thread pool and create worker threads for later use.
-		log << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
+		std::cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
 		thread_pool tp(num_threads);
 
 		// Initialize csv file for dumping statistics.
-		ofstream csv(csv_path);
-		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
+		boost::filesystem::ofstream csv(csv_path);
+		std::cout << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
 
 		for (size_t generation = 1; true; ++generation)
 		{
-			log << "Running generation " << generation << '\n';
+			std::cout << "Running generation " << generation << '\n';
 
 			// Initialize the paths to current generation folder and its two subfolders.
 			const path generation_folder(output_folder_path / lexical_cast<string>(generation));
@@ -379,7 +367,7 @@ int main(int argc, char* argv[])
 			// Check if the maximum number of failures has been reached.
 			if (num_failures >= max_failures)
 			{
-				log << "The number of failures has reached " << max_failures << '\n';
+				std::cout << "The number of failures has reached " << max_failures << '\n';
 				return 0;
 			}
 
@@ -391,7 +379,7 @@ int main(int argc, char* argv[])
 			const int exit_code = create_child(idock_path.string(), idock_args, ctx).wait();
 			if (exit_code)
 			{
-				log << "idock exited with code " << exit_code << '\n';
+				std::cout << "idock exited with code " << exit_code << '\n';
 				return 1;
 			}
 
@@ -448,7 +436,7 @@ int main(int argc, char* argv[])
 			avg_heavy_atoms *= num_elitists_inv;
 			avg_hb_donors *= num_elitists_inv;
 			avg_hb_acceptors *= num_elitists_inv;
-			log << "Failures |  Avg FE |  Avg LE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
+			std::cout << "Failures |  Avg FE |  Avg LE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
 			    << std::setw(8) << num_failures << "   "
 				<< std::setw(7) << avg_fe << "   "
 				<< std::setw(7) << avg_le << "   "
