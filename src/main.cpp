@@ -30,7 +30,6 @@
 
 int main(int argc, char* argv[])
 {
-	using namespace igrow;
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path, csv_path;
 	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw;
@@ -234,7 +233,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the log.
-		igrow::tee log(log_path);
+		class tee log(log_path);
 		std::cout << "Logging to " << log_path << '\n';
 
 		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.

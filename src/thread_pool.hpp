@@ -26,46 +26,43 @@
 #include <boost/thread/condition.hpp>
 #include <boost/thread/future.hpp>
 
-namespace igrow
+using boost::ptr_vector;
+using boost::thread_group;
+using boost::mutex;
+using boost::condition;
+using boost::packaged_task;
+using boost::unique_future;
+
+/// Represents a thread pool and incorporates a progress bar. It inherits from boost::thread_group for the usage of create_thread and join_all.
+class thread_pool : public thread_group
 {
-	using boost::ptr_vector;
-	using boost::thread_group;
-	using boost::mutex;
-	using boost::condition;
-	using boost::packaged_task;
-	using boost::unique_future;
+public:
 
-	/// Represents a thread pool and incorporates a progress bar. It inherits from boost::thread_group for the usage of create_thread and join_all.
-	class thread_pool : public thread_group
-	{
-	public:
+	/// Constructs a thread pool with specified number of threads.
+	explicit thread_pool(const size_t num_threads);
 
-		/// Constructs a thread pool with specified number of threads.
-		explicit thread_pool(const size_t num_threads);
+	/// Runs tasks in parallel asynchronously.
+	void run(ptr_vector<packaged_task<void>>& tasks);
 
-		/// Runs tasks in parallel asynchronously.
-		void run(ptr_vector<packaged_task<void>>& tasks);
+	/// The function for threads to execute and loop inside.
+	void operator()();
 
-		/// The function for threads to execute and loop inside.
-		void operator()();
+	/// Blocks until all tasks are completed and the progress bar becomes full.
+	void sync();
 
-		/// Blocks until all tasks are completed and the progress bar becomes full.
-		void sync();
+	/// Destructs a thread pool by joining all the threads.
+	~thread_pool();
 
-		/// Destructs a thread pool by joining all the threads.
-		~thread_pool();
-
-	protected:
-		const size_t num_threads; ///< Number of threads to run tasks.
-		ptr_vector<packaged_task<void>>* tasks_ptr; ///< Pointer to the tasks to run.
-		size_t num_tasks; ///< Number of tasks.
-		size_t num_started_tasks; ///< Number of tasks that have started running.
-		size_t num_completed_tasks; ///< Number of tasks that have completed running.
-		condition task_completion;	///< Completion event of a running task.
-		condition task_incoming; ///< Incoming event of new tasks.
-		bool exiting; ///< If true, notify threads to return.
-		mutex self; ///< A mutex is a type whose objects can be in either of two states, called locked and unlocked, with the property that when a thread A has locked a mutex m and a different thread B tries to lock m, B is blocked until A unlocks m.
-	};
-}
+protected:
+	const size_t num_threads; ///< Number of threads to run tasks.
+	ptr_vector<packaged_task<void>>* tasks_ptr; ///< Pointer to the tasks to run.
+	size_t num_tasks; ///< Number of tasks.
+	size_t num_started_tasks; ///< Number of tasks that have started running.
+	size_t num_completed_tasks; ///< Number of tasks that have completed running.
+	condition task_completion;	///< Completion event of a running task.
+	condition task_incoming; ///< Incoming event of new tasks.
+	bool exiting; ///< If true, notify threads to return.
+	mutex self; ///< A mutex is a type whose objects can be in either of two states, called locked and unlocked, with the property that when a thread A has locked a mutex m and a different thread B tries to lock m, B is blocked until A unlocks m.
+};
 
 #endif

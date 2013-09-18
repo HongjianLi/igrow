@@ -24,44 +24,41 @@
 #include <iomanip>
 #include <boost/filesystem/fstream.hpp>
 
-namespace igrow
+using namespace boost::filesystem;
+
+/// Represents a log with both stdout and a custom log file as output.
+class tee
 {
-	using namespace boost::filesystem;
+public:
+	ofstream file; ///< Custom log file.
 
-	/// Represents a log with both stdout and a custom log file as output.
-	class tee
+	/// Constructs a log and sets up the floating point format.
+	explicit tee(const path& p) : file(p)
 	{
-	public:
-		ofstream file; ///< Custom log file.
+		using namespace std;
+		cout.setf(ios::fixed, ios::floatfield);
+		file.setf(ios::fixed, ios::floatfield);
+		cout << std::setprecision(3);
+		file << std::setprecision(3);
+	}
 
-		/// Constructs a log and sets up the floating point format.
-		explicit tee(const path& p) : file(p)
-		{
-			using namespace std;
-			cout.setf(ios::fixed, ios::floatfield);
-			file.setf(ios::fixed, ios::floatfield);
-			cout << std::setprecision(3);
-			file << std::setprecision(3);
-		}
+	/// Logs a generic left-value reference.
+	template<typename T>
+	tee& operator<<(const T& x)
+	{
+		std::cout << x;
+		file << x;
+		return *this;
+	}
 
-		/// Logs a generic left-value reference.
-		template<typename T>
-		tee& operator<<(const T& x)
-		{
-			std::cout << x;
-			file << x;
-			return *this;
-		}
-
-		/// Logs a generic right-value reference.
-		template<typename T>
-		tee& operator<<(T&& x)
-		{
-			std::cout << x;
-			file << x;
-			return *this;
-		}
-	};
-}
+	/// Logs a generic right-value reference.
+	template<typename T>
+	tee& operator<<(T&& x)
+	{
+		std::cout << x;
+		file << x;
+		return *this;
+	}
+};
 
 #endif
