@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
 		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw);
 
 		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
-		boost::atomic<size_t> num_failures(0);
+		std::atomic<size_t> num_failures(0);
 
 		// Reserve storage for operation tasks.
 		operation op(ligands, num_elitists, fragments, v, max_failures, num_failures);
