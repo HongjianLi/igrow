@@ -38,7 +38,7 @@ Supported operating systems and compilers
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.54.0 is supported. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem` and `Program Options`. An unofficial and header-only library, Boost.Process, is also required by igrow. The file `boost.process.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
+igrow depends on [Boost C++ Libraries]. Boost 1.54.0 is supported. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem`, `Program Options` and `Date Time`. An unofficial and header-only library, Boost.Process, is also required by igrow. The file `boost.process.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
 
 ### Compilation on Linux
 
