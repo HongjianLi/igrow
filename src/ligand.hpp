@@ -41,35 +41,10 @@ public:
 	/// Constructs a frame, and initializes its parent frame, rotor connectors, and beginning atom index.
 	explicit frame(const size_t parent, const size_t rotorX, const size_t rotorY, const size_t begin) : parent(parent), rotorX(rotorX), rotorY(rotorY), begin(begin) {}
 
-	/// Copy constructor.
-	frame(const frame& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(f.branches) {}
-
-	/// Move constructor.
-	frame(frame&& f) : parent(f.parent), rotorX(f.rotorX), rotorY(f.rotorY), begin(f.begin), end(f.end), branches(static_cast<vector<size_t>&&>(f.branches)) {}
-
-	/// Copy assignment operator.
-	frame& operator=(const frame& f)
-	{
-		this->parent = f.parent;
-		this->rotorX = f.rotorX;
-		this->rotorY = f.rotorY;
-		this->begin = f.begin;
-		this->end = f.end;
-		this->branches = f.branches;
-		return *this;
-	}
-
-	/// Move assignment operator.
-	frame& operator=(frame&& f)
-	{
-		this->parent = f.parent;
-		this->rotorX = f.rotorX;
-		this->rotorY = f.rotorY;
-		this->begin = f.begin;
-		this->end = f.end;
-		this->branches = static_cast<vector<size_t>&&>(f.branches);
-		return *this;
-	}
+	frame(const frame&) = default;
+	frame(frame&&) = default;
+	frame& operator=(const frame&) = default;
+	frame& operator=(frame&&) = default;
 };
 
 /// Represents a ligand.

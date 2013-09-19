@@ -128,35 +128,10 @@ public:
 	/// Constructs an atoms.
 	explicit atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const vec3& coordinate, const size_t ad) : name(name), columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coordinate(coordinate), ad(ad) {}
 
-	/// Copy constructor.
-	atom(const atom& a) : name(a.name), columns_13_to_30(a.columns_13_to_30), columns_55_to_79(a.columns_55_to_79), srn(a.srn), coordinate(a.coordinate), ad(a.ad) {}
-
-	/// Move constructor.
-	atom(atom&& a) : name(static_cast<string&&>(a.name)), columns_13_to_30(static_cast<string&&>(a.columns_13_to_30)), columns_55_to_79(static_cast<string&&>(a.columns_55_to_79)), srn(a.srn), coordinate(a.coordinate), ad(a.ad) {}
-
-	/// Copy assignment operator.
-	atom& operator=(const atom& a)
-	{
-		this->name = a.name;
-		this->columns_13_to_30 = a.columns_13_to_30;
-		this->columns_55_to_79 = a.columns_55_to_79;
-		this->srn = a.srn;
-		this->coordinate = a.coordinate;
-		this->ad = a.ad;
-		return *this;
-	}
-
-	/// Move assignment operator.
-	atom& operator=(atom&& a)
-	{
-		this->name = static_cast<string&&>(a.name);
-		this->columns_13_to_30 = static_cast<string&&>(a.columns_13_to_30);
-		this->columns_55_to_79 = static_cast<string&&>(a.columns_55_to_79);
-		this->srn = a.srn;
-		this->coordinate = a.coordinate;
-		this->ad = a.ad;
-		return *this;
-	}
+	atom(const atom&) = default;
+	atom(atom&&) = default;
+	atom& operator=(const atom&) = default;
+	atom& operator=(atom&&) = default;
 
 	/// Returns covalent radius from an AutoDock4 atom type.
 	fl covalent_radius() const
