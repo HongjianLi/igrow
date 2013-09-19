@@ -23,6 +23,27 @@
 #include "mat3.hpp"
 #include "ligand.hpp"
 
+/// Returns true if a string starts with another string.
+inline bool starts_with(const string& str, const string& start)
+{
+	const size_t start_size = start.size();
+	if (str.size() < start_size) return false;
+	for (size_t i = 0; i < start_size; ++i)
+	{
+		if (str[i] != start[i]) return false;
+	}
+	return true;
+}
+
+/// Parses right-justified 1-based [i, j] of str into generic type T lexically.
+/// This conversion does not apply to left-justified values.
+template<typename T>
+inline T right_cast(const string& str, const size_t i, const size_t j)
+{
+	const size_t start = str.find_first_not_of(' ', i - 1);
+	return lexical_cast<T>(str.substr(start, j - start));
+}
+
 using namespace boost::filesystem;
 
 ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
