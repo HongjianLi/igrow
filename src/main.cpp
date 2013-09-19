@@ -16,6 +16,7 @@
 
  */
 
+#include <iomanip>
 #include <thread>
 #include <random>
 #include <boost/lexical_cast.hpp>
@@ -292,7 +293,6 @@ int main(int argc, char* argv[])
 
 		// Reserve storage for operation tasks.
 		operation op(ligands, num_elitists, fragments, v, max_failures, num_failures);
-		boost::ptr_vector<packaged_task<void>> operation_tasks(num_children);
 
 		// Initialize ligand filenames.
 		vector<string> ligand_filenames;
@@ -350,24 +350,19 @@ int main(int argc, char* argv[])
 			create_directory(output_folder);
 
 			// Create addition, subtraction and crossover tasks.
-			BOOST_ASSERT(operation_tasks.empty());
 			for (size_t i = 0; i < num_additions; ++i)
 			{
-				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::addition_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+				tp.enqueue(packaged_task<void()>(bind(&operation::addition_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
 			for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
 			{
-				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::subtraction_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+				tp.enqueue(packaged_task<void()>(bind(&operation::subtraction_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
 			for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
 			{
-				operation_tasks.push_back(new packaged_task<void>(boost::bind<void>(&operation::crossover_task, boost::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+				tp.enqueue(packaged_task<void()>(bind(&operation::crossover_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
 			}
-
-			// Run the tasks in parallel asynchronously.
-			tp.run(operation_tasks);
-			tp.sync();
-			operation_tasks.clear();
+			tp.synchronize();
 
 			// Check if the maximum number of failures has been reached.
 			if (num_failures >= max_failures)
