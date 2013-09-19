@@ -17,7 +17,6 @@
  */
 
 #include <iomanip>
-#include <boost/lexical_cast.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/algorithm/string.hpp>
@@ -237,7 +236,7 @@ pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 			}
 		}
 	}
-	throw domain_error("Failed to find an atom with serial number " + lexical_cast<string>(srn));
+	throw domain_error("Failed to find an atom with serial number " + to_string(srn));
 }
 
 ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2) : p(p), parent1(l1.p), parent2(l2.p)
@@ -284,8 +283,8 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 	BOOST_ASSERT(f2idx == l2.get_frame(c2.srn).first);
 
 	// Set the connector bonds.
-	connector1 = lexical_cast<string>(c1.srn) + ":" + c1.name + " - " + lexical_cast<string>(m1.srn) + ":" + m1.name;
-	connector2 = lexical_cast<string>(c2.srn) + ":" + c2.name + " - " + lexical_cast<string>(m2.srn) + ":" + m2.name;
+	connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
+	connector2 = to_string(c2.srn) + ":" + c2.name + " - " + to_string(m2.srn) + ":" + m2.name;
 
 	// The maximum atom serial number of child ligand is equal to the sum of its parent ligands.
 	max_atom_number = l1.max_atom_number + l2.max_atom_number;
@@ -711,7 +710,7 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		BOOST_ASSERT(m1.srn == f1.rotorY);
 
 		// Set the connector bonds.
-		connector1 = lexical_cast<string>(c1.srn) + ":" + c1.name + " - " + lexical_cast<string>(m1.srn) + ":" + m1.name;
+		connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
 
 		// Add a hydrogen.
 		const vec3 c1_to_c2 = ((c1.covalent_radius() + ad_covalent_radii[0]) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
@@ -882,8 +881,8 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	BOOST_ASSERT(m2.srn == f2.rotorX);
 
 	// Set the connector bonds.
-	connector1 = lexical_cast<string>(c1.srn) + ":" + c1.name + " - " + lexical_cast<string>(m1.srn) + ":" + m1.name;
-	connector2 = lexical_cast<string>(c2.srn) + ":" + c2.name + " - " + lexical_cast<string>(m2.srn) + ":" + m2.name;
+	connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
+	connector2 = to_string(c2.srn) + ":" + c2.name + " - " + to_string(m2.srn) + ":" + m2.name;
 
 	// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
 	const vec3 c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
