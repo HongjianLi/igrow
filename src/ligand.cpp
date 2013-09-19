@@ -42,9 +42,10 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 
 	// Parse ATOM/HETATM, BRANCH, ENDBRANCH.
 	ifstream in(p); // Parsing starts. Open the file stream as late as possible.
-	while (getline(in, line) && !starts_with(line, "TORSDOF"))
+	while (getline(in, line))
 	{
 		++num_lines;
+		if (starts_with(line, "TORSDOF")) break;
 		if (starts_with(line, "ATOM") || starts_with(line, "HETATM"))
 		{
 			// Whenever an ATOM/HETATM line shows up, the current frame must be the last one.
