@@ -20,9 +20,6 @@
 #ifndef IGROW_COMMON_HPP
 #define IGROW_COMMON_HPP
 
-#include <limits>
-#include <vector>
-#include <string>
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/random.hpp>
