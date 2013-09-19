@@ -24,28 +24,6 @@
 #include "mat3.hpp"
 #include "ligand.hpp"
 using namespace boost;
-
-/// Returns true if a string starts with another string.
-inline bool starts_with(const string& str, const string& start)
-{
-	const size_t start_size = start.size();
-	if (str.size() < start_size) return false;
-	for (size_t i = 0; i < start_size; ++i)
-	{
-		if (str[i] != start[i]) return false;
-	}
-	return true;
-}
-
-/// Parses right-justified 1-based [i, j] of str into generic type T lexically.
-/// This conversion does not apply to left-justified values.
-template<typename T>
-inline T right_cast(const string& str, const size_t i, const size_t j)
-{
-	const size_t start = str.find_first_not_of(' ', i - 1);
-	return lexical_cast<T>(str.substr(start, j - start));
-}
-
 using namespace boost::filesystem;
 
 ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
@@ -68,8 +46,9 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 	while (getline(in, line))
 	{
 		++num_lines;
-		if (starts_with(line, "TORSDOF")) break;
-		if (starts_with(line, "ATOM") || starts_with(line, "HETATM"))
+		const string record = line.substr(0, 6);
+		if (record == "TORSDO") break;
+		if (record == "ATOM  " || record == "HETATM")
 		{
 			// Whenever an ATOM/HETATM line shows up, the current frame must be the last one.
 			BOOST_ASSERT(current == frames.size() - 1);
@@ -82,7 +61,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 			// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
 			string name = line.substr(12, 4);
 			boost::algorithm::trim(name);
-			atoms.push_back(atom(name, line.substr(12, 18), line.substr(54), right_cast<size_t>(line, 7, 11), vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54)), ad));
+			atoms.push_back(atom(name, line.substr(12, 18), line.substr(54), stoul(line.substr(6, 5)), vec3(stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8))), ad));
 
 			// Update ligand properties.
 			const atom& a = atoms.back();
@@ -92,10 +71,10 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 			if (a.is_hb_acceptor()) ++num_hb_acceptors;
 			mw += a.atomic_weight();
 		}
-		else if (starts_with(line, "BRANCH"))
+		else if (record == "BRANCH")
 		{
 			// Parse "BRANCH   X   Y". X and Y are right-justified and 4 characters wide.
-			frames.push_back(frame(current, right_cast<size_t>(line, 7, 10), right_cast<size_t>(line, 11, 14), atoms.size()));
+			frames.push_back(frame(current, stoul(line.substr(6, 4)), stoul(line.substr(10, 4)), atoms.size()));
 
 			// Now the current frame is the newly inserted BRANCH frame.
 			current = frames.size() - 1;
@@ -112,7 +91,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 			// Reserve enough capacity for storing BRANCH frames.
 			f->branches.reserve(4); // A frame typically consists of <= 4 BRANCH frames.
 		}
-		else if (starts_with(line, "ENDBRANCH"))
+		else if (record == "ENDBRA")
 		{
 			// A frame may be empty, e.g. "BRANCH   4   9" is immediately followed by "ENDBRANCH   4   9".
 			// This emptiness is likely to be caused by invalid input structure, especially when all the atoms are located in the same plane.
@@ -216,18 +195,20 @@ void ligand::update(const path& p)
 	boost::filesystem::ifstream in(p);
 	getline(in, line); // MODEL        1
 	getline(in, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.976 KCAL/MOL
-	fe = right_cast<fl>(line, 56, 63);
+	fe = stod(line.substr(55, 8));
 	getline(in, line); // REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.722 KCAL/MOL
 	getline(in, line); // REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.740 KCAL/MOL
 	getline(in, line); // REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.018 KCAL/MOL
 	getline(in, line); // REMARK            LIGAND EFFICIENCY PREDICTED BY IDOCK:  -0.280 KCAL/MOL
-	le = right_cast<fl>(line, 56, 63);
-	for (size_t i = 0; getline(in, line) && !starts_with(line, "TORSDOF");)
+	le = stod(line.substr(55, 8));
+	for (size_t i = 0; getline(in, line);)
 	{
-		if (starts_with(line, "ATOM"))
+		const string record = line.substr(0, 6);
+		if (record == "TORSDO") break;
+		if (record == "ATOM  ")
 		{
-			BOOST_ASSERT(atoms[i].srn == right_cast<size_t>(line, 7, 11));
-			atoms[i++].coordinate = vec3(right_cast<fl>(line, 31, 38), right_cast<fl>(line, 39, 46), right_cast<fl>(line, 47, 54));
+			BOOST_ASSERT(atoms[i].srn == stoul(line.substr(6, 5)));
+			atoms[i++].coordinate = vec3(stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)));
 		}
 	}
 	in.close();
