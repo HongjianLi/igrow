@@ -41,8 +41,8 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 	line.reserve(79); // According to PDBQT specification, the last item AutoDock4 atom type locates at 1-based [78, 79].
 
 	// Parse ATOM/HETATM, BRANCH, ENDBRANCH.
-	boost::filesystem::ifstream in(p); // Parsing starts. Open the file stream as late as possible.
-	while (getline(in, line))
+	boost::filesystem::ifstream ifs(p); // Parsing starts. Open the file stream as late as possible.
+	while (getline(ifs, line))
 	{
 		++num_lines;
 		const string record = line.substr(0, 6);
@@ -103,7 +103,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 			f = &frames[current];
 		}
 	}
-	in.close(); // Parsing finishes. Close the file stream as soon as possible.
+	ifs.close(); // Parsing finishes. Close the file stream as soon as possible.
 
 	BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
 	BOOST_ASSERT(f == &frames.front()); // The frame pointer should point to the ROOT frame.
@@ -125,22 +125,22 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 
 void ligand::save() const
 {
-	boost::filesystem::ofstream out(p); // Dumping starts. Open the file stream as late as possible.
+	boost::filesystem::ofstream ofs(p); // Dumping starts. Open the file stream as late as possible.
 	using namespace std;
-	out.setf(ios::fixed, ios::floatfield);
-	out << setprecision(3);
+	ofs.setf(ios::fixed, ios::floatfield);
+	ofs << setprecision(3);
 
 	// Dump the ROOT frame.
-	out << "ROOT\n";
+	ofs << "ROOT\n";
 	{
 		const frame& f = frames.front();
 		for (size_t i = f.begin; i < f.end; ++i)
 		{
 			const atom& a = atoms[i];
-			out << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
+			ofs << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
 		}
 	}
-	out << "ENDROOT\n";
+	ofs << "ENDROOT\n";
 
 	// Dump the BRANCH frames.
 	vector<bool> dump_branches(frames.size()); // dump_branches[0] is dummy. The ROOT frame has been dumped.
@@ -159,11 +159,11 @@ void ligand::save() const
 		const frame& f = frames[fn];
 		if (!dump_branches[fn]) // This BRANCH frame has not been dumped.
 		{
-			out << "BRANCH"    << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
+			ofs << "BRANCH"    << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
 			for (size_t i = f.begin; i < f.end; ++i)
 			{
 				const atom& a = atoms[i];
-				out << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
+				ofs << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
 			}
 			dump_branches[fn] = true;
 			for (auto i = f.branches.rbegin(); i < f.branches.rend(); ++i)
@@ -173,12 +173,12 @@ void ligand::save() const
 		}
 		else // This BRANCH frame has been dumped.
 		{
-			out << "ENDBRANCH" << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
+			ofs << "ENDBRANCH" << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
 			stack.pop_back();
 		}
 	}
-	out << "TORSDOF " << num_rotatable_bonds << '\n';
-	out.close();
+	ofs << "TORSDOF " << num_rotatable_bonds << '\n';
+	ofs.close();
 }
 
 void ligand::update(const path& p)
@@ -191,16 +191,16 @@ void ligand::update(const path& p)
 	}
 	string line;
 	line.reserve(79);
-	boost::filesystem::ifstream in(p);
-	getline(in, line); // MODEL        1
-	getline(in, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.976 KCAL/MOL
+	boost::filesystem::ifstream ifs(p);
+	getline(ifs, line); // MODEL        1
+	getline(ifs, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.976 KCAL/MOL
 	fe = stod(line.substr(55, 8));
-	getline(in, line); // REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.722 KCAL/MOL
-	getline(in, line); // REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.740 KCAL/MOL
-	getline(in, line); // REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.018 KCAL/MOL
-	getline(in, line); // REMARK            LIGAND EFFICIENCY PREDICTED BY IDOCK:  -0.280 KCAL/MOL
+	getline(ifs, line); // REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.722 KCAL/MOL
+	getline(ifs, line); // REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.740 KCAL/MOL
+	getline(ifs, line); // REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.018 KCAL/MOL
+	getline(ifs, line); // REMARK            LIGAND EFFICIENCY PREDICTED BY IDOCK:  -0.280 KCAL/MOL
 	le = stod(line.substr(55, 8));
-	for (size_t i = 0; getline(in, line);)
+	for (size_t i = 0; getline(ifs, line);)
 	{
 		const string record = line.substr(0, 6);
 		if (record == "TORSDO") break;
@@ -210,7 +210,7 @@ void ligand::update(const path& p)
 			atoms[i++].coordinate = vec3(stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)));
 		}
 	}
-	in.close();
+	ifs.close();
 	save();
 }
 
