@@ -37,10 +37,10 @@ thread_pool::thread_pool(const size_t num_threads) : num_scheduled_tasks(0), num
 	}
 }
 
-void thread_pool::enqueue(packaged_task<void()>&& task)
+void thread_pool::enqueue(packaged_task<int()>&& task)
 {
 	unique_lock<mutex> lock(m);
-	tasks.push_back(static_cast<packaged_task<void()>&&>(task));
+	tasks.push_back(static_cast<packaged_task<int()>&&>(task));
 	task_incoming.notify_one();
 }
 

@@ -19,7 +19,7 @@
 #include <random>
 #include "operation.hpp"
 
-void operation::addition_task(const size_t index, const path& p, const size_t seed)
+int operation::addition_task(const size_t index, const path& p, const size_t seed)
 {
 	// Initialize a Mersenne Twister random number generator.
 	mt19937_64 eng(seed);
@@ -47,12 +47,13 @@ void operation::addition_task(const size_t index, const path& p, const size_t se
 		{
 			// Save the newly created child ligand.
 			ligands[index].save();
-			return;
+			break;
 		}
 	} while (++num_failures < max_failures);
+	return 0;
 }
 
-void operation::subtraction_task(const size_t index, const path& p, const size_t seed)
+int operation::subtraction_task(const size_t index, const path& p, const size_t seed)
 {
 	// Initialize a Mersenne Twister random number generator.
 	mt19937_64 eng(seed);
@@ -76,12 +77,13 @@ void operation::subtraction_task(const size_t index, const path& p, const size_t
 		{
 			// Save the newly created child ligand.
 			ligands[index].save();
-			return;
+			break;
 		}
 	} while (++num_failures < max_failures);
+	return 0;
 }
 
-void operation::crossover_task(const size_t index, const path& p, const size_t seed)
+int operation::crossover_task(const size_t index, const path& p, const size_t seed)
 {
 	// Initialize a Mersenne Twister random number generator.
 	mt19937_64 eng(seed);
@@ -108,7 +110,8 @@ void operation::crossover_task(const size_t index, const path& p, const size_t s
 		{
 			// Save the newly created child ligand.
 			ligands[index].save();
-			return;
+			break;
 		}
 	} while (++num_failures < max_failures);
+	return 0;
 }
