@@ -41,10 +41,10 @@ public:
 	/// Constructs a frame, and initializes its parent frame, rotor connectors, and beginning atom index.
 	explicit frame(const size_t parent, const size_t rotorX, const size_t rotorY, const size_t begin) : parent(parent), rotorX(rotorX), rotorY(rotorY), begin(begin) {}
 
-	frame(const frame&) = default;
-	frame(frame&&) = default;
-	frame& operator=(const frame&) = default;
-	frame& operator=(frame&&) = default;
+//	frame(const frame&) = default;
+//	frame(frame&&) = default;
+//	frame& operator=(const frame&) = default;
+//	frame& operator=(frame&&) = default;
 };
 
 /// Represents a ligand.

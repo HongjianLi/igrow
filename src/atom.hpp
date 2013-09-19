@@ -128,10 +128,10 @@ public:
 	/// Constructs an atoms.
 	explicit atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const vec3& coordinate, const size_t ad) : name(name), columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coordinate(coordinate), ad(ad) {}
 
-	atom(const atom&) = default;
-	atom(atom&&) = default;
-	atom& operator=(const atom&) = default;
-	atom& operator=(atom&&) = default;
+//	atom(const atom&) = default;
+//	atom(atom&&) = default;
+//	atom& operator=(const atom&) = default;
+//	atom& operator=(atom&&) = default;
 
 	/// Returns covalent radius from an AutoDock4 atom type.
 	fl covalent_radius() const
