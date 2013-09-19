@@ -330,6 +330,8 @@ int main(int argc, char* argv[])
 		boost::filesystem::ofstream csv(csv_path);
 		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
 
+		std::cout.setf(std::ios::fixed, std::ios::floatfield);
+		std::cout << std::setprecision(3);
 		for (size_t generation = 1; true; ++generation)
 		{
 			std::cout << "Running generation " << generation << '\n';
