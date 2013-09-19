@@ -50,8 +50,8 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 		if (record == "ATOM  " || record == "HETATM")
 		{
 			// Whenever an ATOM/HETATM line shows up, the current frame must be the last one.
-			BOOST_ASSERT(current == frames.size() - 1);
-			BOOST_ASSERT(f == &frames.back());
+			assert(current == frames.size() - 1);
+			assert(f == &frames.back());
 
 			// Validate the AutoDock4 atom type.
 			const string ad_type_string = line.substr(77, isspace(line[78]) ? 1 : 2);
@@ -105,22 +105,22 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 	}
 	ifs.close(); // Parsing finishes. Close the file stream as soon as possible.
 
-	BOOST_ASSERT(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
-	BOOST_ASSERT(f == &frames.front()); // The frame pointer should point to the ROOT frame.
+	assert(current == 0); // current should remain its original value if "BRANCH" and "ENDBRANCH" properly match each other.
+	assert(f == &frames.front()); // The frame pointer should point to the ROOT frame.
 
 	// Determine the number of atoms.
 	num_atoms = atoms.size();
-	BOOST_ASSERT(num_atoms >= num_heavy_atoms);
-	BOOST_ASSERT(num_atoms <= num_heavy_atoms + mutable_atoms.size());
+	assert(num_atoms >= num_heavy_atoms);
+	assert(num_atoms <= num_heavy_atoms + mutable_atoms.size());
 	frames.back().end = num_atoms;
 
 	// Determine the number of rotatable bonds.
 	num_rotatable_bonds = frames.size() - 1;
-	BOOST_ASSERT(num_atoms + (num_rotatable_bonds << 1) + 3 <= num_lines); // ATOM/HETATM lines + BRANCH/ENDBRANCH lines + ROOT/ENDROOT/TORSDOF lines + REMARK lines (if any) == num_lines
+	assert(num_atoms + (num_rotatable_bonds << 1) + 3 <= num_lines); // ATOM/HETATM lines + BRANCH/ENDBRANCH lines + ROOT/ENDROOT/TORSDOF lines + REMARK lines (if any) == num_lines
 
 	// Determine the maximum atom serial number.
 	max_atom_number = atoms.back().srn;
-	BOOST_ASSERT(max_atom_number >= num_atoms);
+	assert(max_atom_number >= num_atoms);
 }
 
 void ligand::save() const
@@ -206,7 +206,7 @@ void ligand::update(const path& p)
 		if (record == "TORSDO") break;
 		if (record == "ATOM  ")
 		{
-			BOOST_ASSERT(atoms[i].srn == stoul(line.substr(6, 5)));
+			assert(atoms[i].srn == stoul(line.substr(6, 5)));
 			atoms[i++].coordinate = vec3(stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)));
 		}
 	}
@@ -216,13 +216,13 @@ void ligand::update(const path& p)
 
 pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 {
-	BOOST_ASSERT(num_rotatable_bonds == frames.size() - 1);
+	assert(num_rotatable_bonds == frames.size() - 1);
 	for (size_t k = 0; k <= num_rotatable_bonds; ++k)
 	{
 		const frame& f = frames[k];
 		const size_t srn_begin = atoms[f.begin].srn;
 		const size_t srn_end = atoms[f.end - 1].srn;
-		BOOST_ASSERT(srn_begin <= srn_end);
+		assert(srn_begin <= srn_end);
 		if ((f.end - f.begin) == (srn_end - srn_begin + 1)) // The serial numbers are continuous, which is the most cases.
 		{
 			if ((srn_begin <= srn) && (srn <= srn_end)) return pair<size_t, size_t>(k, f.begin + srn - srn_begin);
@@ -241,14 +241,14 @@ pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 
 ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2) : p(p), parent1(l1.p), parent2(l2.p)
 {
-	BOOST_ASSERT(g1 < l1.mutable_atoms.size());
-	BOOST_ASSERT(g2 < l2.mutable_atoms.size());
+	assert(g1 < l1.mutable_atoms.size());
+	assert(g2 < l2.mutable_atoms.size());
 	const size_t m1srn = l1.mutable_atoms[g1];
 	const size_t m2srn = l2.mutable_atoms[g2];
-	BOOST_ASSERT(m1srn >= 1);
-	BOOST_ASSERT(m1srn <= l1.max_atom_number);
-	BOOST_ASSERT(m2srn >= 1);
-	BOOST_ASSERT(m2srn <= l2.max_atom_number);
+	assert(m1srn >= 1);
+	assert(m1srn <= l1.max_atom_number);
+	assert(m2srn >= 1);
+	assert(m2srn <= l2.max_atom_number);
 
 	// Obtain the frames and indices of the two mutable atoms.
 	const pair<size_t, size_t> p1 = l1.get_frame(m1srn);
@@ -259,28 +259,28 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 	const frame& f2 = l2.frames[f2idx];
 	const size_t m1idx = p1.second;
 	const size_t m2idx = p2.second;
-	BOOST_ASSERT(f1.begin <= m1idx);
-	BOOST_ASSERT(f1.end   >  m1idx);
-	BOOST_ASSERT(f2.begin <= m2idx);
-	BOOST_ASSERT(f2.end   >  m2idx);
+	assert(f1.begin <= m1idx);
+	assert(f1.end   >  m1idx);
+	assert(f2.begin <= m2idx);
+	assert(f2.end   >  m2idx);
 
 	const atom& m1 = l1.atoms[m1idx]; // Constant reference to the mutable atom of ligand 1.
 	const atom& m2 = l2.atoms[m2idx]; // Constant reference to the mutable atom of ligand 2.
-	BOOST_ASSERT(m1.is_mutable());
-	BOOST_ASSERT(m2.is_mutable());
+	assert(m1.is_mutable());
+	assert(m2.is_mutable());
 
 	// Find the connector atom that is covalently bonded to the mutable atom for both ligands.
 	size_t c1idx, c2idx;
 	for (c1idx = f1.begin; (c1idx == m1idx) || (!m1.is_neighbor(l1.atoms[c1idx])); ++c1idx);
 	for (c2idx = f2.begin; (c2idx == m2idx) || (!m2.is_neighbor(l2.atoms[c2idx])); ++c2idx);
-	BOOST_ASSERT(c1idx < f1.end);
-	BOOST_ASSERT(c2idx < f2.end);
+	assert(c1idx < f1.end);
+	assert(c2idx < f2.end);
 
 	// Obtain constant references to the connector atoms.
 	const atom& c1 = l1.atoms[c1idx];
 	const atom& c2 = l2.atoms[c2idx];
-	BOOST_ASSERT(f1idx == l1.get_frame(c1.srn).first);
-	BOOST_ASSERT(f2idx == l2.get_frame(c2.srn).first);
+	assert(f1idx == l1.get_frame(c1.srn).first);
+	assert(f2idx == l2.get_frame(c2.srn).first);
 
 	// Set the connector bonds.
 	connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
@@ -317,7 +317,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 
 	// Determine the number of ligand 1's frames up to f1.
 	const size_t f1_num_frames = f1idx + 1;
-	BOOST_ASSERT(f1_num_frames <= l1_num_frames);
+	assert(f1_num_frames <= l1_num_frames);
 
 	// Create new frames for ligand 1's frames that are before f1.
 	for (size_t k = 0; k < f1idx; ++k)
@@ -339,13 +339,13 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 		}
 
 		// Populate atoms.
-		BOOST_ASSERT(f.begin == rf.begin);
+		assert(f.begin == rf.begin);
 		for (size_t i = rf.begin; i < rf.end; ++i)
 		{
 			atoms.push_back(l1.atoms[i]);
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Create a new frame for ligand 1's f1 frame itself.
@@ -366,7 +366,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 		}
 
 		// Populate atoms.
-		BOOST_ASSERT(f.begin == f1.begin);
+		assert(f.begin == f1.begin);
 		for (size_t i = f1.begin; i < m1idx; ++i)
 		{
 			atoms.push_back(l1.atoms[i]);
@@ -376,7 +376,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 			atoms.push_back(l1.atoms[i]);
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Find the traversal sequence (i.e. l4_to_l2_mapping) of ligand 2 starting from f2 frame, as well as its reverse traversal sequence (i.e. l2_to_l4_mapping).
@@ -401,9 +401,9 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 			if (find(l4_to_l2_mapping.begin(), l4_to_l2_mapping.end(), rf.parent) == l4_to_l2_mapping.end()) stack.push_back(rf.parent);
 		}
 	}
-	BOOST_ASSERT(l4_to_l2_mapping.size() == l2_num_frames);
-	BOOST_ASSERT(l4_to_l2_mapping[0] == f2idx);
-	BOOST_ASSERT(l2_to_l4_mapping[f2idx] == 0);
+	assert(l4_to_l2_mapping.size() == l2_num_frames);
+	assert(l4_to_l2_mapping[0] == f2idx);
+	assert(l2_to_l4_mapping[f2idx] == 0);
 
 	// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
 	const vec3 c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
@@ -415,7 +415,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 	// Create a new frame for ligand 2's f2 frame itself. Its branches are separately considered, depending on whether f2 is the ROOT frame of ligand 2.
 	{
 		// The reference frame is f2.
-		BOOST_ASSERT(&f2 == &l2.frames[l4_to_l2_mapping[0]]);
+		assert(&f2 == &l2.frames[l4_to_l2_mapping[0]]);
 
 		// Create a new frame based on the reference frame.
 		frames.push_back(frame(f1idx, c1.srn, l1.max_atom_number + c2.srn, atoms.size()));
@@ -433,12 +433,12 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 			atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	if (!f2idx) // f2 is the ROOT frame of ligand 2.
 	{
-		BOOST_ASSERT(l2_to_l4_mapping[0] == 0);
+		assert(l2_to_l4_mapping[0] == 0);
 		const size_t f2_num_branches = f2.branches.size();
 		frame& f = frames.back();
 
@@ -465,17 +465,17 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 		}
 
 		// Create new frames for ligand 2's frames that are parent frames of f2 except ROOT.
-		BOOST_ASSERT(l2_to_l4_mapping[0] >= 1);
+		assert(l2_to_l4_mapping[0] >= 1);
 		for (size_t k = 1; k < l2_to_l4_mapping.front(); ++k)
 		{
 			// Obtain a constant reference to the corresponding frame of ligand 2.
 			const frame& rf = l2.frames[l4_to_l2_mapping[k]];
 			const size_t rf_num_branches = rf.branches.size();
-			BOOST_ASSERT(rf_num_branches >= 1);
+			assert(rf_num_branches >= 1);
 
 			// Create a new frame based on the reference frame.
 			const frame& pf = l2.frames[l4_to_l2_mapping[k - 1]];
-			BOOST_ASSERT(f1idx + k == frames.size() - 1);
+			assert(f1idx + k == frames.size() - 1);
 			frames.push_back(frame(f1idx + k, l1.max_atom_number + pf.rotorY, l1.max_atom_number + pf.rotorX, atoms.size()));
 			frame& f = frames.back();
 
@@ -496,7 +496,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 				atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
-			BOOST_ASSERT(f.begin < f.end);
+			assert(f.begin < f.end);
 		}
 
 		// Create new frames for ligand 2's ROOT frame.
@@ -504,11 +504,11 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 			// Obtain a constant reference to the corresponding frame of ligand 2.
 			const frame& rf = l2.frames.front();
 			const size_t rf_num_branches = rf.branches.size();
-			BOOST_ASSERT(rf_num_branches >= 1);
+			assert(rf_num_branches >= 1);
 
 			// Create a new frame based on the reference frame.
 			const frame& pf = l2.frames[l4_to_l2_mapping[l2_to_l4_mapping.front() - 1]];
-			BOOST_ASSERT(f1idx + l2_to_l4_mapping.front() == frames.size() - 1);
+			assert(f1idx + l2_to_l4_mapping.front() == frames.size() - 1);
 			frames.push_back(frame(f1idx + l2_to_l4_mapping.front(), l1.max_atom_number + pf.rotorY, l1.max_atom_number + pf.rotorX, atoms.size()));
 			frame& f = frames.back();
 
@@ -528,7 +528,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 				atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 			}
 			f.end = atoms.size();
-			BOOST_ASSERT(f.begin < f.end);
+			assert(f.begin < f.end);
 		}
 	}
 
@@ -557,7 +557,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 			atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Create new frames for ligand 1's frames that are after f1.
@@ -587,10 +587,10 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 		f.end = atoms.size();
 	}
 
-	BOOST_ASSERT(frames.size() == l1_num_frames + l2_num_frames);
-	BOOST_ASSERT(frames.size() == frames.capacity());
-	BOOST_ASSERT(atoms.size() == num_atoms);
-	BOOST_ASSERT(atoms.size() == atoms.capacity());
+	assert(frames.size() == l1_num_frames + l2_num_frames);
+	assert(frames.size() == frames.capacity());
+	assert(atoms.size() == num_atoms);
+	assert(atoms.size() == atoms.capacity());
 
 	// The number of mutable atoms of child ligand is equal to the sum of its parent ligands minus 2.
 	const size_t l1_num_mutatable_atoms = l1.mutable_atoms.size();
@@ -616,8 +616,8 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 	{
 		mutable_atoms.push_back(l1.max_atom_number + l2.mutable_atoms[i]);
 	}
-	BOOST_ASSERT(mutable_atoms.size() == l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
-	BOOST_ASSERT(mutable_atoms.size() == mutable_atoms.capacity());
+	assert(mutable_atoms.size() == l1_num_mutatable_atoms + l2_num_mutatable_atoms - 2);
+	assert(mutable_atoms.size() == mutable_atoms.capacity());
 }
 
 ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), parent1(l1.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
@@ -637,9 +637,9 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 	// Determine the number of frames of ligand 5. Here, ligand 5 = ligand 1 - ligand 3.
 	size_t child;
 	for (child = f1idx; l1.frames[child].branches.size(); child = l1.frames[child].branches.back());
-	BOOST_ASSERT(child < l1_num_frames);
+	assert(child < l1_num_frames);
 	const size_t l5_num_frames = child - f1idx + 1;
-	BOOST_ASSERT(l5_num_frames < l1_num_frames);
+	assert(l5_num_frames < l1_num_frames);
 
 	// Create new frames for ligand 1's frames that are before f1's parent frame.
 	for (size_t k = 0; k < f1.parent; ++k)
@@ -661,13 +661,13 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		}
 
 		// Populate atoms.
-		BOOST_ASSERT(f.begin == rf.begin);
+		assert(f.begin == rf.begin);
 		for (size_t i = rf.begin; i < rf.end; ++i)
 		{
 			atoms.push_back(l1.atoms[i]);
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 
@@ -691,7 +691,7 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		}
 
 		// Populate atoms.
-		BOOST_ASSERT(f.begin == rf.begin);
+		assert(f.begin == rf.begin);
 		for (size_t i = rf.begin; i < rf.end; ++i)
 		{
 			atoms.push_back(l1.atoms[i]);
@@ -700,14 +700,14 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		// Obtain the frames and indices of the two connector atoms.
 		const pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
 		const pair<size_t, size_t> p2 = l1.get_frame(f1.rotorY);
-		BOOST_ASSERT(p1.first == f1.parent);
-		BOOST_ASSERT(p2.first == f1idx);
+		assert(p1.first == f1.parent);
+		assert(p2.first == f1idx);
 
 		// Obtain constant references to the connector atoms.
 		const atom& c1 = l1.atoms[p1.second];
 		const atom& m1 = l1.atoms[p2.second];
-		BOOST_ASSERT(c1.srn == f1.rotorX);
-		BOOST_ASSERT(m1.srn == f1.rotorY);
+		assert(c1.srn == f1.rotorX);
+		assert(m1.srn == f1.rotorY);
 
 		// Set the connector bonds.
 		connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
@@ -717,7 +717,7 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		const vec3 origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
 		atoms.push_back(atom("H", " H   <0> d        ", "  0.00  0.00     0.085 H ", max_atom_number, origin_to_c2, 0)); // c2 is a hydrogen.
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Create new frames for ligand 1's frames that are after f1's parent frame and before f1.
@@ -740,13 +740,13 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		}
 
 		// Populate atoms.
-		BOOST_ASSERT(f.begin == rf.begin + 1);
+		assert(f.begin == rf.begin + 1);
 		for (size_t i = rf.begin; i < rf.end; ++i)
 		{
 			atoms.push_back(l1.atoms[i]);
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Create new frames for ligand 1's frames that are after f1idx + l5_num_frames.
@@ -765,7 +765,7 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		for (size_t i = 0; i < rf_num_branches; ++i)
 		{
 			const size_t b = rf.branches[i];
-			BOOST_ASSERT(b > f1idx);
+			assert(b > f1idx);
 			f.branches.push_back(b - l5_num_frames);
 		}
 
@@ -775,17 +775,17 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 			atoms.push_back(l1.atoms[i]);
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Refresh the number of atoms.
 	num_atoms = atoms.size();
-	BOOST_ASSERT(num_atoms >= 1);
-	BOOST_ASSERT(num_atoms < l1.num_atoms);
+	assert(num_atoms >= 1);
+	assert(num_atoms < l1.num_atoms);
 
 	// Refresh the number of rotatable bonds.
 	num_rotatable_bonds = frames.size() - 1;
-	BOOST_ASSERT(num_rotatable_bonds < l1.num_rotatable_bonds);
+	assert(num_rotatable_bonds < l1.num_rotatable_bonds);
 
 	// Refresh mutable_atoms, num_heavy_atoms, num_hb_donors, num_hb_acceptors and mw.
 	mutable_atoms.reserve(num_atoms);
@@ -797,7 +797,7 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		if (a.is_hb_acceptor()) ++num_hb_acceptors;
 		mw += a.atomic_weight();
 	}
-	BOOST_ASSERT(mutable_atoms.size() <= l1.mutable_atoms.size() + 1);
+	assert(mutable_atoms.size() <= l1.mutable_atoms.size() + 1);
 }
 
 ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx, const bool dummy) : p(p), parent1(l1.p), parent2(l2.p), num_heavy_atoms(0), num_hb_donors(0), num_hb_acceptors(0), mw(0)
@@ -819,13 +819,13 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	// Determine the number of frames of ligand 5 and ligand 4. Here, ligand 5 = ligand 1 - ligand 3.
 	size_t child;
 	for (child = f1idx; l1.frames[child].branches.size(); child = l1.frames[child].branches.back());
-	BOOST_ASSERT(child < l1_num_frames);
+	assert(child < l1_num_frames);
 	const size_t l5_num_frames = child - f1idx + 1;
-	BOOST_ASSERT(l5_num_frames < l1_num_frames);
+	assert(l5_num_frames < l1_num_frames);
 	for (child = f2idx; l2.frames[child].branches.size(); child = l2.frames[child].branches.back());
-	BOOST_ASSERT(child < l2_num_frames);
+	assert(child < l2_num_frames);
 	const size_t l4_num_frames = child - f2idx + 1;
-	BOOST_ASSERT(l4_num_frames <= l2_num_frames);
+	assert(l4_num_frames <= l2_num_frames);
 
 	// Create new frames for ligand 1's frames that are before f1.
 	for (size_t k = 0; k < f1idx; ++k)
@@ -847,38 +847,38 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 		}
 
 		// Populate atoms.
-		BOOST_ASSERT(f.begin == rf.begin);
+		assert(f.begin == rf.begin);
 		for (size_t i = rf.begin; i < rf.end; ++i)
 		{
 			atoms.push_back(l1.atoms[i]);
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Obtain the frames and indices of the two connector atoms.
 	const pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
 	const pair<size_t, size_t> p2 = l2.get_frame(f2.rotorY);
-	BOOST_ASSERT(p1.first == f1.parent);
-	BOOST_ASSERT(p2.first == f2idx);
+	assert(p1.first == f1.parent);
+	assert(p2.first == f2idx);
 
 	// Obtain constant references to the connector atoms.
 	const atom& c1 = l1.atoms[p1.second];
 	const atom& c2 = l2.atoms[p2.second];
-	BOOST_ASSERT(c1.srn == f1.rotorX);
-	BOOST_ASSERT(c2.srn == f2.rotorY);
+	assert(c1.srn == f1.rotorX);
+	assert(c2.srn == f2.rotorY);
 
 	// Obtain the frames and indices of the two virtual mutable atoms.
 	const pair<size_t, size_t> q1 = l1.get_frame(f1.rotorY);
 	const pair<size_t, size_t> q2 = l2.get_frame(f2.rotorX);
-	BOOST_ASSERT(q1.first == f1idx);
-	BOOST_ASSERT(q2.first == f2.parent);
+	assert(q1.first == f1idx);
+	assert(q2.first == f2.parent);
 
 	// Obtain constant references to the virtual mutable atoms.
 	const atom& m1 = l1.atoms[q1.second];
 	const atom& m2 = l2.atoms[q2.second];
-	BOOST_ASSERT(m1.srn == f1.rotorY);
-	BOOST_ASSERT(m2.srn == f2.rotorX);
+	assert(m1.srn == f1.rotorY);
+	assert(m2.srn == f2.rotorX);
 
 	// Set the connector bonds.
 	connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
@@ -916,7 +916,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 			atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Create new frames for ligand 1's frames that are after f1idx + l5_num_frames.
@@ -944,18 +944,18 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 			atoms.push_back(l1.atoms[i]);
 		}
 		f.end = atoms.size();
-		BOOST_ASSERT(f.begin < f.end);
+		assert(f.begin < f.end);
 	}
 
 	// Refresh the number of atoms.
 	num_atoms = atoms.size();
-	BOOST_ASSERT(num_atoms >= 1);
-	BOOST_ASSERT(num_atoms < l1.num_atoms + l2.num_atoms);
+	assert(num_atoms >= 1);
+	assert(num_atoms < l1.num_atoms + l2.num_atoms);
 
 	// Refresh the number of rotatable bonds.
 	num_rotatable_bonds = frames.size() - 1;
-	BOOST_ASSERT(num_rotatable_bonds >= 1);
-	BOOST_ASSERT(num_rotatable_bonds <= l1.num_rotatable_bonds + l2.num_rotatable_bonds - 1);
+	assert(num_rotatable_bonds >= 1);
+	assert(num_rotatable_bonds <= l1.num_rotatable_bonds + l2.num_rotatable_bonds - 1);
 
 	// Refresh mutable_atoms, num_heavy_atoms, num_hb_donors, num_hb_acceptors and mw.
 	mutable_atoms.reserve(num_atoms);
@@ -967,5 +967,5 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 		if (a.is_hb_acceptor()) ++num_hb_acceptors;
 		mw += a.atomic_weight();
 	}
-	BOOST_ASSERT(mutable_atoms.size() <= l1.mutable_atoms.size() + l2.mutable_atoms.size());
+	assert(mutable_atoms.size() <= l1.mutable_atoms.size() + l2.mutable_atoms.size());
 }

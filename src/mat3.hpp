@@ -44,7 +44,7 @@ public:
 	{
 		if (a.zero())
 		{
-			BOOST_ASSERT(eq(c, 1) || eq(c, -1));
+			assert(eq(c, 1) || eq(c, -1));
 			elems[0] = 1;
 			elems[1] = 0;
 			elems[2] = 0;
@@ -57,9 +57,9 @@ public:
 		}
 		else
 		{
-			BOOST_ASSERT(a.normalized());
-			BOOST_ASSERT(c >= -1);
-			BOOST_ASSERT(c <=  1);
+			assert(a.normalized());
+			assert(c >= -1);
+			assert(c <=  1);
 			const fl t = 1 - c;
 			const fl ta0a0 = t * a[0] * a[0];
 			const fl ta1a1 = t * a[1] * a[1];
@@ -86,8 +86,8 @@ public:
 	/// Returns the value at index (i, j) where j is the lowest dimension.
 	fl operator()(const size_t i, const size_t j) const
 	{
-		BOOST_ASSERT(i < 3);
-		BOOST_ASSERT(j < 3);
+		assert(i < 3);
+		assert(j < 3);
 		return elems[3 * i + j];
 	}
 

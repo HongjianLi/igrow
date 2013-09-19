@@ -51,14 +51,14 @@ public:
 	/// Returns a constant reference to the element at index i.
 	const fl& operator[](const size_t i) const
 	{
-		BOOST_ASSERT(i < 3);
+		assert(i < 3);
 		return elems[i];
 	}
 
 	/// Returns a mutable reference to the element at index i.
 	fl& operator[](const size_t i)
 	{
-		BOOST_ASSERT(i < 3);
+		assert(i < 3);
 		return elems[i];
 	}
 

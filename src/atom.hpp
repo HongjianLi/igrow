@@ -178,7 +178,7 @@ public:
 	/// Returns true if the current atom is covalently bonded to a given atom.
 	bool is_neighbor(const atom& a) const
 	{
-		BOOST_ASSERT(this != &a);
+		assert(this != &a);
 		return (distance_sqr(coordinate, a.coordinate) < sqr(1.1 * (covalent_radius() + a.covalent_radius())));
 	}
 };
