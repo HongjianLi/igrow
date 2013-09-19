@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 	{
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
-		const size_t default_num_threads = std::thread::hardware_concurrency();
+		const size_t default_num_threads = thread::hardware_concurrency();
 		const size_t default_seed = time(0);
 		const size_t default_num_additions = 20;
 		const size_t default_num_subtractions = 20;
@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
 		// If no command line argument is supplied, simply print the usage and exit.
 		if (argc == 1)
 		{
-			std::cout << all_options;
+			cout << all_options;
 			return 0;
 		}
 
@@ -115,14 +115,14 @@ int main(int argc, char* argv[])
 		// If no command line argument is supplied or help is requested, print the usage and exit.
 		if (argc == 1 || vm.count("help"))
 		{
-			std::cout << all_options;
+			cout << all_options;
 			return 0;
 		}
 
 		// If version is requested, print the version and exit.
 		if (vm.count("version"))
 		{
-			std::cout << "1.0.0" << std::endl;
+			cout << "1.0.0" << endl;
 			return 0;
 		}
 
@@ -141,48 +141,48 @@ int main(int argc, char* argv[])
 		// Validate initial generation csv.
 		if (!exists(initial_generation_csv_path))
 		{
-			std::cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist\n";
+			cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_regular_file(initial_generation_csv_path))
 		{
-			std::cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file\n";
+			cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file\n";
 			return 1;
 		}
 
 		// Validate initial generation folder.
 		if (!exists(initial_generation_folder_path))
 		{
-			std::cerr << "Initial generation folder " << initial_generation_folder_path << " does not exist\n";
+			cerr << "Initial generation folder " << initial_generation_folder_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_directory(initial_generation_folder_path))
 		{
-			std::cerr << "Initial generation folder " << initial_generation_folder_path << " is not a directory\n";
+			cerr << "Initial generation folder " << initial_generation_folder_path << " is not a directory\n";
 			return 1;
 		}
 
 		// Validate fragment folder.
 		if (!exists(fragment_folder_path))
 		{
-			std::cerr << "Fragment folder " << fragment_folder_path << " does not exist\n";
+			cerr << "Fragment folder " << fragment_folder_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_directory(fragment_folder_path))
 		{
-			std::cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
+			cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
 			return 1;
 		}
 
 		// Validate idock configuration file.
 		if (!exists(idock_config_path))
 		{
-			std::cerr << "idock configuration file " << idock_config_path << " does not exist\n";
+			cerr << "idock configuration file " << idock_config_path << " does not exist\n";
 			return 1;
 		}
 		if (!is_regular_file(idock_config_path))
 		{
-			std::cerr << "idock configuration file " << idock_config_path << " is not a regular file\n";
+			cerr << "idock configuration file " << idock_config_path << " is not a regular file\n";
 			return 1;
 		}
 
@@ -190,266 +190,258 @@ int main(int argc, char* argv[])
 		remove_all(output_folder_path);
 		if (!create_directories(output_folder_path))
 		{
-			std::cerr << "Failed to create output folder " << output_folder_path << '\n';
+			cerr << "Failed to create output folder " << output_folder_path << '\n';
 			return 1;
 		}
 
 		// Validate csv_path.
 		if (is_directory(csv_path))
 		{
-			std::cerr << "csv path " << csv_path << " is a directory\n";
+			cerr << "csv path " << csv_path << " is a directory\n";
 			return 1;
 		}
 
 		// Validate miscellaneous options.
 		if (!num_threads)
 		{
-			std::cerr << "Option threads must be 1 or greater\n";
+			cerr << "Option threads must be 1 or greater\n";
 			return 1;
 		}
 		if (max_mw <= 0)
 		{
-			std::cerr << "Option max_mw must be positive\n";
+			cerr << "Option max_mw must be positive\n";
 			return 1;
 		}
 //		if (!((sort == "fe") || (sort == "le")))
 //		{
-//			std::cerr << "Option sort must be either fe or le\n";
+//			cerr << "Option sort must be either fe or le\n";
 //			return 1;
 //		}
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << e.what() << '\n';
+		cerr << e.what() << '\n';
 		return 1;
 	}
 
-	try
+	// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
+	const size_t num_children = num_additions + num_subtractions + num_crossovers;
+	const size_t num_ligands = num_elitists + num_children;
+	const fl num_elitists_inv = static_cast<fl>(1) / num_elitists;
+
+	// Initialize a pointer vector to dynamically hold and destroy generated ligands.
+	boost::ptr_vector<ligand> ligands;
+	ligands.resize(num_ligands);
+
+	// Parse the initial generation csv to get initial elite ligands.
 	{
-		// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
-		const size_t num_children = num_additions + num_subtractions + num_crossovers;
-		const size_t num_ligands = num_elitists + num_children;
-		const fl num_elitists_inv = static_cast<fl>(1) / num_elitists;
-
-		// Initialize a pointer vector to dynamically hold and destroy generated ligands.
-		boost::ptr_vector<ligand> ligands;
-		ligands.resize(num_ligands);
-
-		// Parse the initial generation csv to get initial elite ligands.
+		boost::filesystem::ifstream in(initial_generation_csv_path);
+		string line;
+		line.reserve(80);
+		getline(in, line); // Ligand,Conf,FE1,FE2,FE3,FE4,FE5,FE6,FE7,FE8,FE9
+		for (size_t i = 0; i < num_elitists; ++i)
 		{
-			boost::filesystem::ifstream in(initial_generation_csv_path);
-			string line;
-			line.reserve(80);
-			getline(in, line); // Ligand,Conf,FE1,FE2,FE3,FE4,FE5,FE6,FE7,FE8,FE9
-			for (size_t i = 0; i < num_elitists; ++i)
+			// Check if there are sufficient initial elite ligands.
+			if (!getline(in, line))
 			{
-				// Check if there are sufficient initial elite ligands.
-				if (!getline(in, line))
-				{
-					std::cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands.\n";
-					return 1;
-				}
-
-				// Parse the elite ligand.
-				const size_t comma1 = line.find(',', 1);
-				ligands.replace(i, new ligand(initial_generation_folder_path / (line.substr(0, comma1) + ".pdbqt")));
-
-				// Parse the free energy and ligand efficiency.
-				const size_t comma2 = line.find(',', comma1 + 2);
-				const size_t comma3 = line.find(',', comma2 + 6);
-				const size_t comma4 = line.find(',', comma3 + 6);
-				ligands[i].fe = lexical_cast<fl>(line.substr(comma2 + 1, comma3 - comma2 - 1));
-				ligands[i].le = lexical_cast<fl>(line.substr(comma3 + 1, comma4 - comma3 - 1));
+				cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands.\n";
+				return 1;
 			}
-		}
 
-		// Scan the fragment folder to obtain a list of fragments.
-		std::cout << "Scanning fragment folder " << fragment_folder_path << '\n';
-		vector<path> fragments;
-		fragments.reserve(1000); // A fragment folder typically consists of <= 1000 fragments.
+			// Parse the elite ligand.
+			const size_t comma1 = line.find(',', 1);
+			ligands.replace(i, new ligand(initial_generation_folder_path / (line.substr(0, comma1) + ".pdbqt")));
+
+			// Parse the free energy and ligand efficiency.
+			const size_t comma2 = line.find(',', comma1 + 2);
+			const size_t comma3 = line.find(',', comma2 + 6);
+			const size_t comma4 = line.find(',', comma3 + 6);
+			ligands[i].fe = lexical_cast<fl>(line.substr(comma2 + 1, comma3 - comma2 - 1));
+			ligands[i].le = lexical_cast<fl>(line.substr(comma3 + 1, comma4 - comma3 - 1));
+		}
+	}
+
+	// Scan the fragment folder to obtain a list of fragments.
+	cout << "Scanning fragment folder " << fragment_folder_path << '\n';
+	vector<path> fragments;
+	fragments.reserve(1000); // A fragment folder typically consists of <= 1000 fragments.
+	{
+		using namespace boost::filesystem;
+		const directory_iterator end_dir_iter; // A default constructed directory_iterator acts as the end iterator.
+		for (directory_iterator dir_iter(fragment_folder_path); dir_iter != end_dir_iter; ++dir_iter)
 		{
-			using namespace boost::filesystem;
-			const directory_iterator end_dir_iter; // A default constructed directory_iterator acts as the end iterator.
-			for (directory_iterator dir_iter(fragment_folder_path); dir_iter != end_dir_iter; ++dir_iter)
-			{
-				// Skip non-regular files such as folders.
-				if (!is_regular_file(dir_iter->status())) continue;
+			// Skip non-regular files such as folders.
+			if (!is_regular_file(dir_iter->status())) continue;
 
-				// Save the fragment path.
-				fragments.push_back(dir_iter->path());
-			}
+			// Save the fragment path.
+			fragments.push_back(dir_iter->path());
 		}
-		std::cout << "Found " << fragments.size() << " fragments\n";
+	}
+	cout << "Found " << fragments.size() << " fragments\n";
 
-		// Initialize a Mersenne Twister random number generator.
-		std::cout << "Using random seed " << seed << '\n';
-		mt19937_64 eng(seed);
+	// Initialize a Mersenne Twister random number generator.
+	cout << "Using random seed " << seed << '\n';
+	mt19937_64 eng(seed);
 
-		// Initialize a ligand validator.
-		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw);
+	// Initialize a ligand validator.
+	const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw);
 
-		// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
-		std::atomic<size_t> num_failures(0);
+	// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
+	atomic<size_t> num_failures(0);
 
-		// Reserve storage for operation tasks.
-		operation op(ligands, num_elitists, fragments, v, max_failures, num_failures);
+	// Reserve storage for operation tasks.
+	operation op(ligands, num_elitists, fragments, v, max_failures, num_failures);
 
-		// Initialize ligand filenames.
-		vector<string> ligand_filenames;
-		ligand_filenames.reserve(num_ligands);
-		for (size_t i = 1; i <= num_ligands; ++i)
-		{
-			ligand_filenames.push_back(lexical_cast<string>(i) + ".pdbqt");
-		}
+	// Initialize ligand filenames.
+	vector<string> ligand_filenames;
+	ligand_filenames.reserve(num_ligands);
+	for (size_t i = 1; i <= num_ligands; ++i)
+	{
+		ligand_filenames.push_back(lexical_cast<string>(i) + ".pdbqt");
+	}
 
-		// Find the full path to idock executable.
-		const path idock_path = path(boost::process::find_executable_in_path("idock")).make_preferred();
-		std::cout << "Using idock executable at " << idock_path << '\n';
+	// Find the full path to idock executable.
+	const path idock_path = path(boost::process::find_executable_in_path("idock")).make_preferred();
+	cout << "Using idock executable at " << idock_path << '\n';
 
-		// Initialize arguments to idock.
-		vector<string> idock_args(12);
-		idock_args[0]  = "--ligand_folder";
-		idock_args[2]  = "--output_folder";
-		idock_args[4]  = "--log";
-		idock_args[6]  = "--csv";
-		idock_args[8]  = "--seed";
-		idock_args[9]  = lexical_cast<string>(seed);
-		idock_args[10] = "--config";
-		idock_args[11] = idock_config_path.string();
+	// Initialize arguments to idock.
+	vector<string> idock_args(12);
+	idock_args[0]  = "--ligand_folder";
+	idock_args[2]  = "--output_folder";
+	idock_args[4]  = "--log";
+	idock_args[6]  = "--csv";
+	idock_args[8]  = "--seed";
+	idock_args[9]  = lexical_cast<string>(seed);
+	idock_args[10] = "--config";
+	idock_args[11] = idock_config_path.string();
 
-		// Initialize process context.
-		const boost::process::context ctx;
+	// Initialize process context.
+	const boost::process::context ctx;
 
-		// Initialize sorters.
+	// Initialize sorters.
 //		const auto sort_by_fe = [] (const ligand& l1, const ligand& l2) -> bool { return l1.fe < l2.fe; };
 //		const auto sort_by_le = [] (const ligand& l1, const ligand& l2) -> bool { return l1.le < l2.le; };
 //		const auto sort_by = sort == "fe" ? sort_by_fe : sort_by_le;
 
-		// Initialize a thread pool and create worker threads for later use.
-		std::cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
-		thread_pool tp(num_threads);
+	// Initialize a thread pool and create worker threads for later use.
+	cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
+	thread_pool tp(num_threads);
 
-		// Initialize csv file for dumping statistics.
-		boost::filesystem::ofstream csv(csv_path);
-		csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
+	// Initialize csv file for dumping statistics.
+	boost::filesystem::ofstream csv(csv_path);
+	csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
 
-		std::cout.setf(std::ios::fixed, std::ios::floatfield);
-		std::cout << std::setprecision(3);
-		for (size_t generation = 1; true; ++generation)
-		{
-			std::cout << "Running generation " << generation << '\n';
-
-			// Initialize the paths to current generation folder and its two subfolders.
-			const path generation_folder(output_folder_path / lexical_cast<string>(generation));
-			const path ligand_folder(generation_folder / "ligand");
-			const path output_folder(generation_folder / "output");
-
-			// Create a new folder and two subfolders for current generation.
-			create_directory(generation_folder);
-			create_directory(ligand_folder);
-			create_directory(output_folder);
-
-			// Create addition, subtraction and crossover tasks.
-			for (size_t i = 0; i < num_additions; ++i)
-			{
-				tp.enqueue(packaged_task<void()>(bind(&operation::addition_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
-			}
-			for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
-			{
-				tp.enqueue(packaged_task<void()>(bind(&operation::subtraction_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
-			}
-			for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
-			{
-				tp.enqueue(packaged_task<void()>(bind(&operation::crossover_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
-			}
-			tp.synchronize();
-
-			// Check if the maximum number of failures has been reached.
-			if (num_failures >= max_failures)
-			{
-				std::cout << "The number of failures has reached " << max_failures << '\n';
-				return 0;
-			}
-
-			// Invoke idock.
-			idock_args[1] = ligand_folder.string();
-			idock_args[3] = output_folder.string();
-			idock_args[5] = (generation_folder / default_log_path).string();
-			idock_args[7] = (generation_folder / default_csv_path).string();
-			const int exit_code = create_child(idock_path.string(), idock_args, ctx).wait();
-			if (exit_code)
-			{
-				std::cout << "idock exited with code " << exit_code << '\n';
-				return 1;
-			}
-
-			// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands into the ligand subfolder.
-			for (size_t i = 0; i < num_children; ++i)
-			{
-				ligands[num_elitists + i].update(output_folder / ligand_filenames[i]);
-			}
-
-			// Sort ligands in ascending order of efficacy.
-			ligands.sort();
-//			std::sort(ligands.begin(), ligands.end(), sort_by);
-
-			// Write summaries to csv and calculate average statistics.
-			for (size_t i = 0; i < num_ligands; ++i)
-			{
-				const ligand& l = ligands[i];
-				csv << generation
-					<< ',' << l.p
-					<< ',' << l.parent1
-					<< ',' << l.connector1
-					<< ',' << l.parent2
-					<< ',' << l.connector2
-					<< ',' << l.fe
-					<< ',' << l.le
-					<< ',' << l.num_rotatable_bonds
-					<< ',' << l.num_atoms
-					<< ',' << l.num_heavy_atoms
-					<< ',' << l.num_hb_donors
-					<< ',' << l.num_hb_acceptors
-					<< ',' << l.mw
-					<< '\n';
-			}
-
-			// Calculate average statistics of elite ligands.
-			fl avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
-			for (size_t i = 0; i < num_elitists; ++i)
-			{
-				const ligand& l = ligands[i];
-				avg_mw += l.mw;
-				avg_fe += l.fe;
-				avg_le += l.le;
-				avg_rotatable_bonds += l.num_rotatable_bonds;
-				avg_atoms += l.num_atoms;
-				avg_heavy_atoms += l.num_heavy_atoms;
-				avg_hb_donors += l.num_hb_donors;
-				avg_hb_acceptors += l.num_hb_acceptors;
-			}
-			avg_mw *= num_elitists_inv;
-			avg_fe *= num_elitists_inv;
-			avg_le *= num_elitists_inv;
-			avg_rotatable_bonds *= num_elitists_inv;
-			avg_atoms *= num_elitists_inv;
-			avg_heavy_atoms *= num_elitists_inv;
-			avg_hb_donors *= num_elitists_inv;
-			avg_hb_acceptors *= num_elitists_inv;
-			std::cout << "Failures |  Avg FE |  Avg LE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
-			    << std::setw(8) << num_failures << "   "
-				<< std::setw(7) << avg_fe << "   "
-				<< std::setw(7) << avg_le << "   "
-				<< std::setw(7) << avg_heavy_atoms << "   "
-				<< std::setw(7) << avg_mw << "   "
-				<< std::setw(7) << avg_rotatable_bonds << "   "
-				<< std::setw(7) << avg_hb_donors << "   "
-				<< std::setw(7) << avg_hb_acceptors << '\n';
-		}
-	}
-	catch (const std::exception& e)
+	cout.setf(ios::fixed, ios::floatfield);
+	cout << setprecision(3);
+	for (size_t generation = 1; true; ++generation)
 	{
-		std::cerr << e.what() << '\n';
-		return 1;
+		cout << "Running generation " << generation << '\n';
+
+		// Initialize the paths to current generation folder and its two subfolders.
+		const path generation_folder(output_folder_path / lexical_cast<string>(generation));
+		const path ligand_folder(generation_folder / "ligand");
+		const path output_folder(generation_folder / "output");
+
+		// Create a new folder and two subfolders for current generation.
+		create_directory(generation_folder);
+		create_directory(ligand_folder);
+		create_directory(output_folder);
+
+		// Create addition, subtraction and crossover tasks.
+		for (size_t i = 0; i < num_additions; ++i)
+		{
+			tp.enqueue(packaged_task<void()>(bind(&operation::addition_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+		}
+		for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
+		{
+			tp.enqueue(packaged_task<void()>(bind(&operation::subtraction_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+		}
+		for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
+		{
+			tp.enqueue(packaged_task<void()>(bind(&operation::crossover_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+		}
+		tp.synchronize();
+
+		// Check if the maximum number of failures has been reached.
+		if (num_failures >= max_failures)
+		{
+			cout << "The number of failures has reached " << max_failures << '\n';
+			return 0;
+		}
+
+		// Invoke idock.
+		idock_args[1] = ligand_folder.string();
+		idock_args[3] = output_folder.string();
+		idock_args[5] = (generation_folder / default_log_path).string();
+		idock_args[7] = (generation_folder / default_csv_path).string();
+		const int exit_code = create_child(idock_path.string(), idock_args, ctx).wait();
+		if (exit_code)
+		{
+			cout << "idock exited with code " << exit_code << '\n';
+			return 1;
+		}
+
+		// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands into the ligand subfolder.
+		for (size_t i = 0; i < num_children; ++i)
+		{
+			ligands[num_elitists + i].update(output_folder / ligand_filenames[i]);
+		}
+
+		// Sort ligands in ascending order of efficacy.
+		ligands.sort();
+//			sort(ligands.begin(), ligands.end(), sort_by);
+
+		// Write summaries to csv and calculate average statistics.
+		for (size_t i = 0; i < num_ligands; ++i)
+		{
+			const ligand& l = ligands[i];
+			csv << generation
+				<< ',' << l.p
+				<< ',' << l.parent1
+				<< ',' << l.connector1
+				<< ',' << l.parent2
+				<< ',' << l.connector2
+				<< ',' << l.fe
+				<< ',' << l.le
+				<< ',' << l.num_rotatable_bonds
+				<< ',' << l.num_atoms
+				<< ',' << l.num_heavy_atoms
+				<< ',' << l.num_hb_donors
+				<< ',' << l.num_hb_acceptors
+				<< ',' << l.mw
+				<< '\n';
+		}
+
+		// Calculate average statistics of elite ligands.
+		fl avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
+		for (size_t i = 0; i < num_elitists; ++i)
+		{
+			const ligand& l = ligands[i];
+			avg_mw += l.mw;
+			avg_fe += l.fe;
+			avg_le += l.le;
+			avg_rotatable_bonds += l.num_rotatable_bonds;
+			avg_atoms += l.num_atoms;
+			avg_heavy_atoms += l.num_heavy_atoms;
+			avg_hb_donors += l.num_hb_donors;
+			avg_hb_acceptors += l.num_hb_acceptors;
+		}
+		avg_mw *= num_elitists_inv;
+		avg_fe *= num_elitists_inv;
+		avg_le *= num_elitists_inv;
+		avg_rotatable_bonds *= num_elitists_inv;
+		avg_atoms *= num_elitists_inv;
+		avg_heavy_atoms *= num_elitists_inv;
+		avg_hb_donors *= num_elitists_inv;
+		avg_hb_acceptors *= num_elitists_inv;
+		cout << "Failures |  Avg FE |  Avg LE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
+		    << setw(8) << num_failures << "   "
+			<< setw(7) << avg_fe << "   "
+			<< setw(7) << avg_le << "   "
+			<< setw(7) << avg_heavy_atoms << "   "
+			<< setw(7) << avg_mw << "   "
+			<< setw(7) << avg_rotatable_bonds << "   "
+			<< setw(7) << avg_hb_donors << "   "
+			<< setw(7) << avg_hb_acceptors << '\n';
 	}
 }

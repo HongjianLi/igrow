@@ -234,7 +234,7 @@ void ligand::update(const path& p)
 	save();
 }
 
-std::pair<size_t, size_t> ligand::get_frame(const size_t srn) const
+pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 {
 	BOOST_ASSERT(num_rotatable_bonds == frames.size() - 1);
 	for (size_t k = 0; k <= num_rotatable_bonds; ++k)
@@ -245,18 +245,18 @@ std::pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 		BOOST_ASSERT(srn_begin <= srn_end);
 		if ((f.end - f.begin) == (srn_end - srn_begin + 1)) // The serial numbers are continuous, which is the most cases.
 		{
-			if ((srn_begin <= srn) && (srn <= srn_end)) return std::pair<size_t, size_t>(k, f.begin + srn - srn_begin);
+			if ((srn_begin <= srn) && (srn <= srn_end)) return pair<size_t, size_t>(k, f.begin + srn - srn_begin);
 		}
 		else // The serial numbers are not continuous, but they are sorted. Binary search can be used.
 		{
 			// Linear search at the moment.
 			for (size_t i = f.begin; i < f.end; ++i)
 			{
-				if (srn == atoms[i].srn) return std::pair<size_t,  size_t>(k, i);
+				if (srn == atoms[i].srn) return pair<size_t,  size_t>(k, i);
 			}
 		}
 	}
-	throw std::domain_error("Failed to find an atom with serial number " + lexical_cast<string>(srn));
+	throw domain_error("Failed to find an atom with serial number " + lexical_cast<string>(srn));
 }
 
 ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2) : p(p), parent1(l1.p), parent2(l2.p)
@@ -271,8 +271,8 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 	BOOST_ASSERT(m2srn <= l2.max_atom_number);
 
 	// Obtain the frames and indices of the two mutable atoms.
-	const std::pair<size_t, size_t> p1 = l1.get_frame(m1srn);
-	const std::pair<size_t, size_t> p2 = l2.get_frame(m2srn);
+	const pair<size_t, size_t> p1 = l1.get_frame(m1srn);
+	const pair<size_t, size_t> p2 = l2.get_frame(m2srn);
 	const size_t f1idx = p1.first;
 	const size_t f2idx = p2.first;
 	const frame& f1 = l1.frames[f1idx];
@@ -416,9 +416,9 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 			const frame& rf = l2.frames[k];
 			for (auto i = rf.branches.rbegin(); i < rf.branches.rend(); ++i)
 			{
-				if (std::find(l4_to_l2_mapping.begin(), l4_to_l2_mapping.end(), *i) == l4_to_l2_mapping.end()) stack.push_back(*i);
+				if (find(l4_to_l2_mapping.begin(), l4_to_l2_mapping.end(), *i) == l4_to_l2_mapping.end()) stack.push_back(*i);
 			}
-			if (std::find(l4_to_l2_mapping.begin(), l4_to_l2_mapping.end(), rf.parent) == l4_to_l2_mapping.end()) stack.push_back(rf.parent);
+			if (find(l4_to_l2_mapping.begin(), l4_to_l2_mapping.end(), rf.parent) == l4_to_l2_mapping.end()) stack.push_back(rf.parent);
 		}
 	}
 	BOOST_ASSERT(l4_to_l2_mapping.size() == l2_num_frames);
@@ -718,8 +718,8 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		}
 
 		// Obtain the frames and indices of the two connector atoms.
-		const std::pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
-		const std::pair<size_t, size_t> p2 = l1.get_frame(f1.rotorY);
+		const pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
+		const pair<size_t, size_t> p2 = l1.get_frame(f1.rotorY);
 		BOOST_ASSERT(p1.first == f1.parent);
 		BOOST_ASSERT(p2.first == f1idx);
 
@@ -877,8 +877,8 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	}
 
 	// Obtain the frames and indices of the two connector atoms.
-	const std::pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
-	const std::pair<size_t, size_t> p2 = l2.get_frame(f2.rotorY);
+	const pair<size_t, size_t> p1 = l1.get_frame(f1.rotorX);
+	const pair<size_t, size_t> p2 = l2.get_frame(f2.rotorY);
 	BOOST_ASSERT(p1.first == f1.parent);
 	BOOST_ASSERT(p2.first == f2idx);
 
@@ -889,8 +889,8 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	BOOST_ASSERT(c2.srn == f2.rotorY);
 
 	// Obtain the frames and indices of the two virtual mutable atoms.
-	const std::pair<size_t, size_t> q1 = l1.get_frame(f1.rotorY);
-	const std::pair<size_t, size_t> q2 = l2.get_frame(f2.rotorX);
+	const pair<size_t, size_t> q1 = l1.get_frame(f1.rotorY);
+	const pair<size_t, size_t> q2 = l2.get_frame(f2.rotorX);
 	BOOST_ASSERT(q1.first == f1idx);
 	BOOST_ASSERT(q2.first == f2.parent);
 

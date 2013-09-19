@@ -115,7 +115,7 @@ public:
 	void update(const path& p);
 
 	/// Gets the frame and index to which a atom belongs to given its serial number.
-	std::pair<size_t, size_t> get_frame(const size_t srn) const;
+	pair<size_t, size_t> get_frame(const size_t srn) const;
 
 	/// Returns true if the current ligand is able to perform addition.
 	bool addition_feasible() const

@@ -26,7 +26,6 @@
 #include <boost/filesystem/path.hpp>
 #include "ligand.hpp"
 
-using std::vector;
 using boost::ptr_vector;
 using boost::filesystem::path;
 
@@ -35,7 +34,7 @@ class operation
 {
 public:
 	/// Constructs a GA operation.
-	explicit operation(ptr_vector<ligand>& ligands, const size_t num_elitists, const vector<path>& fragments, const validator& v, const size_t max_failures, std::atomic<size_t>& num_failures) : ligands(ligands), num_elitists(num_elitists), fragments(fragments), num_fragments(fragments.size()), v(v), max_failures(max_failures), num_failures(num_failures) {}
+	explicit operation(ptr_vector<ligand>& ligands, const size_t num_elitists, const vector<path>& fragments, const validator& v, const size_t max_failures, atomic<size_t>& num_failures) : ligands(ligands), num_elitists(num_elitists), fragments(fragments), num_fragments(fragments.size()), v(v), max_failures(max_failures), num_failures(num_failures) {}
 
 	/// Task for creating a child ligand from two parent ligands by addition.
 	/// @exception maximum_failures_reached_error Thrown when the number of failures reaches the user specified maximum number of failures.
@@ -56,7 +55,7 @@ protected:
 	const size_t num_fragments;
 	const validator& v;
 	const size_t max_failures;
-	std::atomic<size_t>& num_failures;
+	atomic<size_t>& num_failures;
 
 //		/// Represent a GA operation for removal of ligand duplicates.
 //		class operation_code
