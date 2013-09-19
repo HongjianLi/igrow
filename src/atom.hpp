@@ -20,8 +20,10 @@
 #ifndef IGROW_ATOM_HPP
 #define IGROW_ATOM_HPP
 
+#include <string>
 #include "common.hpp"
 #include "vec3.hpp"
+using namespace std;
 
 // AutoDock4 atom types.
 const size_t AD_TYPE_HD   =  0;	///< Polar hydrogen, i.e. bonded to a hetero atom.

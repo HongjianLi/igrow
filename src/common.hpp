@@ -20,15 +20,7 @@
 #ifndef IGROW_COMMON_HPP
 #define IGROW_COMMON_HPP
 
-#include <boost/lexical_cast.hpp>
-#include <boost/filesystem/path.hpp>
 #include <boost/random.hpp>
-
-// These classes are widely used across the entire program.
-using std::vector;
-using std::string;
-using boost::lexical_cast;
-using boost::filesystem::path;
 
 /// igrow uses double precision floating point computation by default.
 /// This could possible be demoted to single precision for better performance.

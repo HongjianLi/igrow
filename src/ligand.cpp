@@ -22,6 +22,7 @@
 #include <boost/algorithm/string.hpp>
 #include "mat3.hpp"
 #include "ligand.hpp"
+using namespace boost;
 
 /// Returns true if a string starts with another string.
 inline bool starts_with(const string& str, const string& start)
@@ -62,7 +63,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 	line.reserve(79); // According to PDBQT specification, the last item AutoDock4 atom type locates at 1-based [78, 79].
 
 	// Parse ATOM/HETATM, BRANCH, ENDBRANCH.
-	ifstream in(p); // Parsing starts. Open the file stream as late as possible.
+	boost::filesystem::ifstream in(p); // Parsing starts. Open the file stream as late as possible.
 	while (getline(in, line))
 	{
 		++num_lines;
@@ -146,7 +147,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 
 void ligand::save() const
 {
-	ofstream out(p); // Dumping starts. Open the file stream as late as possible.
+	boost::filesystem::ofstream out(p); // Dumping starts. Open the file stream as late as possible.
 	using namespace std;
 	out.setf(ios::fixed, ios::floatfield);
 	out << setprecision(3);
@@ -212,7 +213,7 @@ void ligand::update(const path& p)
 	}
 	string line;
 	line.reserve(79);
-	ifstream in(p);
+	boost::filesystem::ifstream in(p);
 	getline(in, line); // MODEL        1
 	getline(in, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.976 KCAL/MOL
 	fe = right_cast<fl>(line, 56, 63);

@@ -20,10 +20,12 @@
 #ifndef IGROW_LIGAND_HPP
 #define IGROW_LIGAND_HPP
 
+#include <boost/filesystem/path.hpp>
 #include <boost/flyweight.hpp>
 #include <boost/flyweight/key_value.hpp>
 #include <boost/flyweight/no_tracking.hpp>
 #include "atom.hpp"
+using boost::filesystem::path;
 
 /// Represents a parsing error.
 class parsing_error : public std::domain_error

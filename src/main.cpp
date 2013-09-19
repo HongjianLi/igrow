@@ -17,6 +17,7 @@
  */
 
 #include <thread>
+#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -26,6 +27,7 @@
 #include "ligand.hpp"
 #include "thread_pool.hpp"
 #include "operation.hpp"
+using namespace boost;
 
 int main(int argc, char* argv[])
 {
