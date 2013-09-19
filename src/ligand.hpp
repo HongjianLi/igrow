@@ -27,14 +27,6 @@
 #include "atom.hpp"
 using boost::filesystem::path;
 
-/// Represents a parsing error.
-class parsing_error : public std::domain_error
-{
-public:
-	/// Constructs a parsing error.
-	parsing_error(const path& file, const size_t line, const string& reason) : std::domain_error("Error parsing \"" + file.filename().string() + "\" on line " + boost::lexical_cast<string>(line) + ": " + reason) {}
-};
-
 /// Represents a ROOT or a BRANCH in PDBQT structure.
 class frame
 {

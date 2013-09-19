@@ -17,6 +17,7 @@
  */
 
 #include <iomanip>
+#include <boost/lexical_cast.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/algorithm/string.hpp>
@@ -77,7 +78,6 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 			// Validate the AutoDock4 atom type.
 			const string ad_type_string = line.substr(77, isspace(line[78]) ? 1 : 2);
 			const size_t ad = parse_ad_type_string(ad_type_string);
-			if (ad == AD_TYPE_SIZE) throw parsing_error(p, num_lines, "Atom type " + ad_type_string + " is not supported by igrow.");
 
 			// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
 			string name = line.substr(12, 4);
@@ -116,7 +116,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 		{
 			// A frame may be empty, e.g. "BRANCH   4   9" is immediately followed by "ENDBRANCH   4   9".
 			// This emptiness is likely to be caused by invalid input structure, especially when all the atoms are located in the same plane.
-			if (f->begin == atoms.size()) throw parsing_error(p, num_lines, "An empty BRANCH has been detected, indicating the input ligand structure is probably invalid.");
+			if (f->begin == atoms.size()) throw domain_error("Error parsing " + p.filename().string() + ": an empty BRANCH has been detected, indicating the input ligand structure is probably invalid.");
 
 			// Now the parent of the following frame is the parent of current frame.
 			current = f->parent;

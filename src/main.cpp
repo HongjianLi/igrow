@@ -17,6 +17,7 @@
  */
 
 #include <thread>
+#include <random>
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -281,7 +282,7 @@ int main(int argc, char* argv[])
 
 		// Initialize a Mersenne Twister random number generator.
 		std::cout << "Using random seed " << seed << '\n';
-		mt19937eng eng(seed);
+		mt19937_64 eng(seed);
 
 		// Initialize a ligand validator.
 		const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw);

@@ -20,18 +20,9 @@
 #ifndef IGROW_COMMON_HPP
 #define IGROW_COMMON_HPP
 
-#include <boost/random.hpp>
-
 /// igrow uses double precision floating point computation by default.
 /// This could possible be demoted to single precision for better performance.
 typedef double fl;
-
-// Choose the appropriate Mersenne Twister engine for random number generation on 32-bit or 64-bit platform.
-#if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(__amd64__) || defined(_M_X64) || defined(_M_AMD64)
-typedef boost::random::mt19937_64 mt19937eng;
-#else
-typedef boost::random::mt19937 mt19937eng;
-#endif
 
 const fl epsilon = static_cast<fl>(0.00001); ///< Tolerance for equality comparison of two floating point values.
 
