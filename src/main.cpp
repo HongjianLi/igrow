@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <iomanip>
 #include <thread>
@@ -74,7 +75,7 @@ int main(int argc, char* argv[])
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
 		const size_t default_num_threads = thread::hardware_concurrency();
-		const size_t default_seed = time(0);
+		const size_t default_seed = chrono::system_clock::now().time_since_epoch().count();
 		const size_t default_num_additions = 20;
 		const size_t default_num_subtractions = 20;
 		const size_t default_num_crossovers = 20;
