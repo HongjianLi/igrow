@@ -20,7 +20,7 @@
     <ClCompile Include="src\operation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_pool.cpp">
+    <ClCompile Include="src\io_service_pool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -43,7 +43,7 @@
     <ClInclude Include="src\operation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_pool.hpp">
+    <ClInclude Include="src\io_service_pool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
