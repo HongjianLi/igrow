@@ -31,6 +31,7 @@
 #include "io_service_pool.hpp"
 #include "operation.hpp"
 using namespace boost;
+using namespace boost::filesystem;
 
 //! Represents a thread safe counter.
 template <typename T>
@@ -301,17 +302,12 @@ int main(int argc, char* argv[])
 	cout << "Scanning fragment folder " << fragment_folder_path << endl;
 	vector<path> fragments;
 	fragments.reserve(1000); // A fragment folder typically consists of <= 1000 fragments.
+	for (directory_iterator dir_iter(fragment_folder_path), end_dir_iter; dir_iter != end_dir_iter; ++dir_iter)
 	{
-		using namespace boost::filesystem;
-		const directory_iterator end_dir_iter; // A default constructed directory_iterator acts as the end iterator.
-		for (directory_iterator dir_iter(fragment_folder_path); dir_iter != end_dir_iter; ++dir_iter)
-		{
-			// Skip non-regular files such as folders.
-			if (!is_regular_file(dir_iter->status())) continue;
-
-			// Save the fragment path.
-			fragments.push_back(dir_iter->path());
-		}
+		// Skip non-regular files such as folders.
+		if (!is_regular_file(dir_iter->status())) continue;
+		// Save the fragment path.
+		fragments.push_back(dir_iter->path());
 	}
 	cout << "Found " << fragments.size() << " fragments\n";
 
@@ -354,8 +350,8 @@ int main(int argc, char* argv[])
 	// Initialize process context.
 	const boost::process::context ctx;
 
-	// Initialize a thread pool and create worker threads for later use.
-	cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << endl;
+	// Initialize an io service pool and create worker threads for later use.
+	cout << "Creating an io service pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << endl;
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
