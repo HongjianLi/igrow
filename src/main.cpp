@@ -11,53 +11,11 @@
 #include "io_service_pool.hpp"
 #include "ligand.hpp"
 #include "operation.hpp"
+#include "utility.hpp"
 using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::process;
 using namespace boost::process::initializers;
-
-//! Represents a thread safe counter.
-template <typename T>
-class safe_counter
-{
-public:
-	//! Initializes the counter to 0 and its expected hit value to z.
-	void init(const T z);
-
-	//! Increments the counter by 1 in a thread safe manner, and wakes up the calling thread waiting on the internal mutex.
-	void increment();
-
-	//! Waits until the counter reaches its expected hit value.
-	void wait();
-private:
-	mutex m;
-	condition_variable cv;
-	T n; //!< Expected hit value.
-	T i; //!< Counter value.
-};
-
-template <typename T>
-void safe_counter<T>::init(const T z)
-{
-	n = z;
-	i = 0;
-}
-
-template <typename T>
-void safe_counter<T>::increment()
-{
-	lock_guard<mutex> guard(m);
-	if (++i == n) cv.notify_one();
-}
-
-template <typename T>
-void safe_counter<T>::wait()
-{
-	unique_lock<mutex> lock(m);
-	if (i < n) cv.wait(lock);
-}
-
-template class safe_counter<size_t>;
 
 int main(int argc, char* argv[])
 {
