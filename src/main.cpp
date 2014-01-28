@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
 		remove_all(output_folder_path);
 		if (!create_directories(output_folder_path))
 		{
-			cerr << "Failed to create output folder " << output_folder_path << '\n';
+			cerr << "Failed to create output folder " << output_folder_path << endl;
 			return 1;
 		}
 
@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
 	}
 	catch (const std::exception& e)
 	{
-		cerr << e.what() << '\n';
+		cerr << e.what() << endl;
 		return 1;
 	}
 
@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Scan the fragment folder to obtain a list of fragments.
-	cout << "Scanning fragment folder " << fragment_folder_path << '\n';
+	cout << "Scanning fragment folder " << fragment_folder_path << endl;
 	vector<path> fragments;
 	fragments.reserve(1000); // A fragment folder typically consists of <= 1000 fragments.
 	{
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
 	cout << "Found " << fragments.size() << " fragments\n";
 
 	// Initialize a Mersenne Twister random number generator.
-	cout << "Using random seed " << seed << '\n';
+	cout << "Using random seed " << seed << endl;
 	mt19937_64 eng(seed);
 
 	// Initialize a ligand validator.
@@ -338,7 +338,7 @@ int main(int argc, char* argv[])
 
 	// Find the full path to idock executable.
 	const path idock_path = path(boost::process::find_executable_in_path("idock")).make_preferred();
-	cout << "Using idock executable at " << idock_path << '\n';
+	cout << "Using idock executable at " << idock_path << endl;
 
 	// Initialize arguments to idock.
 	vector<string> idock_args(12);
@@ -355,7 +355,7 @@ int main(int argc, char* argv[])
 	const boost::process::context ctx;
 
 	// Initialize a thread pool and create worker threads for later use.
-	cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
+	cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << endl;
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
@@ -367,7 +367,7 @@ int main(int argc, char* argv[])
 	cout << setprecision(3);
 	for (size_t generation = 1; true; ++generation)
 	{
-		cout << "Running generation " << generation << '\n';
+		cout << "Running generation " << generation << endl;
 
 		// Initialize the paths to current generation folder and its two subfolders.
 		const path generation_folder(output_folder_path / lexical_cast<string>(generation));
@@ -410,7 +410,7 @@ int main(int argc, char* argv[])
 		// Check if the maximum number of failures has been reached.
 		if (num_failures >= max_failures)
 		{
-			cout << "The number of failures has reached " << max_failures << '\n';
+			cout << "The number of failures has reached " << max_failures << endl;
 			return 0;
 		}
 
@@ -422,7 +422,7 @@ int main(int argc, char* argv[])
 		const int exit_code = create_child(idock_path.string(), idock_args, ctx).wait();
 		if (exit_code)
 		{
-			cout << "idock exited with code " << exit_code << '\n';
+			cout << "idock exited with code " << exit_code << endl;
 			return 1;
 		}
 
@@ -453,7 +453,7 @@ int main(int argc, char* argv[])
 				<< ',' << l.num_hb_donors
 				<< ',' << l.num_hb_acceptors
 				<< ',' << l.mw
-				<< '\n';
+				<< endl;
 		}
 
 		// Calculate average statistics of elite ligands.
@@ -486,6 +486,6 @@ int main(int argc, char* argv[])
 			<< setw(7) << avg_mw << "   "
 			<< setw(7) << avg_rotatable_bonds << "   "
 			<< setw(7) << avg_hb_donors << "   "
-			<< setw(7) << avg_hb_acceptors << '\n';
+			<< setw(7) << avg_hb_acceptors << endl;
 	}
 }
