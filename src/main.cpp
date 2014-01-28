@@ -84,7 +84,6 @@ int main(int argc, char* argv[])
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, csv_path;
 	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	fl max_mw;
-//	string sort;
 
 	// Process program options.
 	try
@@ -104,7 +103,6 @@ int main(int argc, char* argv[])
 		const size_t default_max_hb_donors = 5;
 		const size_t default_max_hb_acceptors = 10;
 		const fl default_max_mw = 500;
-//		const string default_sort = "fe";
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
@@ -129,7 +127,6 @@ int main(int argc, char* argv[])
 			("additions", value<size_t>(&num_additions)->default_value(default_num_additions), "number of child ligands created by addition")
 			("subtractions", value<size_t>(&num_subtractions)->default_value(default_num_subtractions), "number of child ligands created by subtraction")
 			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
-//			("sort", value<string>(&sort)->default_value(default_sort), "sorting ligands ascendingly by free energy (fe) or ligand efficiency (le)")
 			("max_failures", value<size_t>(&max_failures)->default_value(default_max_failures), "maximum number of operational failures to tolerate")
 			("max_rotatable_bonds", value<size_t>(&max_rotatable_bonds)->default_value(default_max_rotatable_bonds), "maximum number of rotatable bonds")
 			("max_atoms", value<size_t>(&max_atoms)->default_value(default_max_atoms), "maximum number of atoms")
@@ -256,11 +253,6 @@ int main(int argc, char* argv[])
 			cerr << "Option max_mw must be positive\n";
 			return 1;
 		}
-//		if (!((sort == "fe") || (sort == "le")))
-//		{
-//			cerr << "Option sort must be either fe or le\n";
-//			return 1;
-//		}
 	}
 	catch (const std::exception& e)
 	{
@@ -362,11 +354,6 @@ int main(int argc, char* argv[])
 	// Initialize process context.
 	const boost::process::context ctx;
 
-	// Initialize sorters.
-//		const auto sort_by_fe = [] (const ligand& l1, const ligand& l2) -> bool { return l1.fe < l2.fe; };
-//		const auto sort_by_le = [] (const ligand& l1, const ligand& l2) -> bool { return l1.le < l2.le; };
-//		const auto sort_by = sort == "fe" ? sort_by_fe : sort_by_le;
-
 	// Initialize a thread pool and create worker threads for later use.
 	cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
 	io_service_pool io(num_threads);
@@ -447,7 +434,6 @@ int main(int argc, char* argv[])
 
 		// Sort ligands in ascending order of efficacy.
 		ligands.sort();
-//			sort(ligands.begin(), ligands.end(), sort_by);
 
 		// Write summaries to csv and calculate average statistics.
 		for (size_t i = 0; i < num_ligands; ++i)
