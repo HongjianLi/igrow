@@ -10,7 +10,7 @@ Features
 * igrow uses [idock] as backend docking engine.
 * igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
 * igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
-* igrow invents its own thread pool in order to reuse threads and maintain a high CPU utilization throughout the entire synhsizing procedure. The thread pool parallelizes the creation of mutants and children in each generation.
+* igrow invents its own io service pool in order to reuse threads and maintain a high CPU utilization throughout the entire synthsizing procedure. The io service pool parallelizes the creation of mutants and children in each generation.
 * igrow utilizes flyweight pattern for caching fragments and dynamic pointer vector for caching and sorting ligands.
 * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial elite ligands and fragments.
 
@@ -18,27 +18,14 @@ Features
 Supported operating systems and compilers
 -----------------------------------------
 
-* Ubuntu 11.10 x86_64 and GCC 4.6.1
-* Ubuntu 11.10 x86_64 and CLANG 3.0
-* Ubuntu 11.10 x86_64 and Intel C++ Compiler 12.1.2
-* Fedora 16 x86_64 and GCC 4.6.2
-* Fedora 16 x86_64 and Intel C++ Compiler 12.1.2
-* Arch Linux 3.3.2 x86_64 and GCC 4.7.0
-* Arch Linux 3.3.2 x86_64 and CLANG 3.0
-* Arch Linux 3.3.2 x86_64 and Intel C++ Compiler 12.1.2
-* FreeBSD 9.0 x86_64 and CLANG 3.0
-* Solaris 11 11/11 and GCC 4.5.2
-* Mac OS X 10.7.2 x86_64 and CLANG 3.0
-* Windows 7 SP1 x64 and Windows SDK 7.1
-* Windows 7 SP1 x64 and Visual Studio 2010 SP1
-* Windows 7 SP1 x64 and Intel C++ Compiler 12.1.2
-* Windows 8 Consumer Preview x64 and Visual Studio 11 Ultimate Beta
+* Arch Linux 3.12.9 x86_64 and CLANG 3.4
+* Windows 7 SP1 x64 and Visual Studio 2013 Update 1
 
 
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.54.0 is supported. The must-be-built libraries required by igrow are `System`, `Thread`, `Filesystem`, `Program Options` and `Date Time`. An unofficial and header-only library, Boost.Process, is also required by igrow. The file `boost.process.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
+igrow depends on [Boost C++ Libraries]. Boost 1.55.0 is supported. The must-be-built libraries required by igrow are `System`, `Filesystem` and `Program Options`. An unofficial and header-only library, Boost.Process, is also required by igrow. The file `boost.process.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
 
 ### Compilation on Linux
 
@@ -112,7 +99,7 @@ Change Log
 * Allowed users to specify the number of failures of GA operations as a stopping criterion.
 * Used docked atom coordinates to construct child ligands of the next generation.
 * Parallelized mutation and crossover operations.
-* Provided precompiled executables for 32-bit and 64-bit Linux, Windows, Mac OS X, FreeBSD and Solaris.
+* Provided precompiled executables for 64-bit Linux and Windows.
 
 
 Author
