@@ -7,14 +7,14 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/process/context.hpp>
-#include <boost/process/operations.hpp>
-#include <boost/process/child.hpp>
+#include <boost/process.hpp>
 #include "ligand.hpp"
 #include "io_service_pool.hpp"
 #include "operation.hpp"
 using namespace boost;
 using namespace boost::filesystem;
+using namespace boost::process;
+using namespace boost::process::initializers;
 
 //! Represents a thread safe counter.
 template <typename T>
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
 		boost::filesystem::ifstream in(initial_generation_csv_path);
 		string line;
 		line.reserve(80);
-		getline(in, line); // Ligand,Conf,FE1,FE2,FE3,FE4,FE5,FE6,FE7,FE8,FE9
+		getline(in, line); // Ligand,pKd1,pKd2,pKd3,pKd4,pKd5,pKd6,pKd7,pKd8,pKd9
 		for (size_t i = 0; i < num_elitists; ++i)
 		{
 			// Check if there are sufficient initial elite ligands.
@@ -274,10 +274,10 @@ int main(int argc, char* argv[])
 
 			// Parse the free energy and ligand efficiency.
 			const size_t comma2 = line.find(',', comma1 + 2);
-			const size_t comma3 = line.find(',', comma2 + 6);
-			const size_t comma4 = line.find(',', comma3 + 6);
-			ligands[i].fe = lexical_cast<fl>(line.substr(comma2 + 1, comma3 - comma2 - 1));
-			ligands[i].le = lexical_cast<fl>(line.substr(comma3 + 1, comma4 - comma3 - 1));
+//			const size_t comma3 = line.find(',', comma2 + 6);
+//			const size_t comma4 = line.find(',', comma3 + 6);
+			ligands[i].fe = lexical_cast<fl>(line.substr(comma1 + 1, comma2 - comma1 - 1));
+//			ligands[i].le = lexical_cast<fl>(line.substr(comma3 + 1, comma4 - comma3 - 1));
 		}
 	}
 
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Find the full path to idock executable.
-	const path idock_path = path(boost::process::find_executable_in_path("idock")).make_preferred();
+	const path idock_path = path(search_path("idock")).make_preferred();
 	cout << "Using idock executable at " << idock_path << endl;
 
 	// Initialize arguments to idock.
@@ -329,9 +329,6 @@ int main(int argc, char* argv[])
 	idock_args[9]  = lexical_cast<string>(seed);
 	idock_args[10] = "--config";
 	idock_args[11] = idock_config_path.string();
-
-	// Initialize process context.
-	const boost::process::context ctx;
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << endl;
@@ -398,7 +395,7 @@ int main(int argc, char* argv[])
 		idock_args[3] = output_folder.string();
 		idock_args[5] = (generation_folder / default_log_path).string();
 		idock_args[7] = (generation_folder / default_csv_path).string();
-		const int exit_code = create_child(idock_path.string(), idock_args, ctx).wait();
+		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), throw_on_error()));
 		if (exit_code)
 		{
 			cout << "idock exited with code " << exit_code << endl;
