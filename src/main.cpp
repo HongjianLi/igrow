@@ -28,9 +28,52 @@
 #include <boost/process/operations.hpp>
 #include <boost/process/child.hpp>
 #include "ligand.hpp"
-#include "thread_pool.hpp"
+#include "io_service_pool.hpp"
 #include "operation.hpp"
 using namespace boost;
+
+//! Represents a thread safe counter.
+template <typename T>
+class safe_counter
+{
+public:
+	//! Initializes the counter to 0 and its expected hit value to z.
+	void init(const T z);
+
+	//! Increments the counter by 1 in a thread safe manner, and wakes up the calling thread waiting on the internal mutex.
+	void increment();
+
+	//! Waits until the counter reaches its expected hit value.
+	void wait();
+private:
+	mutex m;
+	condition_variable cv;
+	T n; //!< Expected hit value.
+	T i; //!< Counter value.
+};
+
+template <typename T>
+void safe_counter<T>::init(const T z)
+{
+	n = z;
+	i = 0;
+}
+
+template <typename T>
+void safe_counter<T>::increment()
+{
+	lock_guard<mutex> guard(m);
+	if (++i == n) cv.notify_one();
+}
+
+template <typename T>
+void safe_counter<T>::wait()
+{
+	unique_lock<mutex> lock(m);
+	if (i < n) cv.wait(lock);
+}
+
+template class safe_counter<size_t>;
 
 int main(int argc, char* argv[])
 {
@@ -326,7 +369,8 @@ int main(int argc, char* argv[])
 
 	// Initialize a thread pool and create worker threads for later use.
 	cout << "Creating a thread pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << '\n';
-	thread_pool tp(num_threads);
+	io_service_pool io(num_threads);
+	safe_counter<size_t> cnt;
 
 	// Initialize csv file for dumping statistics.
 	boost::filesystem::ofstream csv(csv_path);
@@ -349,19 +393,32 @@ int main(int argc, char* argv[])
 		create_directory(output_folder);
 
 		// Create addition, subtraction and crossover tasks.
+		cnt.init(num_children);
 		for (size_t i = 0; i < num_additions; ++i)
 		{
-			tp.enqueue(packaged_task<int()>(bind(&operation::addition_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+			io.post([&,i]()
+			{
+				op.addition_task(num_elitists + i, ligand_folder / ligand_filenames[i], eng());
+				cnt.increment();
+			});
 		}
 		for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
 		{
-			tp.enqueue(packaged_task<int()>(bind(&operation::subtraction_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+			io.post([&,i]()
+			{
+				op.subtraction_task(num_elitists + i, ligand_folder / ligand_filenames[i], eng());
+				cnt.increment();
+			});
 		}
 		for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
 		{
-			tp.enqueue(packaged_task<int()>(bind(&operation::crossover_task, std::ref(op), num_elitists + i, ligand_folder / ligand_filenames[i], eng())));
+			io.post([&,i]()
+			{
+				op.crossover_task(num_elitists + i, ligand_folder / ligand_filenames[i], eng());
+				cnt.increment();
+			});
 		}
-		tp.synchronize();
+		cnt.wait();
 
 		// Check if the maximum number of failures has been reached.
 		if (num_failures >= max_failures)
