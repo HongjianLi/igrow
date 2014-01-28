@@ -1,7 +1,7 @@
 #include <random>
 #include "operation.hpp"
 
-int operation::addition_task(const size_t index, const path& p, const size_t seed)
+void operation::addition_task(const size_t index, const path& p, const size_t seed)
 {
 	// Initialize a Mersenne Twister random number generator.
 	mt19937_64 eng(seed);
@@ -32,10 +32,9 @@ int operation::addition_task(const size_t index, const path& p, const size_t see
 			break;
 		}
 	} while (++num_failures < max_failures);
-	return 0;
 }
 
-int operation::subtraction_task(const size_t index, const path& p, const size_t seed)
+void operation::subtraction_task(const size_t index, const path& p, const size_t seed)
 {
 	// Initialize a Mersenne Twister random number generator.
 	mt19937_64 eng(seed);
@@ -62,10 +61,9 @@ int operation::subtraction_task(const size_t index, const path& p, const size_t 
 			break;
 		}
 	} while (++num_failures < max_failures);
-	return 0;
 }
 
-int operation::crossover_task(const size_t index, const path& p, const size_t seed)
+void operation::crossover_task(const size_t index, const path& p, const size_t seed)
 {
 	// Initialize a Mersenne Twister random number generator.
 	mt19937_64 eng(seed);
@@ -95,5 +93,4 @@ int operation::crossover_task(const size_t index, const path& p, const size_t se
 			break;
 		}
 	} while (++num_failures < max_failures);
-	return 0;
 }
