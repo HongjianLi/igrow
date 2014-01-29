@@ -1,4 +1,4 @@
-#include "utility.hpp"
+#include "safe_counter.hpp"
 
 template <typename T>
 void safe_counter<T>::init(const T z)
