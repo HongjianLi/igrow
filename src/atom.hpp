@@ -124,38 +124,39 @@ public:
 	/// Returns true if the current atom is a hydrogen.
 	bool is_hydrogen() const
 	{
-		return (ad <= AD_TYPE_H);
+		return ad <= AD_TYPE_H;
 	}
 
 	/// Returns true if the current atom is a halogen.
 	bool is_halogen() const
 	{
-		return ((AD_TYPE_F <= ad) && (ad <= AD_TYPE_I));
+		return AD_TYPE_F <= ad && ad <= AD_TYPE_I;
 	}
 
 	/// Returns true if the current atom is a mutable atom.
 	bool is_mutable() const
 	{
-		return (is_hydrogen() || is_halogen());
+		return is_hydrogen() || is_halogen();
 	}
 
 	/// Returns true is the current atom is a hydrogen bond donor, i.e. polar hydrogen.
 	bool is_hb_donor() const
 	{
-		return (!ad);
+		return !ad;
 	}
 
 	/// Returns true is the current atom is a hydrogen bond acceptor.
 	bool is_hb_acceptor() const
 	{
-		return ((AD_TYPE_NA <= ad) && (ad <= AD_TYPE_SA));
+		return AD_TYPE_NA <= ad && ad <= AD_TYPE_SA;
 	}
 
 	/// Returns true if the current atom is covalently bonded to a given atom.
 	bool is_neighbor(const atom& a) const
 	{
 		assert(this != &a);
-		return (distance_sqr(coordinate, a.coordinate) < sqr(1.1 * (covalent_radius() + a.covalent_radius())));
+		const double r = 1.1 * (covalent_radius() + a.covalent_radius());
+		return distance_sqr(coordinate, a.coordinate) < r * r;
 	}
 };
 
