@@ -3,7 +3,6 @@
 #include <iomanip>
 #include <thread>
 #include <random>
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -231,7 +230,7 @@ int main(int argc, char* argv[])
 
 			// Parse the free energy and ligand efficiency.
 			const size_t comma2 = line.find(',', comma1 + 2);
-			ligands[i].fe = lexical_cast<double>(line.substr(comma1 + 1, comma2 - comma1 - 1));
+			ligands[i].fe = stod(line.substr(comma1 + 1, comma2 - comma1 - 1));
 		}
 	}
 
@@ -266,7 +265,7 @@ int main(int argc, char* argv[])
 	ligand_filenames.reserve(num_ligands);
 	for (size_t i = 1; i <= num_ligands; ++i)
 	{
-		ligand_filenames.push_back(lexical_cast<string>(i) + ".pdbqt");
+		ligand_filenames.push_back(to_string(i) + ".pdbqt");
 	}
 
 	// Find the full path to idock executable.
@@ -279,7 +278,7 @@ int main(int argc, char* argv[])
 	idock_args[2]  = "--output_folder";
 	idock_args[4]  = "--log";
 	idock_args[6]  = "--seed";
-	idock_args[7]  = lexical_cast<string>(seed);
+	idock_args[7]  = to_string(seed);
 	idock_args[8] = "--config";
 	idock_args[9] = idock_config_path.string();
 
@@ -299,7 +298,7 @@ int main(int argc, char* argv[])
 		cout << "Running generation " << generation << endl;
 
 		// Initialize the paths to current generation folder and its two subfolders.
-		const path generation_folder(output_folder_path / lexical_cast<string>(generation));
+		const path generation_folder(output_folder_path / to_string(generation));
 		const path input_folder(generation_folder / "ligand");
 		const path output_folder(generation_folder / "output");
 
