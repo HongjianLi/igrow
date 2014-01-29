@@ -8,10 +8,10 @@ Features
 --------
 
 * igrow uses [idock] as backend docking engine.
-* igrow supports more types of chemical synthesis such as halogen replacement and branch replacement in addition to hydrogen replacement.
+* igrow supports halogen replacement and branch replacement in addition to hydrogen replacement.
 * igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
 * igrow invents its own io service pool in order to reuse threads and maintain a high CPU utilization throughout the entire synthsizing procedure. The io service pool parallelizes the creation of mutants and children in each generation.
-* igrow utilizes flyweight pattern for caching fragments and dynamic pointer vector for caching and sorting ligands.
+* igrow utilizes flyweight pattern to cache fragments and dynamic pointer vector to cache and sort ligands.
 * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial elite ligands and fragments.
 
 
@@ -25,7 +25,7 @@ Supported operating systems and compilers
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.55.0 is supported. The must-be-built libraries required by igrow are `System`, `Filesystem` and `Program Options`. An unofficial and header-only library, Boost.Process, is also required by igrow. The file `boost.process.tar.bz2` must be extracted to the Boost distribution tree in order to pass compilation.
+igrow depends on [Boost C++ Libraries]. Boost 1.55.0 is supported. The must-be-built libraries required by igrow are `System`, `Filesystem` and `Program Options`. An unofficial header-only library, Boost.Process, is also required by igrow. The file `process.zip` must be extracted to the Boost distribution tree in order to pass compilation.
 
 ### Compilation on Linux
 
