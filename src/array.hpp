@@ -5,8 +5,8 @@
 #include <array>
 using namespace std;
 
-/// Returns true if the absolute difference between two floating point values is within the constant tolerance.
-bool eq(const double a, const double b);
+/// Returns true if the absolute difference between a floating point value and zero is within the constant tolerance.
+bool zero(const double a);
 
 /// Returns true is the vector is (0, 0, 0).
 bool zero(const array<double, 3>& v);

@@ -12,15 +12,15 @@ T sqr(const T x)
 }
 
 /// Returns true if the absolute difference between two floating point values is within the constant tolerance.
-bool eq(const double a, const double b)
+bool zero(const double a)
 {
-	return fabs(a - b) < epsilon;
+	return fabs(a) < epsilon;
 }
 
 /// Returns true is the vector is (0, 0, 0).
 bool zero(const array<double, 3>& v)
 {
-	return (eq(v[0], 0) && eq(v[1], 0) && eq(v[2], 0));
+	return zero(v[0]) && zero(v[1]) && zero(v[2]);
 }
 
 /// Returns the square norm.
@@ -38,14 +38,14 @@ double norm(const array<double, 3>& v)
 /// Returns true if the norm equals 1.
 bool normalized(const array<double, 3>& v)
 {
-	return eq(norm_sqr(v), 1);
+	return zero(norm_sqr(v) - 1);
 }
 
 /// Normalize the vector.
 array<double, 3> normalize(const array<double, 3>& v)
 {
 	const double nrm = norm(v);
-	if (eq(nrm, 0)) return v;
+	if (zero(nrm)) return v;
 	const double f = 1 / nrm;
 	return
 	{
@@ -116,7 +116,7 @@ array<double, 9> vec3_to_mat3(const array<double, 3>& a, const double c)
 {
 	if (zero(a))
 	{
-		assert(eq(c, 1) || eq(c, -1));
+		assert(zero(c - 1) || zero(c + 1));
 		return
 		{
 			1, 0, 0,
