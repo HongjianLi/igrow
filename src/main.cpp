@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, csv_path;
 	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
-	fl max_mw;
+	double max_mw;
 
 	// Process program options.
 	try
@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 		const size_t default_max_heavy_atoms = 80;
 		const size_t default_max_hb_donors = 5;
 		const size_t default_max_hb_acceptors = 10;
-		const fl default_max_mw = 500;
+		const double default_max_mw = 500;
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
 			("max_heavy_atoms", value<size_t>(&max_heavy_atoms)->default_value(default_max_heavy_atoms), "maximum number of heavy atoms")
 			("max_hb_donors", value<size_t>(&max_hb_donors)->default_value(default_max_hb_donors), "maximum number of hydrogen bond donors")
 			("max_hb_acceptors", value<size_t>(&max_hb_acceptors)->default_value(default_max_hb_acceptors), "maximum number of hydrogen bond acceptors")
-			("max_mw", value<fl>(&max_mw)->default_value(default_max_mw), "maximum molecular weight")
+			("max_mw", value<double>(&max_mw)->default_value(default_max_mw), "maximum molecular weight")
 			("help", "help information")
 			("version", "version information")
 			("config", value<path>(), "options can be loaded from a configuration file")
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
 	// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
 	const size_t num_children = num_additions + num_subtractions + num_crossovers;
 	const size_t num_ligands = num_elitists + num_children;
-	const fl num_elitists_inv = static_cast<fl>(1) / num_elitists;
+	const double num_elitists_inv = static_cast<double>(1) / num_elitists;
 
 	// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 	boost::ptr_vector<ligand> ligands;
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
 
 			// Parse the free energy and ligand efficiency.
 			const size_t comma2 = line.find(',', comma1 + 2);
-			ligands[i].fe = lexical_cast<fl>(line.substr(comma1 + 1, comma2 - comma1 - 1));
+			ligands[i].fe = lexical_cast<double>(line.substr(comma1 + 1, comma2 - comma1 - 1));
 		}
 	}
 
@@ -387,7 +387,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Calculate average statistics of elite ligands.
-		fl avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
+		double avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
 		for (size_t i = 0; i < num_elitists; ++i)
 		{
 			const ligand& l = ligands[i];

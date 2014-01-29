@@ -3,7 +3,6 @@
 #define IGROW_ATOM_HPP
 
 #include <string>
-#include "common.hpp"
 #include "vec3.hpp"
 using namespace std;
 
@@ -48,7 +47,7 @@ const string ad_type_strings[] = ///< AutoDock4 atom type names.
 // http://en.wikipedia.org/wiki/Covalent_radius
 // The above two references have inconsistent values for covalent radius.
 // The following definitions use the first reference, while OpenBabel uses the second.
-const fl ad_covalent_radii[] = ///< AutoDock4 covalent radii.
+const double ad_covalent_radii[] = ///< AutoDock4 covalent radii.
 {
 	0.37, //  0 = AD_TYPE_HD
 	0.37, //  1 = AD_TYPE_H
@@ -67,7 +66,7 @@ const fl ad_covalent_radii[] = ///< AutoDock4 covalent radii.
 	1.33  // 14 = AD_TYPE_I
 };
 
-const fl ad_atomic_weights[] = ///< AutoDock4 atomic weights.
+const double ad_atomic_weights[] = ///< AutoDock4 atomic weights.
 {
 	  1.008,//  0 = AD_TYPE_HD
 	  1.008,//  1 = AD_TYPE_H
@@ -111,13 +110,13 @@ public:
 	explicit atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const vec3& coordinate, const size_t ad) : name(name), columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coordinate(coordinate), ad(ad) {}
 
 	/// Returns covalent radius from an AutoDock4 atom type.
-	fl covalent_radius() const
+	double covalent_radius() const
 	{
 		return ad_covalent_radii[ad];
 	}
 
 	/// Returns atomic weight from an AutoDock4 atom type.
-	fl atomic_weight() const
+	double atomic_weight() const
 	{
 		return ad_atomic_weights[ad];
 	}

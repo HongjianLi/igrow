@@ -5,11 +5,11 @@
 #include "vec3.hpp"
 
 /// Represents a row-major 3x3 matrix for vector transformation.
-class mat3 : public std::array<fl, 9>
+class mat3 : public std::array<double, 9>
 {
 public:
 	/// Constructs a rotation matrix from a normalized axis and the cosine value of an angle.
-	mat3(const vec3& a, const fl c)
+	mat3(const vec3& a, const double c)
 	{
 		if (a.zero())
 		{
@@ -29,17 +29,17 @@ public:
 			assert(a.normalized());
 			assert(c >= -1);
 			assert(c <=  1);
-			const fl t = 1 - c;
-			const fl ta0a0 = t * a[0] * a[0];
-			const fl ta1a1 = t * a[1] * a[1];
-			const fl ta2a2 = t * a[2] * a[2];
-			const fl ta0a1 = t * a[0] * a[1];
-			const fl ta0a2 = t * a[0] * a[2];
-			const fl ta1a2 = t * a[1] * a[2];
-			const fl s = sqrt(1 - c * c); // s = sin(acos(c))
-			const fl sa0 = s * a[0];
-			const fl sa1 = s * a[1];
-			const fl sa2 = s * a[2];
+			const double t = 1 - c;
+			const double ta0a0 = t * a[0] * a[0];
+			const double ta1a1 = t * a[1] * a[1];
+			const double ta2a2 = t * a[2] * a[2];
+			const double ta0a1 = t * a[0] * a[1];
+			const double ta0a2 = t * a[0] * a[2];
+			const double ta1a2 = t * a[1] * a[2];
+			const double s = sqrt(1 - c * c); // s = sin(acos(c))
+			const double sa0 = s * a[0];
+			const double sa1 = s * a[1];
+			const double sa2 = s * a[2];
 			(*this)[0] = ta0a0 + c;
 			(*this)[1] = ta0a1 - sa2;
 			(*this)[2] = ta0a2 + sa1;
