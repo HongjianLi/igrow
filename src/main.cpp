@@ -20,10 +20,9 @@ using namespace boost::process::initializers;
 int main(int argc, char* argv[])
 {
 	// Initialize the default path to log files. They will be reused when calling idock.
-	const path default_log_path = "log.txt";
-	const path default_csv_path = "log.csv";
+	const path default_log_path = "log.csv";
 
-	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, csv_path;
+	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path;
 	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	double max_mw;
 
@@ -58,7 +57,7 @@ int main(int argc, char* argv[])
 		options_description output_options("output (optional)");
 		output_options.add_options()
 			("output_folder", value<path>(&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
-			("csv", value<path>(&csv_path)->default_value(default_csv_path), "summary file in csv format")
+			("log", value<path>(&log_path)->default_value(default_log_path), "log file in csv format")
 			;
 
 		options_description miscellaneous_options("options (optional)");
@@ -177,10 +176,10 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Validate csv_path.
-		if (is_directory(csv_path))
+		// Validate log_path.
+		if (is_directory(log_path))
 		{
-			cerr << "csv path " << csv_path << " is a directory" << endl;
+			cerr << "log path " << log_path << " is a directory" << endl;
 			return 1;
 		}
 
@@ -275,24 +274,23 @@ int main(int argc, char* argv[])
 	cout << "Using idock executable at " << idock_path << endl;
 
 	// Initialize arguments to idock.
-	vector<string> idock_args(12);
-	idock_args[0]  = "--ligand_folder";
+	vector<string> idock_args(10);
+	idock_args[0]  = "--input_folder";
 	idock_args[2]  = "--output_folder";
 	idock_args[4]  = "--log";
-	idock_args[6]  = "--csv";
-	idock_args[8]  = "--seed";
-	idock_args[9]  = lexical_cast<string>(seed);
-	idock_args[10] = "--config";
-	idock_args[11] = idock_config_path.string();
+	idock_args[6]  = "--seed";
+	idock_args[7]  = lexical_cast<string>(seed);
+	idock_args[8] = "--config";
+	idock_args[9] = idock_config_path.string();
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
-	// Initialize csv file for dumping statistics.
-	boost::filesystem::ofstream csv(csv_path);
-	csv << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
+	// Initialize log file for dumping statistics.
+	boost::filesystem::ofstream log(log_path);
+	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy in kcal/mol,ligand efficiency in kcal/mol,no. of rotatable bonds,no. of atoms,no. of heavy atoms,no. of hydrogen bond donors,no. of hydrogen bond acceptors,molecular weight in g/mol\n";
 
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(3);
@@ -349,7 +347,6 @@ int main(int argc, char* argv[])
 		idock_args[1] = ligand_folder.string();
 		idock_args[3] = output_folder.string();
 		idock_args[5] = (generation_folder / default_log_path).string();
-		idock_args[7] = (generation_folder / default_csv_path).string();
 		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), throw_on_error()));
 		if (exit_code)
 		{
@@ -370,7 +367,7 @@ int main(int argc, char* argv[])
 		for (size_t i = 0; i < num_ligands; ++i)
 		{
 			const ligand& l = ligands[i];
-			csv << generation
+			log << generation
 				<< ',' << l.p
 				<< ',' << l.parent1
 				<< ',' << l.connector1
