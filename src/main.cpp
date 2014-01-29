@@ -300,12 +300,12 @@ int main(int argc, char* argv[])
 
 		// Initialize the paths to current generation folder and its two subfolders.
 		const path generation_folder(output_folder_path / lexical_cast<string>(generation));
-		const path ligand_folder(generation_folder / "ligand");
+		const path input_folder(generation_folder / "ligand");
 		const path output_folder(generation_folder / "output");
 
 		// Create a new folder and two subfolders for current generation.
 		create_directory(generation_folder);
-		create_directory(ligand_folder);
+		create_directory(input_folder);
 		create_directory(output_folder);
 
 		// Create addition, subtraction and crossover tasks.
@@ -314,7 +314,7 @@ int main(int argc, char* argv[])
 		{
 			io.post([&,i]()
 			{
-				op.addition_task(num_elitists + i, ligand_folder / ligand_filenames[i], eng());
+				op.addition_task(num_elitists + i, input_folder / ligand_filenames[i], eng());
 				cnt.increment();
 			});
 		}
@@ -322,7 +322,7 @@ int main(int argc, char* argv[])
 		{
 			io.post([&,i]()
 			{
-				op.subtraction_task(num_elitists + i, ligand_folder / ligand_filenames[i], eng());
+				op.subtraction_task(num_elitists + i, input_folder / ligand_filenames[i], eng());
 				cnt.increment();
 			});
 		}
@@ -330,7 +330,7 @@ int main(int argc, char* argv[])
 		{
 			io.post([&,i]()
 			{
-				op.crossover_task(num_elitists + i, ligand_folder / ligand_filenames[i], eng());
+				op.crossover_task(num_elitists + i, input_folder / ligand_filenames[i], eng());
 				cnt.increment();
 			});
 		}
@@ -344,7 +344,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Invoke idock.
-		idock_args[1] = ligand_folder.string();
+		idock_args[1] = input_folder.string();
 		idock_args[3] = output_folder.string();
 		idock_args[5] = (generation_folder / default_log_path).string();
 		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), throw_on_error()));
