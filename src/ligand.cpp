@@ -168,7 +168,6 @@ void ligand::update(const path& p)
 	if (!exists(p))
 	{
 		fe = 0;
-		le = 0;
 		return;
 	}
 	string line;
@@ -181,7 +180,6 @@ void ligand::update(const path& p)
 	getline(ifs, line); // REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.740 KCAL/MOL
 	getline(ifs, line); // REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.018 KCAL/MOL
 	getline(ifs, line); // REMARK            LIGAND EFFICIENCY PREDICTED BY IDOCK:  -0.280 KCAL/MOL
-	le = stod(line.substr(55, 8));
 	for (size_t i = 0; getline(ifs, line);)
 	{
 		const string record = line.substr(0, 6);

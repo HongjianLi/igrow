@@ -44,7 +44,6 @@ public:
 	size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
 	fl mw; ///< Molecular weight.
 	fl fe; ///< Predicted free energy obtained by external docking.
-	fl le; ///< Predicted ligand efficiency obtained by external docking.
 	explicit ligand() {}
 
 	/// Constructs a ligand by parsing a given ligand file in PDBQT.

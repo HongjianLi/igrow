@@ -232,10 +232,7 @@ int main(int argc, char* argv[])
 
 			// Parse the free energy and ligand efficiency.
 			const size_t comma2 = line.find(',', comma1 + 2);
-//			const size_t comma3 = line.find(',', comma2 + 6);
-//			const size_t comma4 = line.find(',', comma3 + 6);
 			ligands[i].fe = lexical_cast<fl>(line.substr(comma1 + 1, comma2 - comma1 - 1));
-//			ligands[i].le = lexical_cast<fl>(line.substr(comma3 + 1, comma4 - comma3 - 1));
 		}
 	}
 
@@ -380,7 +377,6 @@ int main(int argc, char* argv[])
 				<< ',' << l.parent2
 				<< ',' << l.connector2
 				<< ',' << l.fe
-				<< ',' << l.le
 				<< ',' << l.num_rotatable_bonds
 				<< ',' << l.num_atoms
 				<< ',' << l.num_heavy_atoms
@@ -397,7 +393,6 @@ int main(int argc, char* argv[])
 			const ligand& l = ligands[i];
 			avg_mw += l.mw;
 			avg_fe += l.fe;
-			avg_le += l.le;
 			avg_rotatable_bonds += l.num_rotatable_bonds;
 			avg_atoms += l.num_atoms;
 			avg_heavy_atoms += l.num_heavy_atoms;
@@ -406,16 +401,14 @@ int main(int argc, char* argv[])
 		}
 		avg_mw *= num_elitists_inv;
 		avg_fe *= num_elitists_inv;
-		avg_le *= num_elitists_inv;
 		avg_rotatable_bonds *= num_elitists_inv;
 		avg_atoms *= num_elitists_inv;
 		avg_heavy_atoms *= num_elitists_inv;
 		avg_hb_donors *= num_elitists_inv;
 		avg_hb_acceptors *= num_elitists_inv;
-		cout << "Failures |  Avg FE |  Avg LE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
+		cout << "Failures |  Avg FE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
 		    << setw(8) << num_failures << "   "
 			<< setw(7) << avg_fe << "   "
-			<< setw(7) << avg_le << "   "
 			<< setw(7) << avg_heavy_atoms << "   "
 			<< setw(7) << avg_mw << "   "
 			<< setw(7) << avg_rotatable_bonds << "   "
