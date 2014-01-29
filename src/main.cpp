@@ -10,7 +10,7 @@
 #include "io_service_pool.hpp"
 #include "ligand.hpp"
 #include "operation.hpp"
-#include "utility.hpp"
+#include "safe_counter.hpp"
 using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::process;
