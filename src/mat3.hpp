@@ -5,7 +5,7 @@
 #include "vec3.hpp"
 
 /// Represents a row-major 3x3 matrix for vector transformation.
-class mat3 : public std::array<double, 9>
+class mat3 : public array<double, 9>
 {
 public:
 	/// Constructs a rotation matrix from a normalized axis and the cosine value of an angle.
