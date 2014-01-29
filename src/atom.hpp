@@ -103,11 +103,11 @@ public:
 	string columns_13_to_30; ///< Columns from 1-based [13, 30] of an ATOM/HETATM line in PDBQT format.
 	string columns_55_to_79; ///< Columns from 1-based [55, 79] of an ATOM/HETATM line in PDBQT format.
 	size_t srn; ///< Serial number.
-	vec3 coordinate; ///< 3D coordinate.
+	array<double, 3> coordinate; ///< 3D coordinate.
 	size_t ad; ///< AutoDock4 atom type.
 
 	/// Constructs an atoms.
-	explicit atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const vec3& coordinate, const size_t ad) : name(name), columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coordinate(coordinate), ad(ad) {}
+	explicit atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const array<double, 3>& coordinate, const size_t ad) : name(name), columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coordinate(coordinate), ad(ad) {}
 
 	/// Returns covalent radius from an AutoDock4 atom type.
 	double covalent_radius() const

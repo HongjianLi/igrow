@@ -42,7 +42,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 			// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
 			string name = line.substr(12, 4);
 			boost::algorithm::trim(name);
-			atoms.push_back(atom(name, line.substr(12, 18), line.substr(54), stoul(line.substr(6, 5)), vec3(stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8))), ad));
+			atoms.push_back(atom(name, line.substr(12, 18), line.substr(54), stoul(line.substr(6, 5)), {stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8))}, ad));
 
 			// Update ligand properties.
 			const atom& a = atoms.back();
@@ -187,7 +187,7 @@ void ligand::update(const path& p)
 		if (record == "ATOM  ")
 		{
 			assert(atoms[i].srn == stoul(line.substr(6, 5)));
-			atoms[i++].coordinate = vec3(stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8)));
+			atoms[i++].coordinate = {stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8))};
 		}
 	}
 	ifs.close();
@@ -386,11 +386,11 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g
 	assert(l2_to_l4_mapping[f2idx] == 0);
 
 	// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
-	const vec3 c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
-	const vec3 origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
-	const vec3 c2_to_c1_nd = (-1 * c1_to_c2).normalize(); // Normalized vector pointing from c2 to c1.
-	const vec3 c2_to_m2_nd = (m2.coordinate - c2.coordinate).normalize(); // Normalized vector pointing from c2 to m2.
-	const mat3 rot(cross_product(c2_to_m2_nd, c2_to_c1_nd).normalize(), c2_to_m2_nd * c2_to_c1_nd); // Rotation matrix to rotate m2 along the normal to the direction from the new position of c2 to c1.
+	const array<double, 3> c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
+	const array<double, 3> origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
+	const array<double, 3> c2_to_c1_nd = normalize(-1 * c1_to_c2); // Normalized vector pointing from c2 to c1.
+	const array<double, 3> c2_to_m2_nd = normalize(m2.coordinate - c2.coordinate); // Normalized vector pointing from c2 to m2.
+	const array<double, 9> rot = vec3_to_mat3(normalize(cross_product(c2_to_m2_nd, c2_to_c1_nd)), c2_to_m2_nd * c2_to_c1_nd); // Rotation matrix to rotate m2 along the normal to the direction from the new position of c2 to c1.
 
 	// Create a new frame for ligand 2's f2 frame itself. Its branches are separately considered, depending on whether f2 is the ROOT frame of ligand 2.
 	{
@@ -693,8 +693,8 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
 
 		// Add a hydrogen.
-		const vec3 c1_to_c2 = ((c1.covalent_radius() + ad_covalent_radii[0]) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
-		const vec3 origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
+		const array<double, 3> c1_to_c2 = ((c1.covalent_radius() + ad_covalent_radii[0]) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
+		const array<double, 3> origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
 		atoms.push_back(atom("H", " H   <0> d        ", "  0.00  0.00     0.085 H ", max_atom_number, origin_to_c2, 0)); // c2 is a hydrogen.
 		f.end = atoms.size();
 		assert(f.begin < f.end);
@@ -865,11 +865,11 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	connector2 = to_string(c2.srn) + ":" + c2.name + " - " + to_string(m2.srn) + ":" + m2.name;
 
 	// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
-	const vec3 c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
-	const vec3 origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
-	const vec3 c2_to_c1_nd = (-1 * c1_to_c2).normalize(); // Normalized vector pointing from c2 to c1.
-	const vec3 c2_to_m2_nd = (m2.coordinate - c2.coordinate).normalize(); // Normalized vector pointing from c2 to m2.
-	const mat3 rot(cross_product(c2_to_m2_nd, c2_to_c1_nd).normalize(), c2_to_m2_nd * c2_to_c1_nd); // Rotation matrix to rotate m2 along the normal to the direction from the new position of c2 to c1.
+	const array<double, 3> c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
+	const array<double, 3> origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
+	const array<double, 3> c2_to_c1_nd = normalize(-1 * c1_to_c2); // Normalized vector pointing from c2 to c1.
+	const array<double, 3> c2_to_m2_nd = normalize(m2.coordinate - c2.coordinate); // Normalized vector pointing from c2 to m2.
+	const array<double, 9> rot = vec3_to_mat3(normalize(cross_product(c2_to_m2_nd, c2_to_c1_nd)), c2_to_m2_nd * c2_to_c1_nd); // Rotation matrix to rotate m2 along the normal to the direction from the new position of c2 to c1.
 
 	// Create new frames for ligand 2's frames that are either f2 or f2's child frames.
 	for (size_t k = 0; k < l4_num_frames; ++k)
