@@ -22,11 +22,6 @@ public:
 
 	/// Constructs a frame, and initializes its parent frame, rotor connectors, and beginning atom index.
 	explicit frame(const size_t parent, const size_t rotorX, const size_t rotorY, const size_t begin) : parent(parent), rotorX(rotorX), rotorY(rotorY), begin(begin) {}
-
-//	frame(const frame&) = default;
-//	frame(frame&&) = default;
-//	frame& operator=(const frame&) = default;
-//	frame& operator=(frame&&) = default;
 };
 
 /// Represents a ligand.
@@ -47,9 +42,8 @@ public:
 	size_t num_heavy_atoms; ///< Number of heavy atoms.
 	size_t num_hb_donors; ///< Number of hydrogen bond donors.
 	size_t num_hb_acceptors; ///< Number of hydrogen bond acceptors.
-	fl mw; ///< Molecular weight.
-	fl fe; ///< Predicted free energy obtained by external docking.
-	fl le; ///< Predicted ligand efficiency obtained by external docking.
+	double mw; ///< Molecular weight.
+	double fe; ///< Predicted free energy obtained by external docking.
 	explicit ligand() {}
 
 	/// Constructs a ligand by parsing a given ligand file in PDBQT.
@@ -117,7 +111,7 @@ typedef	flyweight<key_value<path, ligand, ligand_path_extractor>, no_tracking> l
 class validator
 {
 public:
-	validator(const size_t max_rotatable_bonds, const size_t max_atoms, const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const fl max_mw) : max_rotatable_bonds(max_rotatable_bonds), max_atoms(max_atoms), max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw) {}
+	validator(const size_t max_rotatable_bonds, const size_t max_atoms, const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const double max_mw) : max_rotatable_bonds(max_rotatable_bonds), max_atoms(max_atoms), max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw) {}
 
 	bool operator()(const ligand& l) const
 	{
@@ -136,7 +130,7 @@ private:
 	const size_t max_heavy_atoms;
 	const size_t max_hb_donors;
 	const size_t max_hb_acceptors;
-	const fl max_mw;
+	const double max_mw;
 };
 
 #endif

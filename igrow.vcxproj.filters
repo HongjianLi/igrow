@@ -31,9 +31,6 @@
     <ClInclude Include="src\atom.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\common.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\ligand.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

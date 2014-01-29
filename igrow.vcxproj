@@ -15,7 +15,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="src\atom.hpp" />
-    <ClInclude Include="src\common.hpp" />
     <ClInclude Include="src\io_service_pool.hpp" />
     <ClInclude Include="src\ligand.hpp" />
     <ClInclude Include="src\mat3.hpp" />
