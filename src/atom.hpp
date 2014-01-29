@@ -3,7 +3,7 @@
 #define IGROW_ATOM_HPP
 
 #include <string>
-#include "vec3.hpp"
+#include "array.hpp"
 using namespace std;
 
 // AutoDock4 atom types.

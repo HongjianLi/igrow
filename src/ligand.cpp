@@ -2,7 +2,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/algorithm/string.hpp>
-#include "mat3.hpp"
+#include "array.hpp"
 #include "ligand.hpp"
 using namespace boost;
 using namespace boost::filesystem;
