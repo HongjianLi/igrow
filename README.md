@@ -39,11 +39,11 @@ The generated objects will be placed in the `obj` folder, and the generated exec
 
 ### Compilation on Windows
 
-Visual Studio 2012 solution and project files are provided. To compile, simply run
+Visual Studio 2013 solution and project files are provided. To compile, simply run
 
     msbuild /t:Build /p:Configuration=Release
 
-Or one may open `igrow.sln` in Visual Studio 2012 and do a full rebuild.
+Or one may open `igrow.sln` in Visual Studio 2013 and do a full rebuild.
 
 The generated objects will be placed in the `obj` folder, and the generated executable will be placed in the `bin` folder.
 
@@ -75,12 +75,11 @@ Documentation Creation
 
 Documentations in both HTML and LaTeX formats can be esaily created by running [doxygen]
 
-    doxygen doxygen
+    doxygen igrow.dox
 
 The created documents will be placed in `doc` folder. To compile LaTeX files into PDF, one must have `pdflatex` installed.
 
-    cd doc/latex
-    make
+    make -C doc/latex
 
 The generated PDF will be `refman.pdf`.
 
