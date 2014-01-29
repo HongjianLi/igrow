@@ -124,48 +124,48 @@ int main(int argc, char* argv[])
 		// Validate initial generation csv.
 		if (!exists(initial_generation_csv_path))
 		{
-			cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist\n";
+			cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist" << endl;
 			return 1;
 		}
 		if (!is_regular_file(initial_generation_csv_path))
 		{
-			cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file\n";
+			cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file" << endl;
 			return 1;
 		}
 
 		// Validate initial generation folder.
 		if (!exists(initial_generation_folder_path))
 		{
-			cerr << "Initial generation folder " << initial_generation_folder_path << " does not exist\n";
+			cerr << "Initial generation folder " << initial_generation_folder_path << " does not exist" << endl;
 			return 1;
 		}
 		if (!is_directory(initial_generation_folder_path))
 		{
-			cerr << "Initial generation folder " << initial_generation_folder_path << " is not a directory\n";
+			cerr << "Initial generation folder " << initial_generation_folder_path << " is not a directory" << endl;
 			return 1;
 		}
 
 		// Validate fragment folder.
 		if (!exists(fragment_folder_path))
 		{
-			cerr << "Fragment folder " << fragment_folder_path << " does not exist\n";
+			cerr << "Fragment folder " << fragment_folder_path << " does not exist" << endl;
 			return 1;
 		}
 		if (!is_directory(fragment_folder_path))
 		{
-			cerr << "Fragment folder " << fragment_folder_path << " is not a directory\n";
+			cerr << "Fragment folder " << fragment_folder_path << " is not a directory" << endl;
 			return 1;
 		}
 
 		// Validate idock configuration file.
 		if (!exists(idock_config_path))
 		{
-			cerr << "idock configuration file " << idock_config_path << " does not exist\n";
+			cerr << "idock configuration file " << idock_config_path << " does not exist" << endl;
 			return 1;
 		}
 		if (!is_regular_file(idock_config_path))
 		{
-			cerr << "idock configuration file " << idock_config_path << " is not a regular file\n";
+			cerr << "idock configuration file " << idock_config_path << " is not a regular file" << endl;
 			return 1;
 		}
 
@@ -180,19 +180,19 @@ int main(int argc, char* argv[])
 		// Validate csv_path.
 		if (is_directory(csv_path))
 		{
-			cerr << "csv path " << csv_path << " is a directory\n";
+			cerr << "csv path " << csv_path << " is a directory" << endl;
 			return 1;
 		}
 
 		// Validate miscellaneous options.
 		if (!num_threads)
 		{
-			cerr << "Option threads must be 1 or greater\n";
+			cerr << "Option threads must be 1 or greater" << endl;
 			return 1;
 		}
 		if (max_mw <= 0)
 		{
-			cerr << "Option max_mw must be positive\n";
+			cerr << "Option max_mw must be positive" << endl;
 			return 1;
 		}
 	}
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
 			// Check if there are sufficient initial elite ligands.
 			if (!getline(in, line))
 			{
-				cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands.\n";
+				cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands." << endl;
 				return 1;
 			}
 
@@ -247,7 +247,7 @@ int main(int argc, char* argv[])
 		// Save the fragment path.
 		fragments.push_back(dir_iter->path());
 	}
-	cout << "Found " << fragments.size() << " fragments\n";
+	cout << "Found " << fragments.size() << " fragments" << endl;
 
 	// Initialize a Mersenne Twister random number generator.
 	cout << "Using random seed " << seed << endl;
@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
 	idock_args[11] = idock_config_path.string();
 
 	// Initialize an io service pool and create worker threads for later use.
-	cout << "Creating an io service pool of " << num_threads << " worker thread" << ((num_threads == 1) ? "" : "s") << endl;
+	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
