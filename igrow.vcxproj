@@ -14,20 +14,20 @@
     <ProjectGuid>{F1B0255B-9FB7-EE4D-CBFD-677220E5C566}</ProjectGuid>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="src\array.hpp" />
     <ClInclude Include="src\atom.hpp" />
     <ClInclude Include="src\io_service_pool.hpp" />
     <ClInclude Include="src\ligand.hpp" />
-    <ClInclude Include="src\mat3.hpp" />
     <ClInclude Include="src\operation.hpp" />
-    <ClInclude Include="src\utility.hpp" />
-    <ClInclude Include="src\vec3.hpp" />
+    <ClInclude Include="src\safe_counter.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\array.cpp" />
     <ClCompile Include="src\io_service_pool.cpp" />
     <ClCompile Include="src\ligand.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\operation.cpp" />
-    <ClCompile Include="src\utility.cpp" />
+    <ClCompile Include="src\safe_counter.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
