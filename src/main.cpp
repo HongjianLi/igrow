@@ -211,14 +211,14 @@ int main(int argc, char* argv[])
 
 	// Parse the initial generation csv to get initial elite ligands.
 	{
-		boost::filesystem::ifstream in(initial_generation_csv_path);
+		boost::filesystem::ifstream ifs(initial_generation_csv_path);
 		string line;
 		line.reserve(80);
-		getline(in, line); // Ligand,pKd1,pKd2,pKd3,pKd4,pKd5,pKd6,pKd7,pKd8,pKd9
+		getline(ifs, line); // Ligand,pKd1,pKd2,pKd3,pKd4,pKd5,pKd6,pKd7,pKd8,pKd9
 		for (size_t i = 0; i < num_elitists; ++i)
 		{
 			// Check if there are sufficient initial elite ligands.
-			if (!getline(in, line))
+			if (!getline(ifs, line))
 			{
 				cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands." << endl;
 				return 1;
@@ -274,11 +274,11 @@ int main(int argc, char* argv[])
 
 	// Initialize arguments to idock.
 	vector<string> idock_args(10);
-	idock_args[0]  = "--input_folder";
-	idock_args[2]  = "--output_folder";
-	idock_args[4]  = "--log";
-	idock_args[6]  = "--seed";
-	idock_args[7]  = to_string(seed);
+	idock_args[0] = "--input_folder";
+	idock_args[2] = "--output_folder";
+	idock_args[4] = "--log";
+	idock_args[6] = "--seed";
+	idock_args[7] = to_string(seed);
 	idock_args[8] = "--config";
 	idock_args[9] = idock_config_path.string();
 
@@ -299,12 +299,12 @@ int main(int argc, char* argv[])
 
 		// Initialize the paths to current generation folder and its two subfolders.
 		const path generation_folder(output_folder_path / to_string(generation));
-		const path input_folder(generation_folder / "ligand");
+		const path  input_folder(generation_folder /  "input");
 		const path output_folder(generation_folder / "output");
 
 		// Create a new folder and two subfolders for current generation.
 		create_directory(generation_folder);
-		create_directory(input_folder);
+		create_directory( input_folder);
 		create_directory(output_folder);
 
 		// Create addition, subtraction and crossover tasks.
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Invoke idock.
-		idock_args[1] = input_folder.string();
+		idock_args[1] =  input_folder.string();
 		idock_args[3] = output_folder.string();
 		idock_args[5] = (generation_folder / default_log_path).string();
 		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), throw_on_error()));
@@ -363,9 +363,8 @@ int main(int argc, char* argv[])
 		ligands.sort();
 
 		// Write summaries to csv and calculate average statistics.
-		for (size_t i = 0; i < num_ligands; ++i)
+		for (const auto& l : ligands)
 		{
-			const ligand& l = ligands[i];
 			log << generation
 				<< ',' << l.p
 				<< ',' << l.parent1
