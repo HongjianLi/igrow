@@ -10,9 +10,6 @@ using namespace std;
 class vec3 : public std::array<fl, 3>
 {
 public:
-	/// Constructs a vector with uninitialized values.
-	vec3() {}
-
 	/// Constructs a vector with specified values.
 	vec3(const fl d0, const fl d1, const fl d2)
 	{
@@ -76,27 +73,7 @@ public:
 	{
 		return vec3((*this)[0] - v[0], (*this)[1] - v[1], (*this)[2] - v[2]);
 	}
-
-	/// Pairwise add a given vector to the current vector.
-	const vec3& operator+=(const vec3& v)
-	{
-		(*this)[0] += v[0];
-		(*this)[1] += v[1];
-		(*this)[2] += v[2];
-		return *this;
-	}
-
-	/// Pairwise subtract a given vector from the current vector.
-	const vec3& operator-=(const vec3& v)
-	{
-		(*this)[0] -= v[0];
-		(*this)[1] -= v[1];
-		(*this)[2] -= v[2];
-		return *this;
-	}
 };
-
-const vec3 zero3(0, 0, 0); ///< Constant vector with all the 3 elements of zero.
 
 /// Pairwise multiply a constant to the current vector.
 inline vec3 operator*(const fl s, const vec3& v)
