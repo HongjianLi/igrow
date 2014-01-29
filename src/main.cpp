@@ -313,7 +313,7 @@ int main(int argc, char* argv[])
 		{
 			io.post([&,i]()
 			{
-				op.addition_task(num_elitists + i, input_folder / ligand_filenames[i], eng());
+				op.add(num_elitists + i, input_folder / ligand_filenames[i], eng());
 				cnt.increment();
 			});
 		}
@@ -321,7 +321,7 @@ int main(int argc, char* argv[])
 		{
 			io.post([&,i]()
 			{
-				op.subtraction_task(num_elitists + i, input_folder / ligand_filenames[i], eng());
+				op.subtract(num_elitists + i, input_folder / ligand_filenames[i], eng());
 				cnt.increment();
 			});
 		}
@@ -329,7 +329,7 @@ int main(int argc, char* argv[])
 		{
 			io.post([&,i]()
 			{
-				op.crossover_task(num_elitists + i, input_folder / ligand_filenames[i], eng());
+				op.crossover(num_elitists + i, input_folder / ligand_filenames[i], eng());
 				cnt.increment();
 			});
 		}
