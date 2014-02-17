@@ -122,49 +122,49 @@ atom::atom(const string& name, const string& columns_13_to_30, const string colu
 {
 }
 
-/// Returns covalent radius from an AutoDock4 atom type.
+//! Returns covalent radius from an AutoDock4 atom type.
 double atom::covalent_radius() const
 {
 	return ad_covalent_radii[ad];
 }
 
-/// Returns atomic weight from an AutoDock4 atom type.
+//! Returns atomic weight from an AutoDock4 atom type.
 double atom::atomic_weight() const
 {
 	return ad_atomic_weights[ad];
 }
 
-/// Returns true if the current atom is a hydrogen.
+//! Returns true if the current atom is a hydrogen.
 bool atom::is_hydrogen() const
 {
 	return ad <= 1;
 }
 
-/// Returns true if the current atom is a halogen.
+//! Returns true if the current atom is a halogen.
 bool atom::is_halogen() const
 {
 	return 11 <= ad && ad <= 14;
 }
 
-/// Returns true if the current atom is a mutable atom.
+//! Returns true if the current atom is a mutable atom.
 bool atom::is_mutable() const
 {
 	return is_hydrogen() || is_halogen();
 }
 
-/// Returns true is the current atom is a hydrogen bond donor, i.e. polar hydrogen.
+//! Returns true is the current atom is a hydrogen bond donor, i.e. polar hydrogen.
 bool atom::is_hb_donor() const
 {
 	return !ad;
 }
 
-/// Returns true is the current atom is a hydrogen bond acceptor.
+//! Returns true is the current atom is a hydrogen bond acceptor.
 bool atom::is_hb_acceptor() const
 {
 	return 5 <= ad && ad <= 7;
 }
 
-/// Returns true if the current atom is covalently bonded to a given atom.
+//! Returns true if the current atom is covalently bonded to a given atom.
 bool atom::is_neighbor(const atom& a) const
 {
 	assert(this != &a);

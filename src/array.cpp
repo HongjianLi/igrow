@@ -2,46 +2,46 @@
 #include <cmath>
 #include "array.hpp"
 
-const double epsilon = 0.00001; ///< Tolerance for equality comparison of two floating point values.
+const double epsilon = 0.00001; //!< Tolerance for equality comparison of two floating point values.
 
-/// Returns the square of a generic value.
+//! Returns the square of a generic value.
 template<typename T>
 T sqr(const T x)
 {
 	return x * x;
 }
 
-/// Returns true if the absolute difference between two floating point values is within the constant tolerance.
+//! Returns true if the absolute difference between two floating point values is within the constant tolerance.
 bool zero(const double a)
 {
 	return fabs(a) < epsilon;
 }
 
-/// Returns true is the vector is (0, 0, 0).
+//! Returns true is the vector is (0, 0, 0).
 bool zero(const array<double, 3>& v)
 {
 	return zero(v[0]) && zero(v[1]) && zero(v[2]);
 }
 
-/// Returns the square norm.
+//! Returns the square norm.
 double norm_sqr(const array<double, 3>& v)
 {
 	return sqr(v[0]) + sqr(v[1]) + sqr(v[2]);
 }
 
-/// Returns the norm.
+//! Returns the norm.
 double norm(const array<double, 3>& v)
 {
 	return sqrt(norm_sqr(v));
 }
 
-/// Returns true if the norm equals 1.
+//! Returns true if the norm equals 1.
 bool normalized(const array<double, 3>& v)
 {
 	return zero(norm_sqr(v) - 1);
 }
 
-/// Normalize the vector.
+//! Normalize the vector.
 array<double, 3> normalize(const array<double, 3>& v)
 {
 	const double nrm = norm(v);
@@ -55,13 +55,13 @@ array<double, 3> normalize(const array<double, 3>& v)
 	};
 }
 
-/// Returns the dot product of the current vector and the given vector.
+//! Returns the dot product of the current vector and the given vector.
 double operator*(const array<double, 3>& t, const array<double, 3>& v)
 {
 	return t[0] * v[0] + t[1] * v[1] + t[2] * v[2];
 }
 
-/// Returns the result of pairwise addition of the current vector and the given vector.
+//! Returns the result of pairwise addition of the current vector and the given vector.
 array<double, 3> operator+(const array<double, 3>& t, const array<double, 3>& v)
 {
 	return
@@ -72,7 +72,7 @@ array<double, 3> operator+(const array<double, 3>& t, const array<double, 3>& v)
 	};
 }
 
-/// Returns the result of pairwise subtraction of the current vector and the given vector.
+//! Returns the result of pairwise subtraction of the current vector and the given vector.
 array<double, 3> operator-(const array<double, 3>& t, const array<double, 3>& v)
 {
 	return
@@ -83,7 +83,7 @@ array<double, 3> operator-(const array<double, 3>& t, const array<double, 3>& v)
 	};
 }
 
-/// Pairwise multiply a constant to the current vector.
+//! Pairwise multiply a constant to the current vector.
 array<double, 3> operator*(const double s, const array<double, 3>& v)
 {
 	return
@@ -94,7 +94,7 @@ array<double, 3> operator*(const double s, const array<double, 3>& v)
 	};
 }
 
-/// Returns the cross product of two vectors.
+//! Returns the cross product of two vectors.
 array<double, 3> cross_product(const array<double, 3>& a, const array<double, 3>& b)
 {
 	return
@@ -105,13 +105,13 @@ array<double, 3> cross_product(const array<double, 3>& a, const array<double, 3>
 	};
 }
 
-/// Returns the square distance between two vectors.
+//! Returns the square distance between two vectors.
 double distance_sqr(const array<double, 3>& a, const array<double, 3>& b)
 {
 	return sqr(a[0] - b[0]) + sqr(a[1] - b[1]) + sqr(a[2] - b[2]);
 }
 
-/// Constructs a rotation matrix from a normalized axis and the cosine value of an angle.
+//! Constructs a rotation matrix from a normalized axis and the cosine value of an angle.
 array<double, 9> vec3_to_mat3(const array<double, 3>& a, const double c)
 {
 	if (zero(a))
@@ -149,7 +149,7 @@ array<double, 9> vec3_to_mat3(const array<double, 3>& a, const double c)
 	}
 }
 
-/// Transforms a vector by current 3x3 matrix.
+//! Transforms a vector by current 3x3 matrix.
 array<double, 3> operator*(const array<double, 9>& m, const array<double, 3>& v)
 {
 	return
