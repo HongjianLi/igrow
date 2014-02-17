@@ -1,6 +1,6 @@
 CC=clang++ -std=c++11 -O2
 
-bin/igrow: obj/io_service_pool.o obj/operation.o obj/ligand.o obj/array.o obj/safe_counter.o obj/main.o
+bin/igrow: obj/io_service_pool.o obj/safe_counter.o obj/array.o obj/atom.o obj/ligand.o obj/operation.o obj/main.o
 	$(CC) -o $@ $^ -pthread -lboost_system -lboost_filesystem -lboost_program_options
 
 obj/%.o: src/%.cpp

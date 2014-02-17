@@ -37,7 +37,7 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 
 			// Validate the AutoDock4 atom type.
 			const string ad_type_string = line.substr(77, isspace(line[78]) ? 1 : 2);
-			const size_t ad = parse_ad_type_string(ad_type_string);
+			const size_t ad = atom::parse_ad_string(ad_type_string);
 
 			// Parse the ATOM/HETATM line into an atom, which belongs to the current frame.
 			string name = line.substr(12, 4);
@@ -693,7 +693,7 @@ ligand::ligand(const path& p, const ligand& l1, const size_t f1idx) : p(p), pare
 		connector1 = to_string(c1.srn) + ":" + c1.name + " - " + to_string(m1.srn) + ":" + m1.name;
 
 		// Add a hydrogen.
-		const array<double, 3> c1_to_c2 = ((c1.covalent_radius() + ad_covalent_radii[0]) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
+		const array<double, 3> c1_to_c2 = ((c1.covalent_radius() + atom::ad_covalent_radii[0]) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
 		const array<double, 3> origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
 		atoms.push_back(atom("H", " H   <0> d        ", "  0.00  0.00     0.085 H ", max_atom_number, origin_to_c2, 0)); // c2 is a hydrogen.
 		f.end = atoms.size();
