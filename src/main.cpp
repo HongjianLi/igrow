@@ -9,8 +9,8 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/process.hpp>
 #include "io_service_pool.hpp"
-#include "ligand.hpp"
 #include "safe_counter.hpp"
+#include "ligand.hpp"
 using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::process;
@@ -311,7 +311,6 @@ int main(int argc, char* argv[])
 			io.post([&, i, s]()
 			{
 				const size_t index = num_elitists + i;
-				const path p = input_folder / ligand_filenames[i];
 
 				// Initialize a Mersenne Twister random number generator.
 				mt19937_64 eng(s);
@@ -334,7 +333,7 @@ int main(int argc, char* argv[])
 					const size_t g1 = uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1)(eng);
 					const size_t g2 = uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1)(eng);
 
-					ligands.replace(index, new ligand(p, l1, l2, g1, g2));
+					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2));
 					if (v(ligands[index]))
 					{
 						// Save the newly created child ligand.
@@ -351,7 +350,6 @@ int main(int argc, char* argv[])
 			io.post([&, i, s]()
 			{
 				const size_t index = num_elitists + i;
-				const path p = input_folder / ligand_filenames[i];
 
 				// Initialize a Mersenne Twister random number generator.
 				mt19937_64 eng(s);
@@ -370,7 +368,7 @@ int main(int argc, char* argv[])
 					// Obtain a random mutable atom from the two parent ligands respectively.
 					const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(eng);
 
-					ligands.replace(index, new ligand(p, l1, g1));
+					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, g1));
 					if (v(ligands[index]))
 					{
 						// Save the newly created child ligand.
@@ -387,7 +385,6 @@ int main(int argc, char* argv[])
 			io.post([&, i, s]()
 			{
 				const size_t index = num_elitists + i;
-				const path p = input_folder / ligand_filenames[i];
 
 				// Initialize a Mersenne Twister random number generator.
 				mt19937_64 eng(s);
@@ -409,7 +406,7 @@ int main(int argc, char* argv[])
 					const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(eng);
 					const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(eng);
 
-					ligands.replace(index, new ligand(p, l1, l2, g1, g2, true));
+					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2, true));
 					if (v(ligands[index]))
 					{
 						// Save the newly created child ligand.
@@ -436,7 +433,7 @@ int main(int argc, char* argv[])
 		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), throw_on_error()));
 		if (exit_code)
 		{
-			cout << "idock exited with code " << exit_code << endl;
+			cerr << "idock exited with code " << exit_code << endl;
 			return 1;
 		}
 
