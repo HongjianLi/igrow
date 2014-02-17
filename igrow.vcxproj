@@ -18,7 +18,6 @@
     <ClInclude Include="src\atom.hpp" />
     <ClInclude Include="src\io_service_pool.hpp" />
     <ClInclude Include="src\ligand.hpp" />
-    <ClInclude Include="src\operation.hpp" />
     <ClInclude Include="src\safe_counter.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -27,7 +26,6 @@
     <ClCompile Include="src\io_service_pool.cpp" />
     <ClCompile Include="src\ligand.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\operation.cpp" />
     <ClCompile Include="src\safe_counter.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

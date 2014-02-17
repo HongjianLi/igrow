@@ -6,10 +6,10 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/process.hpp>
 #include "io_service_pool.hpp"
 #include "ligand.hpp"
-#include "operation.hpp"
 #include "safe_counter.hpp"
 using namespace boost;
 using namespace boost::filesystem;
@@ -117,8 +117,6 @@ int main(int argc, char* argv[])
 		// Notify the user of parsing errors, if any.
 		vm.notify();
 
-		using namespace boost::filesystem;
-
 		// Validate initial generation csv.
 		if (!exists(initial_generation_csv_path))
 		{
@@ -206,7 +204,7 @@ int main(int argc, char* argv[])
 	const double num_elitists_inv = static_cast<double>(1) / num_elitists;
 
 	// Initialize a pointer vector to dynamically hold and destroy generated ligands.
-	boost::ptr_vector<ligand> ligands;
+	ptr_vector<ligand> ligands;
 	ligands.resize(num_ligands);
 
 	// Parse the initial generation csv to get initial elite ligands.
@@ -245,7 +243,8 @@ int main(int argc, char* argv[])
 		// Save the fragment path.
 		fragments.push_back(dir_iter->path());
 	}
-	cout << "Found " << fragments.size() << " fragments" << endl;
+	const size_t num_fragments = fragments.size();
+	cout << "Found " << num_fragments << " fragments" << endl;
 
 	// Initialize a Mersenne Twister random number generator.
 	cout << "Using random seed " << seed << endl;
@@ -256,9 +255,6 @@ int main(int argc, char* argv[])
 
 	// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
 	atomic<size_t> num_failures(0);
-
-	// Reserve storage for operation tasks.
-	operation op(ligands, num_elitists, fragments, v, max_failures, num_failures);
 
 	// Initialize ligand filenames.
 	vector<string> ligand_filenames;
@@ -312,27 +308,115 @@ int main(int argc, char* argv[])
 		for (size_t i = 0; i < num_additions; ++i)
 		{
 			const size_t s = eng();
-			io.post([&,i,s]()
+			io.post([&, i, s]()
 			{
-				op.add(num_elitists + i, input_folder / ligand_filenames[i], s);
+				const size_t index = num_elitists + i;
+				const path p = input_folder / ligand_filenames[i];
+
+				// Initialize a Mersenne Twister random number generator.
+				mt19937_64 eng(s);
+				uniform_int_distribution<size_t> uniform_elitist(0, num_elitists - 1);
+				uniform_int_distribution<size_t> uniform_fragment(0, num_fragments - 1);
+
+				// Create a child ligand by addition.
+				do
+				{
+					// Obtain references to the two parent ligands.
+					ligand& l1 = ligands[uniform_elitist(eng)];
+					ligand l2 = ligand_flyweight(fragments[uniform_fragment(eng)]);
+					while (!(l1.addition_feasible() && l2.addition_feasible()))
+					{
+						l1 = ligands[uniform_elitist(eng)];
+						l2 = ligand_flyweight(fragments[uniform_fragment(eng)]);
+					}
+
+					// Obtain a random mutable atom from the two parent ligands respectively.
+					const size_t g1 = uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1)(eng);
+					const size_t g2 = uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1)(eng);
+
+					ligands.replace(index, new ligand(p, l1, l2, g1, g2));
+					if (v(ligands[index]))
+					{
+						// Save the newly created child ligand.
+						ligands[index].save();
+						break;
+					}
+				} while (++num_failures < max_failures);
 				cnt.increment();
 			});
 		}
 		for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
 		{
 			const size_t s = eng();
-			io.post([&,i,s]()
+			io.post([&, i, s]()
 			{
-				op.subtract(num_elitists + i, input_folder / ligand_filenames[i], s);
+				const size_t index = num_elitists + i;
+				const path p = input_folder / ligand_filenames[i];
+
+				// Initialize a Mersenne Twister random number generator.
+				mt19937_64 eng(s);
+				uniform_int_distribution<size_t> uniform_elitist(0, num_elitists - 1);
+
+				// Create a child ligand by subtraction.
+				do
+				{
+					// Obtain reference to the parent ligand.
+					ligand& l1 = ligands[uniform_elitist(eng)];
+					while (!l1.subtraction_feasible())
+					{
+						l1 = ligands[uniform_elitist(eng)];
+					}
+
+					// Obtain a random mutable atom from the two parent ligands respectively.
+					const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(eng);
+
+					ligands.replace(index, new ligand(p, l1, g1));
+					if (v(ligands[index]))
+					{
+						// Save the newly created child ligand.
+						ligands[index].save();
+						break;
+					}
+				} while (++num_failures < max_failures);
 				cnt.increment();
 			});
 		}
 		for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
 		{
 			const size_t s = eng();
-			io.post([&,i,s]()
+			io.post([&, i, s]()
 			{
-				op.crossover(num_elitists + i, input_folder / ligand_filenames[i], s);
+				const size_t index = num_elitists + i;
+				const path p = input_folder / ligand_filenames[i];
+
+				// Initialize a Mersenne Twister random number generator.
+				mt19937_64 eng(s);
+				uniform_int_distribution<size_t> uniform_elitist(0, num_elitists - 1);
+
+				// Create a child ligand by crossover.
+				do
+				{
+					// Obtain constant references to the two parent ligands.
+					ligand& l1 = ligands[uniform_elitist(eng)];
+					ligand& l2 = ligands[uniform_elitist(eng)];
+					while (!(l1.crossover_feasible() && l2.crossover_feasible()))
+					{
+						l1 = ligands[uniform_elitist(eng)];
+						l2 = ligands[uniform_elitist(eng)];
+					}
+
+					// Obtain a random mutable atom from the two parent ligands respectively.
+					const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(eng);
+					const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(eng);
+
+					ligands.replace(index, new ligand(p, l1, l2, g1, g2, true));
+					if (v(ligands[index]))
+					{
+						// Save the newly created child ligand.
+						ligands[index].save();
+						break;
+					}
+				} while (++num_failures < max_failures);
 				cnt.increment();
 			});
 		}
