@@ -311,25 +311,28 @@ int main(int argc, char* argv[])
 		cnt.init(num_children);
 		for (size_t i = 0; i < num_additions; ++i)
 		{
-			io.post([&,i]()
+			const size_t s = eng();
+			io.post([&,i,s]()
 			{
-				op.add(num_elitists + i, input_folder / ligand_filenames[i], eng());
+				op.add(num_elitists + i, input_folder / ligand_filenames[i], s);
 				cnt.increment();
 			});
 		}
 		for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
 		{
-			io.post([&,i]()
+			const size_t s = eng();
+			io.post([&,i,s]()
 			{
-				op.subtract(num_elitists + i, input_folder / ligand_filenames[i], eng());
+				op.subtract(num_elitists + i, input_folder / ligand_filenames[i], s);
 				cnt.increment();
 			});
 		}
 		for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
 		{
-			io.post([&,i]()
+			const size_t s = eng();
+			io.post([&,i,s]()
 			{
-				op.crossover(num_elitists + i, input_folder / ligand_filenames[i], eng());
+				op.crossover(num_elitists + i, input_folder / ligand_filenames[i], s);
 				cnt.increment();
 			});
 		}
