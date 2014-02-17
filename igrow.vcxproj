@@ -23,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\array.cpp" />
+    <ClCompile Include="src\atom.cpp" />
     <ClCompile Include="src\io_service_pool.cpp" />
     <ClCompile Include="src\ligand.cpp" />
     <ClCompile Include="src\main.cpp" />
