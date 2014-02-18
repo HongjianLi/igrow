@@ -88,7 +88,6 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 	// Determine the number of atoms.
 	num_atoms = atoms.size();
 	assert(num_atoms >= num_heavy_atoms);
-	assert(num_atoms <= num_heavy_atoms + mutable_atoms.size());
 	frames.back().end = num_atoms;
 
 	// Determine the number of rotatable bonds.
