@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 	const path default_log_path = "log.csv";
 
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path;
-	size_t num_threads, seed, num_elitists, num_additions, num_subtractions, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
+	size_t num_threads, seed, num_elitists, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
 	double max_mw;
 
 	// Process program options.
@@ -32,8 +32,6 @@ int main(int argc, char* argv[])
 		const path default_output_folder_path = "output";
 		const size_t default_num_threads = thread::hardware_concurrency();
 		const size_t default_seed = chrono::system_clock::now().time_since_epoch().count();
-		const size_t default_num_additions = 20;
-		const size_t default_num_subtractions = 20;
 		const size_t default_num_crossovers = 20;
 		const size_t default_num_elitists = 10;
 		const size_t default_max_failures = 1000;
@@ -49,7 +47,6 @@ int main(int argc, char* argv[])
 		input_options.add_options()
 			("initial_generation_csv", value<path>(&initial_generation_csv_path)->required(), "path to initial generation csv")
 			("initial_generation_folder", value<path>(&initial_generation_folder_path)->required(), "path to initial generation folder")
-			("fragment_folder", value<path>(&fragment_folder_path)->required(), "path to folder of fragments in PDBQT format")
 			("idock_config", value<path>(&idock_config_path)->required(), "path to idock configuration file")
 			;
 
@@ -64,8 +61,6 @@ int main(int argc, char* argv[])
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
-			("additions", value<size_t>(&num_additions)->default_value(default_num_additions), "number of child ligands created by addition")
-			("subtractions", value<size_t>(&num_subtractions)->default_value(default_num_subtractions), "number of child ligands created by subtraction")
 			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
 			("max_failures", value<size_t>(&max_failures)->default_value(default_max_failures), "maximum number of operational failures to tolerate")
 			("max_rotatable_bonds", value<size_t>(&max_rotatable_bonds)->default_value(default_max_rotatable_bonds), "maximum number of rotatable bonds")
@@ -199,7 +194,7 @@ int main(int argc, char* argv[])
 	}
 
 	// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
-	const size_t num_children = num_additions + num_subtractions + num_crossovers;
+	const size_t num_children = num_crossovers;
 	const size_t num_ligands = num_elitists + num_children;
 	const double num_elitists_inv = static_cast<double>(1) / num_elitists;
 
@@ -231,20 +226,6 @@ int main(int argc, char* argv[])
 			ligands[i].fe = stod(line.substr(comma1 + 1, comma2 - comma1 - 1));
 		}
 	}
-
-	// Scan the fragment folder to obtain a list of fragments.
-	cout << "Scanning fragment folder " << fragment_folder_path << endl;
-	vector<path> fragments;
-	fragments.reserve(1000); // A fragment folder typically consists of <= 1000 fragments.
-	for (directory_iterator dir_iter(fragment_folder_path), end_dir_iter; dir_iter != end_dir_iter; ++dir_iter)
-	{
-		// Skip non-regular files such as folders.
-		if (!is_regular_file(dir_iter->status())) continue;
-		// Save the fragment path.
-		fragments.push_back(dir_iter->path());
-	}
-	const size_t num_fragments = fragments.size();
-	cout << "Found " << num_fragments << " fragments" << endl;
 
 	// Initialize a Mersenne Twister random number generator.
 	cout << "Using random seed " << seed << endl;
@@ -305,81 +286,7 @@ int main(int argc, char* argv[])
 
 		// Create addition, subtraction and crossover tasks.
 		cnt.init(num_children);
-		for (size_t i = 0; i < num_additions; ++i)
-		{
-			const size_t s = eng();
-			io.post([&, i, s]()
-			{
-				const size_t index = num_elitists + i;
-
-				// Initialize a Mersenne Twister random number generator.
-				mt19937_64 eng(s);
-				uniform_int_distribution<size_t> uniform_elitist(0, num_elitists - 1);
-				uniform_int_distribution<size_t> uniform_fragment(0, num_fragments - 1);
-
-				// Create a child ligand by addition.
-				do
-				{
-					// Obtain references to the two parent ligands.
-					ligand& l1 = ligands[uniform_elitist(eng)];
-					ligand l2 = ligand_flyweight(fragments[uniform_fragment(eng)]);
-					while (!(l1.addition_feasible() && l2.addition_feasible()))
-					{
-						l1 = ligands[uniform_elitist(eng)];
-						l2 = ligand_flyweight(fragments[uniform_fragment(eng)]);
-					}
-
-					// Obtain a random mutable atom from the two parent ligands respectively.
-					const size_t g1 = uniform_int_distribution<size_t>(0, l1.mutable_atoms.size() - 1)(eng);
-					const size_t g2 = uniform_int_distribution<size_t>(0, l2.mutable_atoms.size() - 1)(eng);
-
-					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2));
-					if (v(ligands[index]))
-					{
-						// Save the newly created child ligand.
-						ligands[index].save();
-						break;
-					}
-				} while (++num_failures < max_failures);
-				cnt.increment();
-			});
-		}
-		for (size_t i = num_additions; i < num_additions + num_subtractions; ++i)
-		{
-			const size_t s = eng();
-			io.post([&, i, s]()
-			{
-				const size_t index = num_elitists + i;
-
-				// Initialize a Mersenne Twister random number generator.
-				mt19937_64 eng(s);
-				uniform_int_distribution<size_t> uniform_elitist(0, num_elitists - 1);
-
-				// Create a child ligand by subtraction.
-				do
-				{
-					// Obtain reference to the parent ligand.
-					ligand& l1 = ligands[uniform_elitist(eng)];
-					while (!l1.subtraction_feasible())
-					{
-						l1 = ligands[uniform_elitist(eng)];
-					}
-
-					// Obtain a random mutable atom from the two parent ligands respectively.
-					const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(eng);
-
-					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, g1));
-					if (v(ligands[index]))
-					{
-						// Save the newly created child ligand.
-						ligands[index].save();
-						break;
-					}
-				} while (++num_failures < max_failures);
-				cnt.increment();
-			});
-		}
-		for (size_t i = num_additions + num_subtractions; i < num_children; ++i)
+		for (size_t i = 0; i < num_children; ++i)
 		{
 			const size_t s = eng();
 			io.post([&, i, s]()
@@ -406,7 +313,7 @@ int main(int argc, char* argv[])
 					const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(eng);
 					const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(eng);
 
-					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2, true));
+					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2));
 					if (v(ligands[index]))
 					{
 						// Save the newly created child ligand.

@@ -140,18 +140,6 @@ bool atom::is_hydrogen() const
 	return ad <= 1;
 }
 
-//! Returns true if the current atom is a halogen.
-bool atom::is_halogen() const
-{
-	return 11 <= ad && ad <= 14;
-}
-
-//! Returns true if the current atom is a mutable atom.
-bool atom::is_mutable() const
-{
-	return is_hydrogen() || is_halogen();
-}
-
 //! Returns true is the current atom is a hydrogen bond donor, i.e. polar hydrogen.
 bool atom::is_hb_donor() const
 {

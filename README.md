@@ -8,9 +8,9 @@ Features
 --------
 
 * igrow uses [idock] as backend docking engine.
-* igrow supports halogen replacement and branch replacement in addition to hydrogen replacement.
+* igrow implements branch exchange as its crossover operator.
 * igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
-* igrow invents its own io service pool in order to reuse threads and maintain a high CPU utilization throughout the entire synthsizing procedure. The io service pool parallelizes the creation of mutants and children in each generation.
+* igrow uses io service pool to reuse threads and maintain a high CPU utilization throughout the entire synthsizing procedure.
 * igrow utilizes flyweight pattern to cache fragments and dynamic pointer vector to cache and sort ligands.
 * igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial elite ligands and fragments.
 
@@ -92,12 +92,11 @@ Change Log
 * Used idock as backend docking engine.
 * Supported direct PDBQT manipulation without file format conversion.
 * Used dynamic pointer vector to cache ligands.
-* Used flyweight pattern to cache fragments.
 * Supported dumping statistics and traceability of created ligands.
 * Allowed users to specify the ranges of several chemical properties such as molecular weight.
 * Allowed users to specify the number of failures of GA operations as a stopping criterion.
 * Used docked atom coordinates to construct child ligands of the next generation.
-* Parallelized mutation and crossover operations.
+* Parallelized crossover operations.
 * Provided precompiled executables for 64-bit Linux and Windows.
 
 

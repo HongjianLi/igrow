@@ -36,12 +36,6 @@ public:
 	//! Returns true if the current atom is a hydrogen.
 	bool is_hydrogen() const;
 
-	//! Returns true if the current atom is a halogen.
-	bool is_halogen() const;
-
-	//! Returns true if the current atom is a mutable atom.
-	bool is_mutable() const;
-
 	//! Returns true is the current atom is a hydrogen bond donor, i.e. polar hydrogen.
 	bool is_hb_donor() const;
 

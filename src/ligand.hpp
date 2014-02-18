@@ -3,11 +3,8 @@
 #define IGROW_LIGAND_HPP
 
 #include <boost/filesystem/path.hpp>
-#include <boost/flyweight.hpp>
-#include <boost/flyweight/key_value.hpp>
-#include <boost/flyweight/no_tracking.hpp>
 #include "atom.hpp"
-using boost::filesystem::path;
+using namespace boost::filesystem;
 
 //! Represents a ROOT or a BRANCH in PDBQT structure.
 class frame
@@ -35,7 +32,6 @@ public:
 	string connector2; //!< The connecting bond of parent 2.
 	vector<frame> frames; //!< Frames.
 	vector<atom> atoms; //!< Atoms.
-	vector<size_t> mutable_atoms; //!< Hydrogens or halogens.
 	size_t max_atom_number; //!< Maximum atom serial number.
 	size_t num_rotatable_bonds; //!< Number of rotatable bonds.
 	size_t num_atoms; //!< Number of atoms.
@@ -50,14 +46,8 @@ public:
 	//! @exception parsing_error Thrown when error parsing the ligand file.
 	explicit ligand(const path& p);
 
-	//! Constructs a ligand by addition.
-	explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
-
-	//! Constructs a ligand by subtraction.
-	explicit ligand(const path& p, const ligand& l1, const size_t g1);
-
 	//! Constructs a ligand by crossover.
-	explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2, const bool dummy);
+	explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
 	//! Saves the current ligand to a file in PDBQT format.
 	void save() const;
@@ -67,18 +57,6 @@ public:
 
 	//! Gets the frame and index to which a atom belongs to given its serial number.
 	pair<size_t, size_t> get_frame(const size_t srn) const;
-
-	//! Returns true if the current ligand is able to perform addition.
-	bool addition_feasible() const
-	{
-		return mutable_atoms.size() > 0;
-	}
-
-	//! Returns true if the current ligand is able to perform subtraction.
-	bool subtraction_feasible() const
-	{
-		return num_rotatable_bonds > 0;
-	}
 
 	//! Returns true if the current ligand is able to perform crossover.
 	bool crossover_feasible() const
@@ -92,20 +70,6 @@ public:
 		return fe < l.fe;
 	}
 };
-
-//! For extracting the path out of a ligand.
-class ligand_path_extractor
-{
-public:
-	const path& operator()(const ligand& l) const
-	{
-		return l.p;
-	}
-};
-
-//! Define flyweight type for ligand.
-using namespace boost::flyweights;
-typedef	flyweight<key_value<path, ligand, ligand_path_extractor>, no_tracking> ligand_flyweight;
 
 //! Represents a ligand validator.
 class validator
