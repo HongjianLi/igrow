@@ -102,7 +102,6 @@ ligand::ligand(const path& p) : p(p), num_heavy_atoms(0), num_hb_donors(0), num_
 void ligand::save() const
 {
 	boost::filesystem::ofstream ofs(p); // Dumping starts. Open the file stream as late as possible.
-	using namespace std;
 	ofs.setf(ios::fixed, ios::floatfield);
 	ofs << setprecision(3);
 
