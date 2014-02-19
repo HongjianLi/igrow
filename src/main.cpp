@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
 	const path default_log_path = "log.csv";
 
 	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path;
-	size_t num_threads, seed, num_elitists, num_crossovers, max_failures, max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors;
+	size_t num_threads, seed, num_elitists, num_crossovers, max_failures, max_rotatable_bonds, max_hb_donors, max_hb_acceptors;
 	double max_mw;
 
 	// Process program options.
@@ -36,8 +36,6 @@ int main(int argc, char* argv[])
 		const size_t default_num_elitists = 10;
 		const size_t default_max_failures = 1000;
 		const size_t default_max_rotatable_bonds = 30;
-		const size_t default_max_atoms = 100;
-		const size_t default_max_heavy_atoms = 80;
 		const size_t default_max_hb_donors = 5;
 		const size_t default_max_hb_acceptors = 10;
 		const double default_max_mw = 500;
@@ -64,8 +62,6 @@ int main(int argc, char* argv[])
 			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
 			("max_failures", value<size_t>(&max_failures)->default_value(default_max_failures), "maximum number of operational failures to tolerate")
 			("max_rotatable_bonds", value<size_t>(&max_rotatable_bonds)->default_value(default_max_rotatable_bonds), "maximum number of rotatable bonds")
-			("max_atoms", value<size_t>(&max_atoms)->default_value(default_max_atoms), "maximum number of atoms")
-			("max_heavy_atoms", value<size_t>(&max_heavy_atoms)->default_value(default_max_heavy_atoms), "maximum number of heavy atoms")
 			("max_hb_donors", value<size_t>(&max_hb_donors)->default_value(default_max_hb_donors), "maximum number of hydrogen bond donors")
 			("max_hb_acceptors", value<size_t>(&max_hb_acceptors)->default_value(default_max_hb_acceptors), "maximum number of hydrogen bond acceptors")
 			("max_mw", value<double>(&max_mw)->default_value(default_max_mw), "maximum molecular weight")
@@ -232,7 +228,7 @@ int main(int argc, char* argv[])
 	mt19937_64 eng(seed);
 
 	// Initialize a ligand validator.
-	const validator v(max_rotatable_bonds, max_atoms, max_heavy_atoms, max_hb_donors, max_hb_acceptors, max_mw);
+	const validator v(max_rotatable_bonds, max_hb_donors, max_hb_acceptors, max_mw);
 
 	// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
 	atomic<size_t> num_failures(0);
@@ -266,7 +262,7 @@ int main(int argc, char* argv[])
 
 	// Initialize log file for dumping statistics.
 	boost::filesystem::ofstream log(log_path);
-	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),rotatable bonds,atoms,heavy atoms,hydrogen bond donors,hydrogen bond acceptors,molecular weight (g/mol)\n";
+	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors,molecular weight (g/mol)\n";
 
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(3);
@@ -364,8 +360,6 @@ int main(int argc, char* argv[])
 				<< ',' << l.connector2
 				<< ',' << l.fe
 				<< ',' << l.num_rotatable_bonds
-				<< ',' << l.num_atoms
-				<< ',' << l.num_heavy_atoms
 				<< ',' << l.num_hb_donors
 				<< ',' << l.num_hb_acceptors
 				<< ',' << l.mw
@@ -373,29 +367,24 @@ int main(int argc, char* argv[])
 		}
 
 		// Calculate average statistics of elite ligands.
-		double avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_atoms = 0, avg_heavy_atoms = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
+		double avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
 		for (size_t i = 0; i < num_elitists; ++i)
 		{
 			const ligand& l = ligands[i];
 			avg_mw += l.mw;
 			avg_fe += l.fe;
 			avg_rotatable_bonds += l.num_rotatable_bonds;
-			avg_atoms += l.num_atoms;
-			avg_heavy_atoms += l.num_heavy_atoms;
 			avg_hb_donors += l.num_hb_donors;
 			avg_hb_acceptors += l.num_hb_acceptors;
 		}
 		avg_mw *= num_elitists_inv;
 		avg_fe *= num_elitists_inv;
 		avg_rotatable_bonds *= num_elitists_inv;
-		avg_atoms *= num_elitists_inv;
-		avg_heavy_atoms *= num_elitists_inv;
 		avg_hb_donors *= num_elitists_inv;
 		avg_hb_acceptors *= num_elitists_inv;
-		cout << "Failures |  Avg FE |  Avg HA | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
+		cout << "Failures |  Avg FE | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
 		    << setw(8) << num_failures << "   "
 			<< setw(7) << avg_fe << "   "
-			<< setw(7) << avg_heavy_atoms << "   "
 			<< setw(7) << avg_mw << "   "
 			<< setw(7) << avg_rotatable_bonds << "   "
 			<< setw(7) << avg_hb_donors << "   "

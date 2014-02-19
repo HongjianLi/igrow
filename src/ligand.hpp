@@ -35,7 +35,6 @@ public:
 	size_t max_atom_number; //!< Maximum atom serial number.
 	size_t num_rotatable_bonds; //!< Number of rotatable bonds.
 	size_t num_atoms; //!< Number of atoms.
-	size_t num_heavy_atoms; //!< Number of heavy atoms.
 	size_t num_hb_donors; //!< Number of hydrogen bond donors.
 	size_t num_hb_acceptors; //!< Number of hydrogen bond acceptors.
 	double mw; //!< Molecular weight.
@@ -75,13 +74,11 @@ public:
 class validator
 {
 public:
-	validator(const size_t max_rotatable_bonds, const size_t max_atoms, const size_t max_heavy_atoms, const size_t max_hb_donors, const size_t max_hb_acceptors, const double max_mw) : max_rotatable_bonds(max_rotatable_bonds), max_atoms(max_atoms), max_heavy_atoms(max_heavy_atoms), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw) {}
+	validator(const size_t max_rotatable_bonds, const size_t max_hb_donors, const size_t max_hb_acceptors, const double max_mw) : max_rotatable_bonds(max_rotatable_bonds), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw) {}
 
 	bool operator()(const ligand& l) const
 	{
 		if (l.num_rotatable_bonds > max_rotatable_bonds) return false;
-		if (l.num_atoms > max_atoms) return false;
-		if (l.num_heavy_atoms > max_heavy_atoms) return false;
 		if (l.num_hb_donors > max_hb_donors) return false;
 		if (l.num_hb_acceptors > max_hb_acceptors) return false;
 		if (l.mw > max_mw) return false;
@@ -90,8 +87,6 @@ public:
 
 private:
 	const size_t max_rotatable_bonds;
-	const size_t max_atoms;
-	const size_t max_heavy_atoms;
 	const size_t max_hb_donors;
 	const size_t max_hb_acceptors;
 	const double max_mw;
