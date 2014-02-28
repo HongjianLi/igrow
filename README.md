@@ -9,10 +9,10 @@ Features
 
 * igrow uses [idock] as backend docking engine.
 * igrow implements branch exchange as its crossover operator.
-* igrow digests ligands and fragments in pdbqt format, saving the effort of frequently calling the prepare_ligand4 python script.
+* igrow digests ligands in pdbqt format, saving the effort of calling the prepare_ligand4 python script.
 * igrow uses io service pool to reuse threads and maintain a high CPU utilization throughout the entire synthsizing procedure.
-* igrow utilizes flyweight pattern to cache fragments and dynamic pointer vector to cache and sort ligands.
-* igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial elite ligands and fragments.
+* igrow utilizes dynamic pointer vector to cache and sort ligands.
+* igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial elite ligands.
 
 
 Supported operating systems and compilers
@@ -79,7 +79,8 @@ Documentations in both HTML and LaTeX formats can be esaily created by running [
 
 The created documents will be placed in `doc` folder. To compile LaTeX files into PDF, one must have `pdflatex` installed.
 
-    make -C doc/latex
+    cd doc/latex
+    make
 
 The generated PDF will be `refman.pdf`.
 
@@ -93,8 +94,6 @@ Change Log
 * Supported direct PDBQT manipulation without file format conversion.
 * Used dynamic pointer vector to cache ligands.
 * Supported dumping statistics and traceability of created ligands.
-* Allowed users to specify the ranges of several chemical properties such as molecular weight.
-* Allowed users to specify the number of failures of GA operations as a stopping criterion.
 * Used docked atom coordinates to construct child ligands of the next generation.
 * Parallelized crossover operations.
 * Provided precompiled executables for 64-bit Linux and Windows.
