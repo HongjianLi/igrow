@@ -20,9 +20,8 @@ int main(int argc, char* argv[])
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.csv";
 
-	path initial_generation_csv_path, initial_generation_folder_path, fragment_folder_path, idock_config_path, output_folder_path, log_path;
-	size_t num_threads, seed, num_elitists, num_crossovers, max_failures, max_rotatable_bonds, max_hb_donors, max_hb_acceptors;
-	double max_mw;
+	path initial_generation_csv_path, initial_generation_folder_path, idock_config_path, output_folder_path, log_path;
+	size_t num_threads, seed, num_elitists, num_crossovers, num_generations;
 
 	// Process program options.
 	try
@@ -33,11 +32,7 @@ int main(int argc, char* argv[])
 		const size_t default_num_threads = thread::hardware_concurrency();
 		const size_t default_num_crossovers = 20;
 		const size_t default_num_elitists = 10;
-		const size_t default_max_failures = 1000;
-		const size_t default_max_rotatable_bonds = 30;
-		const size_t default_max_hb_donors = 5;
-		const size_t default_max_hb_acceptors = 10;
-		const double default_max_mw = 500;
+		const size_t default_num_generations = 8;
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
@@ -53,15 +48,11 @@ int main(int argc, char* argv[])
 			;
 		options_description miscellaneous_options("options (optional)");
 		miscellaneous_options.add_options()
-			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
+			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
 			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
-			("max_failures", value<size_t>(&max_failures)->default_value(default_max_failures), "maximum number of operational failures to tolerate")
-			("max_rotatable_bonds", value<size_t>(&max_rotatable_bonds)->default_value(default_max_rotatable_bonds), "maximum number of rotatable bonds")
-			("max_hb_donors", value<size_t>(&max_hb_donors)->default_value(default_max_hb_donors), "maximum number of hydrogen bond donors")
-			("max_hb_acceptors", value<size_t>(&max_hb_acceptors)->default_value(default_max_hb_acceptors), "maximum number of hydrogen bond acceptors")
-			("max_mw", value<double>(&max_mw)->default_value(default_max_mw), "maximum molecular weight")
+			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of generations")
 			("help", "help information")
 			("version", "version information")
 			("config", value<path>(), "options can be loaded from a configuration file")
@@ -128,18 +119,6 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Validate fragment folder.
-		if (!exists(fragment_folder_path))
-		{
-			cerr << "Fragment folder " << fragment_folder_path << " does not exist" << endl;
-			return 1;
-		}
-		if (!is_directory(fragment_folder_path))
-		{
-			cerr << "Fragment folder " << fragment_folder_path << " is not a directory" << endl;
-			return 1;
-		}
-
 		// Validate idock configuration file.
 		if (!exists(idock_config_path))
 		{
@@ -171,11 +150,6 @@ int main(int argc, char* argv[])
 		if (!num_threads)
 		{
 			cerr << "Option threads must be 1 or greater" << endl;
-			return 1;
-		}
-		if (max_mw <= 0)
-		{
-			cerr << "Option max_mw must be positive" << endl;
 			return 1;
 		}
 	}
@@ -221,10 +195,7 @@ int main(int argc, char* argv[])
 
 	// Initialize a Mersenne Twister random number generator.
 	cout << "Using random seed " << seed << endl;
-	mt19937_64 eng(seed);
-
-	// Initialize a ligand validator.
-	const validator v(max_rotatable_bonds, max_hb_donors, max_hb_acceptors, max_mw);
+	mt19937_64 rng(seed);
 
 	// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
 	atomic<size_t> num_failures(0);
@@ -262,7 +233,7 @@ int main(int argc, char* argv[])
 
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(3);
-	for (size_t generation = 1; true; ++generation)
+	for (size_t generation = 1; generation <= num_generations; ++generation)
 	{
 		cout << "Running generation " << generation << endl;
 
@@ -276,54 +247,38 @@ int main(int argc, char* argv[])
 		create_directory( input_folder);
 		create_directory(output_folder);
 
-		// Create addition, subtraction and crossover tasks.
+		// Create crossover tasks.
 		cnt.init(num_children);
 		for (size_t i = 0; i < num_children; ++i)
 		{
-			const size_t s = eng();
+			const size_t s = rng();
 			io.post([&, i, s]()
 			{
 				const size_t index = num_elitists + i;
 
 				// Initialize a Mersenne Twister random number generator.
-				mt19937_64 eng(s);
+				mt19937_64 rng(s);
 				uniform_int_distribution<size_t> uniform_elitist(0, num_elitists - 1);
 
-				// Create a child ligand by crossover.
-				do
+				// Obtain constant references to the two parent ligands.
+				ligand& l1 = ligands[uniform_elitist(rng)];
+				ligand& l2 = ligands[uniform_elitist(rng)];
+				while (!(l1.crossover_feasible() && l2.crossover_feasible()))
 				{
-					// Obtain constant references to the two parent ligands.
-					ligand& l1 = ligands[uniform_elitist(eng)];
-					ligand& l2 = ligands[uniform_elitist(eng)];
-					while (!(l1.crossover_feasible() && l2.crossover_feasible()))
-					{
-						l1 = ligands[uniform_elitist(eng)];
-						l2 = ligands[uniform_elitist(eng)];
-					}
+					l1 = ligands[uniform_elitist(rng)];
+					l2 = ligands[uniform_elitist(rng)];
+				}
 
-					// Obtain a random mutable atom from the two parent ligands respectively.
-					const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(eng);
-					const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(eng);
+				// Obtain a random mutable atom from the two parent ligands respectively.
+				const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(rng);
+				const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(rng);
 
-					ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2));
-					if (v(ligands[index]))
-					{
-						// Save the newly created child ligand.
-						ligands[index].save();
-						break;
-					}
-				} while (++num_failures < max_failures);
+				ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2));
+				ligands[index].save();
 				cnt.increment();
 			});
 		}
 		cnt.wait();
-
-		// Check if the maximum number of failures has been reached.
-		if (num_failures >= max_failures)
-		{
-			cout << "The number of failures has reached " << max_failures << endl;
-			return 0;
-		}
 
 		// Invoke idock.
 		idock_args[1] =  input_folder.string();

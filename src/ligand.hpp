@@ -70,26 +70,4 @@ public:
 	}
 };
 
-//! Represents a ligand validator.
-class validator
-{
-public:
-	validator(const size_t max_rotatable_bonds, const size_t max_hb_donors, const size_t max_hb_acceptors, const double max_mw) : max_rotatable_bonds(max_rotatable_bonds), max_hb_donors(max_hb_donors), max_hb_acceptors(max_hb_acceptors), max_mw(max_mw) {}
-
-	bool operator()(const ligand& l) const
-	{
-		if (l.num_rotatable_bonds > max_rotatable_bonds) return false;
-		if (l.num_hb_donors > max_hb_donors) return false;
-		if (l.num_hb_acceptors > max_hb_acceptors) return false;
-		if (l.mw > max_mw) return false;
-		return true;
-	}
-
-private:
-	const size_t max_rotatable_bonds;
-	const size_t max_hb_donors;
-	const size_t max_hb_acceptors;
-	const double max_mw;
-};
-
 #endif
