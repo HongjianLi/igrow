@@ -12,7 +12,7 @@ class io_service_pool : public io_service, public vector<future<void>>
 {
 public:
 	//! Creates a number of threads to listen to the post event of an io service.
-	explicit io_service_pool(const unsigned concurrency);
+	explicit io_service_pool(const size_t num_threads);
 
 	//! Waits for all the posted work and created threads to complete, and propagates thrown exceptions if any.
 	void wait();
