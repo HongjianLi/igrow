@@ -1,7 +1,6 @@
 #include <chrono>
 #include <iostream>
 #include <iomanip>
-#include <thread>
 #include <random>
 #include <boost/program_options.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -30,8 +29,8 @@ int main(int argc, char* argv[])
 	{
 		// Initialize the default values of optional arguments.
 		const path default_output_folder_path = "output";
-		const size_t default_num_threads = thread::hardware_concurrency();
 		const size_t default_seed = chrono::system_clock::now().time_since_epoch().count();
+		const size_t default_num_threads = thread::hardware_concurrency();
 		const size_t default_num_crossovers = 20;
 		const size_t default_num_elitists = 10;
 		const size_t default_max_failures = 1000;
@@ -47,13 +46,11 @@ int main(int argc, char* argv[])
 			("initial_generation_folder", value<path>(&initial_generation_folder_path)->required(), "path to initial generation folder")
 			("idock_config", value<path>(&idock_config_path)->required(), "path to idock configuration file")
 			;
-
 		options_description output_options("output (optional)");
 		output_options.add_options()
 			("output_folder", value<path>(&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
 			("log", value<path>(&log_path)->default_value(default_log_path), "log file in csv format")
 			;
-
 		options_description miscellaneous_options("options (optional)");
 		miscellaneous_options.add_options()
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
@@ -69,7 +66,6 @@ int main(int argc, char* argv[])
 			("version", "version information")
 			("config", value<path>(), "options can be loaded from a configuration file")
 			;
-
 		options_description all_options;
 		all_options.add(input_options).add(output_options).add(miscellaneous_options);
 
