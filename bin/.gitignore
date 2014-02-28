@@ -1,4 +1,4 @@
 igrow
-Win32
-x64
+Debug
+Release
 !.gitignore
