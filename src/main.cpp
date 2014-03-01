@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.csv";
 
-	path initial_generation_csv_path, initial_generation_folder_path, idock_config_path, output_folder_path, log_path;
+	path initial_generation_csv_path, initial_generation_folder_path, output_folder_path, log_path;
 	size_t num_threads, seed, num_elitists, num_crossovers, num_generations;
 
 	// Process program options.
@@ -39,7 +39,6 @@ int main(int argc, char* argv[])
 		input_options.add_options()
 			("initial_generation_csv", value<path>(&initial_generation_csv_path)->required(), "path to initial generation csv")
 			("initial_generation_folder", value<path>(&initial_generation_folder_path)->required(), "path to initial generation folder")
-			("idock_config", value<path>(&idock_config_path)->required(), "path to idock configuration file")
 			;
 		options_description output_options("output (optional)");
 		output_options.add_options()
@@ -116,18 +115,6 @@ int main(int argc, char* argv[])
 		if (!is_directory(initial_generation_folder_path))
 		{
 			cerr << "Initial generation folder " << initial_generation_folder_path << " is not a directory" << endl;
-			return 1;
-		}
-
-		// Validate idock configuration file.
-		if (!exists(idock_config_path))
-		{
-			cerr << "idock configuration file " << idock_config_path << " does not exist" << endl;
-			return 1;
-		}
-		if (!is_regular_file(idock_config_path))
-		{
-			cerr << "idock configuration file " << idock_config_path << " is not a regular file" << endl;
 			return 1;
 		}
 
@@ -220,7 +207,7 @@ int main(int argc, char* argv[])
 	idock_args[6] = "--seed";
 	idock_args[7] = to_string(seed);
 	idock_args[8] = "--config";
-	idock_args[9] = idock_config_path.string();
+	idock_args[9] = "/box.conf";
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
