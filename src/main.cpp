@@ -184,9 +184,6 @@ int main(int argc, char* argv[])
 	cout << "Using random seed " << seed << endl;
 	mt19937_64 rng(seed);
 
-	// Initialize the number of failures. The program will stop if num_failures reaches max_failures.
-	atomic<size_t> num_failures(0);
-
 	// Initialize ligand filenames.
 	vector<string> ligand_filenames;
 	ligand_filenames.reserve(num_ligands);
@@ -303,29 +300,5 @@ int main(int argc, char* argv[])
 				<< ',' << l.mw
 				<< endl;
 		}
-
-		// Calculate average statistics of elite ligands.
-		double avg_mw = 0, avg_fe = 0, avg_le = 0, avg_rotatable_bonds = 0, avg_hb_donors = 0, avg_hb_acceptors = 0;
-		for (size_t i = 0; i < num_elitists; ++i)
-		{
-			const ligand& l = ligands[i];
-			avg_mw += l.mw;
-			avg_fe += l.fe;
-			avg_rotatable_bonds += l.num_rotatable_bonds;
-			avg_hb_donors += l.num_hb_donors;
-			avg_hb_acceptors += l.num_hb_acceptors;
-		}
-		avg_mw *= num_elitists_inv;
-		avg_fe *= num_elitists_inv;
-		avg_rotatable_bonds *= num_elitists_inv;
-		avg_hb_donors *= num_elitists_inv;
-		avg_hb_acceptors *= num_elitists_inv;
-		cout << "Failures |  Avg FE | Avg MWT | Avg NRB | Avg HBD | Avg HBA\n"
-		    << setw(8) << num_failures << "   "
-			<< setw(7) << avg_fe << "   "
-			<< setw(7) << avg_mw << "   "
-			<< setw(7) << avg_rotatable_bonds << "   "
-			<< setw(7) << avg_hb_donors << "   "
-			<< setw(7) << avg_hb_acceptors << endl;
 	}
 }
