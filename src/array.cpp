@@ -2,7 +2,7 @@
 #include <cmath>
 #include "array.hpp"
 
-const double epsilon = 0.00001; //!< Tolerance for equality comparison of two floating point values.
+const double epsilon = 1e-5; //!< Tolerance for equality comparison of two floating point values.
 
 //! Returns the square of a generic value.
 template<typename T>
