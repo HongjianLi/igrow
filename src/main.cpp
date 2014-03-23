@@ -148,22 +148,30 @@ int main(int argc, char* argv[])
 		boost::filesystem::ifstream ifs(idock_example_log_path);
 		string line;
 		getline(ifs, line); // Ligand,Energy1,Energy2,Energy3,Energy4,Energy5,Energy6,Energy7,Energy8,Energy9
-		for (size_t i = 0; i < num_elitists; ++i)
+		size_t i = 0;
+		while (getline(ifs, line) && i < num_elitists)
 		{
-			// Check if there are sufficient initial elite ligands.
-			if (!getline(ifs, line))
-			{
-				cerr << "Failed to construct initial generation because the idock example log " << idock_example_log_path << " contains less than " << num_elitists << " ligands." << endl;
-				return 1;
-			}
-
 			// Parse the elite ligand.
 			const size_t comma1 = line.find(',', 1);
-			ligands.replace(i, new ligand(idock_example_output_path / (line.substr(0, comma1) + ".pdbqt")));
+			unique_ptr<ligand> elitist(new ligand(idock_example_output_path / (line.substr(0, comma1) + ".pdbqt")));
+
+			// Skip elite ligands that are not feasible of crossover.
+			if (!elitist->crossover_feasible()) continue;
+			ligands.replace(i, elitist.release());
 
 			// Parse the free energy.
 			const size_t comma2 = line.find(',', comma1 + 2);
 			ligands[i].fe = stod(line.substr(comma1 + 1, comma2 - comma1 - 1));
+
+			// Move to the next position.
+			++i;
+		}
+
+		// Check if there are sufficient initial elite ligands.
+		if (i < num_elitists)
+		{
+			cerr << "Failed to construct initial generation because the idock example log " << idock_example_log_path << " contains less than " << num_elitists << " crossoverable ligands." << endl;
+			return 1;
 		}
 	}
 
@@ -191,14 +199,14 @@ int main(int argc, char* argv[])
 	idock_args[6] = "--seed";
 	idock_args[7] = to_string(seed);
 	idock_args[8] = "--config";
-	idock_args[9] = "/box.conf";
+	idock_args[9] = (idock_example_folder_path / "idock.conf").string();
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
-	// Initialize log file for dumping statistics.
+	// Initialize log file for writing statistics.
 	boost::filesystem::ofstream log(log_path);
 	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors,molecular weight (g/mol)\n";
 
@@ -234,11 +242,6 @@ int main(int argc, char* argv[])
 				// Obtain constant references to the two parent ligands.
 				ligand& l1 = ligands[uniform_elitist(rng)];
 				ligand& l2 = ligands[uniform_elitist(rng)];
-				while (!(l1.crossover_feasible() && l2.crossover_feasible()))
-				{
-					l1 = ligands[uniform_elitist(rng)];
-					l2 = ligands[uniform_elitist(rng)];
-				}
 
 				// Obtain a random mutable atom from the two parent ligands respectively.
 				const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(rng);
