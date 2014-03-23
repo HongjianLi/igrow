@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	// Initialize the default path to log files. They will be reused when calling idock.
 	const path default_log_path = "log.csv";
 
-	path initial_generation_csv_path, initial_generation_folder_path, output_folder_path, log_path;
+	path idock_example_folder_path, output_folder_path, log_path;
 	size_t num_threads, seed, num_elitists, num_crossovers, num_generations;
 
 	// Process program options.
@@ -37,8 +37,7 @@ int main(int argc, char* argv[])
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
 		input_options.add_options()
-			("initial_generation_csv", value<path>(&initial_generation_csv_path)->required(), "path to initial generation csv")
-			("initial_generation_folder", value<path>(&initial_generation_folder_path)->required(), "path to initial generation folder")
+			("idock_example_folder", value<path>(&idock_example_folder_path)->required(), "path to an idock example folder")
 			;
 		options_description output_options("output (optional)");
 		output_options.add_options()
@@ -94,27 +93,15 @@ int main(int argc, char* argv[])
 		// Notify the user of parsing errors, if any.
 		vm.notify();
 
-		// Validate initial generation csv.
-		if (!exists(initial_generation_csv_path))
+		// Validate idock example folder.
+		if (!exists(idock_example_folder_path))
 		{
-			cerr << "Initial generation csv " << initial_generation_csv_path << " does not exist" << endl;
+			cerr << "idock example folder " << idock_example_folder_path << " does not exist" << endl;
 			return 1;
 		}
-		if (!is_regular_file(initial_generation_csv_path))
+		if (!is_directory(idock_example_folder_path))
 		{
-			cerr << "Initial generation csv " << initial_generation_csv_path << " is not a regular file" << endl;
-			return 1;
-		}
-
-		// Validate initial generation folder.
-		if (!exists(initial_generation_folder_path))
-		{
-			cerr << "Initial generation folder " << initial_generation_folder_path << " does not exist" << endl;
-			return 1;
-		}
-		if (!is_directory(initial_generation_folder_path))
-		{
-			cerr << "Initial generation folder " << initial_generation_folder_path << " is not a directory" << endl;
+			cerr << "idock example folder " << idock_example_folder_path << " is not a directory" << endl;
 			return 1;
 		}
 
@@ -146,35 +133,35 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// The number of ligands (i.e. population size) is equal to the number of elitists plus mutants plus children.
+	// The number of ligands (i.e. population size) is equal to the number of elitists plus children.
 	const size_t num_children = num_crossovers;
 	const size_t num_ligands = num_elitists + num_children;
-	const double num_elitists_inv = static_cast<double>(1) / num_elitists;
 
 	// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 	ptr_vector<ligand> ligands;
 	ligands.resize(num_ligands);
 
-	// Parse the initial generation csv to get initial elite ligands.
+	// Parse the idock example folder to get initial elite ligands.
 	{
-		boost::filesystem::ifstream ifs(initial_generation_csv_path);
+		const path idock_example_log_path = idock_example_folder_path / default_log_path;
+		const path idock_example_output_path = idock_example_folder_path / "output";
+		boost::filesystem::ifstream ifs(idock_example_log_path);
 		string line;
-		line.reserve(80);
-		getline(ifs, line); // Ligand,pKd1,pKd2,pKd3,pKd4,pKd5,pKd6,pKd7,pKd8,pKd9
+		getline(ifs, line); // Ligand,Energy1,Energy2,Energy3,Energy4,Energy5,Energy6,Energy7,Energy8,Energy9
 		for (size_t i = 0; i < num_elitists; ++i)
 		{
 			// Check if there are sufficient initial elite ligands.
 			if (!getline(ifs, line))
 			{
-				cerr << "Failed to construct initial generation because the initial generation csv " << initial_generation_csv_path << " contains less than " << num_elitists << " ligands." << endl;
+				cerr << "Failed to construct initial generation because the idock example log " << idock_example_log_path << " contains less than " << num_elitists << " ligands." << endl;
 				return 1;
 			}
 
 			// Parse the elite ligand.
 			const size_t comma1 = line.find(',', 1);
-			ligands.replace(i, new ligand(initial_generation_folder_path / (line.substr(0, comma1) + ".pdbqt")));
+			ligands.replace(i, new ligand(idock_example_output_path / (line.substr(0, comma1) + ".pdbqt")));
 
-			// Parse the free energy and ligand efficiency.
+			// Parse the free energy.
 			const size_t comma2 = line.find(',', comma1 + 2);
 			ligands[i].fe = stod(line.substr(comma1 + 1, comma2 - comma1 - 1));
 		}
