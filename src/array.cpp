@@ -18,79 +18,73 @@ bool zero(const double a)
 }
 
 //! Returns true is the vector is (0, 0, 0).
-bool zero(const array<double, 3>& v)
+bool zero(const array<double, 3>& a)
 {
-	return zero(v[0]) && zero(v[1]) && zero(v[2]);
+	return zero(a[0]) && zero(a[1]) && zero(a[2]);
 }
 
 //! Returns the square norm.
-double norm_sqr(const array<double, 3>& v)
+double norm_sqr(const array<double, 3>& a)
 {
-	return sqr(v[0]) + sqr(v[1]) + sqr(v[2]);
+	return sqr(a[0]) + sqr(a[1]) + sqr(a[2]);
 }
 
 //! Returns the norm.
-double norm(const array<double, 3>& v)
+double norm(const array<double, 3>& a)
 {
-	return sqrt(norm_sqr(v));
+	return sqrt(norm_sqr(a));
 }
 
 //! Returns true if the norm equals 1.
-bool normalized(const array<double, 3>& v)
+bool normalized(const array<double, 3>& a)
 {
-	return zero(norm_sqr(v) - 1);
+	return zero(norm_sqr(a) - 1);
 }
 
 //! Normalize the vector.
-array<double, 3> normalize(const array<double, 3>& v)
+array<double, 3> normalize(const array<double, 3>& a)
 {
-	const double nrm = norm(v);
-	if (zero(nrm)) return v;
-	const double f = 1 / nrm;
-	return
-	{
-		f * v[0],
-		f * v[1],
-		f * v[2],
-	};
+	const double nrm = norm(a);
+	if (zero(nrm)) return a;
+	return (1 / nrm) * a;
 }
 
 //! Returns the dot product of the current vector and the given vector.
-double operator*(const array<double, 3>& t, const array<double, 3>& v)
+double operator*(const array<double, 3>& a, const array<double, 3>& b)
 {
-	return t[0] * v[0] + t[1] * v[1] + t[2] * v[2];
+	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
 
 //! Returns the result of pairwise addition of the current vector and the given vector.
-array<double, 3> operator+(const array<double, 3>& t, const array<double, 3>& v)
+array<double, 3> operator+(const array<double, 3>& a, const array<double, 3>& b)
 {
 	return
 	{
-		t[0] + v[0],
-		t[1] + v[1],
-		t[2] + v[2],
+		a[0] + b[0],
+		a[1] + b[1],
+		a[2] + b[2],
 	};
 }
 
 //! Returns the result of pairwise subtraction of the current vector and the given vector.
-array<double, 3> operator-(const array<double, 3>& t, const array<double, 3>& v)
+array<double, 3> operator-(const array<double, 3>& a, const array<double, 3>& b)
 {
 	return
 	{
-		t[0] - v[0],
-		t[1] - v[1],
-		t[2] - v[2],
+		a[0] - b[0],
+		a[1] - b[1],
+		a[2] - b[2],
 	};
 }
 
 //! Pairwise multiply a constant to the current vector.
-array<double, 3> operator*(const double s, const array<double, 3>& v)
+array<double, 3> operator*(const double s, const array<double, 3>& a)
 {
 	return
 	{
-		s * v[0],
-		s * v[1],
-		s * v[2],
+		s * a[0],
+		s * a[1],
+		s * a[2],
 	};
 }
 
