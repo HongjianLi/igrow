@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
 		idock_args[1] =  input_folder.string();
 		idock_args[3] = output_folder.string();
 		idock_args[5] = (generation_folder / default_log_path).string();
-		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), throw_on_error()));
+		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), start_in_dir(idock_example_folder_path.string()), throw_on_error()));
 		if (exit_code)
 		{
 			cerr << "idock exited with code " << exit_code << endl;
