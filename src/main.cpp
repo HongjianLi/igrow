@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
 	idock_args[6] = "--seed";
 	idock_args[7] = to_string(seed);
 	idock_args[8] = "--config";
-	idock_args[9] = (idock_example_folder_path / "idock.conf").string();
+	idock_args[9] = "idock.conf";
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
