@@ -213,7 +213,6 @@ int main(int argc, char* argv[])
 
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(3);
-	output_folder_path = absolute(output_folder_path);
 	for (size_t generation = 1; generation <= num_generations; ++generation)
 	{
 		cout << "Running generation " << generation << endl;
@@ -257,9 +256,9 @@ int main(int argc, char* argv[])
 		cnt.wait();
 
 		// Invoke idock.
-		idock_args[4] =  input_folder.string();
-		idock_args[6] = output_folder.string();
-		idock_args[8] = (generation_folder / default_log_path).string();
+		idock_args[4] = absolute( input_folder).string();
+		idock_args[6] = absolute(output_folder).string();
+		idock_args[8] = absolute(generation_folder / default_log_path).string();
 		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_folder_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
 		{
