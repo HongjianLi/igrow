@@ -180,11 +180,10 @@ int main(int argc, char* argv[])
 	mt19937_64 rng(seed);
 
 	// Initialize ligand filenames.
-	vector<string> ligand_filenames;
-	ligand_filenames.reserve(num_ligands);
-	for (size_t i = 1; i <= num_ligands; ++i)
+	vector<string> ligand_filenames(num_children);
+	for (size_t i = 0; i < num_children; ++i)
 	{
-		ligand_filenames.push_back(to_string(i) + ".pdbqt");
+		ligand_filenames[i] = to_string(i) + ".pdbqt";
 	}
 
 	// Find the full path to idock executable.
