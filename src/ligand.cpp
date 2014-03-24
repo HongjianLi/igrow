@@ -110,7 +110,7 @@ void ligand::save() const
 		for (size_t i = f.begin; i < f.end; ++i)
 		{
 			const atom& a = atoms[i];
-			ofs << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
+			ofs << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coord[0] << setw(8) << a.coord[1] << setw(8) << a.coord[2] << a.columns_55_to_79 << '\n';
 		}
 	}
 	ofs << "ENDROOT\n";
@@ -136,7 +136,7 @@ void ligand::save() const
 			for (size_t i = f.begin; i < f.end; ++i)
 			{
 				const atom& a = atoms[i];
-				ofs << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
+				ofs << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coord[0] << setw(8) << a.coord[1] << setw(8) << a.coord[2] << a.columns_55_to_79 << '\n';
 			}
 			branches_written[fn] = true;
 			for (auto i = f.branches.rbegin(); i < f.branches.rend(); ++i)
@@ -176,7 +176,7 @@ void ligand::update(const path& p)
 		if (record == "ATOM  ")
 		{
 			assert(atoms[i].srn == stoul(line.substr(6, 5)));
-			atoms[i++].coordinate = {stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8))};
+			atoms[i++].coord = {stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8))};
 		}
 	}
 	ifs.close();
@@ -293,10 +293,10 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	connector2 = to_string(c2.srn) + ":" + c2.name + " - " + to_string(m2.srn) + ":" + m2.name;
 
 	// Calculate the translation vector for moving ligand 2 to a nearby place of ligand 1.
-	const array<double, 3> c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coordinate - c1.coordinate); // Vector pointing from c1 to the new position of c2.
-	const array<double, 3> origin_to_c2 = c1.coordinate + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
+	const array<double, 3> c1_to_c2 = ((c1.covalent_radius() + c2.covalent_radius()) / (c1.covalent_radius() + m1.covalent_radius())) * (m1.coord - c1.coord); // Vector pointing from c1 to the new position of c2.
+	const array<double, 3> origin_to_c2 = c1.coord + c1_to_c2; // Translation vector to translate ligand 2 from origin to the new position of c2.
 	const array<double, 3> c2_to_c1_nd = normalize(-1 * c1_to_c2); // Normalized vector pointing from c2 to c1.
-	const array<double, 3> c2_to_m2_nd = normalize(m2.coordinate - c2.coordinate); // Normalized vector pointing from c2 to m2.
+	const array<double, 3> c2_to_m2_nd = normalize(m2.coord - c2.coord); // Normalized vector pointing from c2 to m2.
 	const array<double, 9> rot = vec3_to_mat3(normalize(cross_product(c2_to_m2_nd, c2_to_c1_nd)), c2_to_m2_nd * c2_to_c1_nd); // Rotation matrix to rotate m2 along the normal to the direction from the new position of c2 to c1.
 
 	// Create new frames for ligand 2's frames that are either f2 or f2's child frames.
@@ -321,7 +321,7 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 		for (size_t i = rf.begin; i < rf.end; ++i)
 		{
 			const atom& ra = l2.atoms[i];
-			atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coordinate - c2.coordinate) + origin_to_c2, ra.ad));
+			atoms.push_back(atom(ra.name, ra.columns_13_to_30, ra.columns_55_to_79, l1.max_atom_number + ra.srn, rot * (ra.coord - c2.coord) + origin_to_c2, ra.ad));
 		}
 		f.end = atoms.size();
 		assert(f.begin < f.end);

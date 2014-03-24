@@ -18,14 +18,14 @@ public:
 	string columns_13_to_30; //!< Columns from 1-based [13, 30] of an ATOM/HETATM line in PDBQT format.
 	string columns_55_to_79; //!< Columns from 1-based [55, 79] of an ATOM/HETATM line in PDBQT format.
 	size_t srn; //!< Serial number.
-	array<double, 3> coordinate; //!< 3D coordinate.
+	array<double, 3> coord; //!< 3D coordinate.
 	size_t ad; //!< AutoDock4 atom type.
 
 	//! Returns the AutoDock4 atom type of the given string.
 	static size_t parse_ad_string(const string& ad_string);
 
 	//! Constructs an atoms.
-	explicit atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const array<double, 3>& coordinate, const size_t ad);
+	explicit atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const array<double, 3>& coord, const size_t ad);
 
 	//! Returns covalent radius from an AutoDock4 atom type.
 	double covalent_radius() const;

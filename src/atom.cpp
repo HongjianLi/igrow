@@ -118,7 +118,7 @@ size_t atom::parse_ad_string(const string& ad_string)
 }
 
 //! Constructs an atoms.
-atom::atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const array<double, 3>& coordinate, const size_t ad) : name(name), columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coordinate(coordinate), ad(ad)
+atom::atom(const string& name, const string& columns_13_to_30, const string columns_55_to_79, const size_t srn, const array<double, 3>& coord, const size_t ad) : name(name), columns_13_to_30(columns_13_to_30), columns_55_to_79(columns_55_to_79), srn(srn), coord(coord), ad(ad)
 {
 }
 
@@ -157,5 +157,5 @@ bool atom::is_neighbor(const atom& a) const
 {
 	assert(this != &a);
 	const double r = 1.1 * (covalent_radius() + a.covalent_radius());
-	return distance_sqr(coordinate, a.coordinate) < r * r;
+	return distance_sqr(coord, a.coord) < r * r;
 }
