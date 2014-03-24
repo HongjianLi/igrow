@@ -192,14 +192,15 @@ int main(int argc, char* argv[])
 	cout << "Using idock executable at " << idock_path << endl;
 
 	// Initialize arguments to idock.
-	vector<string> idock_args(10);
-	idock_args[0] = "--input_folder";
-	idock_args[2] = "--output_folder";
-	idock_args[4] = "--log";
-	idock_args[6] = "--seed";
-	idock_args[7] = to_string(seed);
-	idock_args[8] = "--config";
-	idock_args[9] = "idock.conf";
+	vector<string> idock_args(11);
+	idock_args[0] = idock_path.string();
+	idock_args[1] = "--config";
+	idock_args[2] = "idock.conf";
+	idock_args[3] = "--input_folder";
+	idock_args[5] = "--output_folder";
+	idock_args[7] = "--log";
+	idock_args[9] = "--seed";
+	idock_args[10]= to_string(seed);
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
@@ -212,6 +213,7 @@ int main(int argc, char* argv[])
 
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(3);
+	output_folder_path = absolute(output_folder_path);
 	for (size_t generation = 1; generation <= num_generations; ++generation)
 	{
 		cout << "Running generation " << generation << endl;
@@ -255,10 +257,10 @@ int main(int argc, char* argv[])
 		cnt.wait();
 
 		// Invoke idock.
-		idock_args[1] =  input_folder.string();
-		idock_args[3] = output_folder.string();
-		idock_args[5] = (generation_folder / default_log_path).string();
-		const auto exit_code = wait_for_exit(execute(run_exe(idock_path), set_args(idock_args), start_in_dir(idock_example_folder_path.string()), throw_on_error()));
+		idock_args[4] =  input_folder.string();
+		idock_args[6] = output_folder.string();
+		idock_args[8] = (generation_folder / default_log_path).string();
+		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_folder_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
 		{
 			cerr << "idock exited with code " << exit_code << endl;
