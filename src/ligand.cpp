@@ -192,13 +192,13 @@ pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 		const size_t srn_begin = atoms[f.begin].srn;
 		const size_t srn_end = atoms[f.end - 1].srn;
 		assert(srn_begin <= srn_end);
-		if ((f.end - f.begin) == (srn_end - srn_begin + 1)) // The serial numbers are continuous, which is the most cases.
+		if (f.end - f.begin == srn_end - srn_begin + 1) // The serial numbers are continuous, which is the most cases.
 		{
-			if ((srn_begin <= srn) && (srn <= srn_end)) return pair<size_t, size_t>(k, f.begin + srn - srn_begin);
+			if (srn_begin <= srn && srn <= srn_end) return pair<size_t, size_t>(k, f.begin + srn - srn_begin);
 		}
-		else // The serial numbers are not continuous, but they are sorted. Binary search can be used.
+		else // The serial numbers are not continuous, but they are sorted.
 		{
-			// Linear search at the moment.
+			// Linear search at the moment. Binary search can be used.
 			for (size_t i = f.begin; i < f.end; ++i)
 			{
 				if (srn == atoms[i].srn) return pair<size_t,  size_t>(k, i);
