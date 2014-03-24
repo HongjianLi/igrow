@@ -39,35 +39,30 @@ public:
 	size_t num_hb_acceptors; //!< Number of hydrogen bond acceptors.
 	double mw; //!< Molecular weight.
 	double fe; //!< Predicted free energy obtained by external docking.
+
+	//! Constructs an empty ligand.
 	explicit ligand() {}
 
 	//! Constructs a ligand by parsing a given ligand file in PDBQT.
-	//! @exception parsing_error Thrown when error parsing the ligand file.
 	explicit ligand(const path& p);
 
 	//! Constructs a ligand by crossover.
 	explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
+	//! Returns true if the current ligand is able to perform crossover.
+	bool crossover_feasible() const;
+
+	//! Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
+	bool operator<(const ligand& l) const;
+
 	//! Saves the current ligand to a file in PDBQT format.
 	void save() const;
 
-	//! Parse the docked ligand to obtain predicted free energy and docked coordinates.
+	//! Parses the docked ligand to obtain predicted free energy and docked coordinates.
 	void update(const path& p);
 
 	//! Gets the frame and index to which a atom belongs to given its serial number.
 	pair<size_t, size_t> get_frame(const size_t srn) const;
-
-	//! Returns true if the current ligand is able to perform crossover.
-	bool crossover_feasible() const
-	{
-		return num_rotatable_bonds > 0;
-	}
-
-	//! Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
-	bool operator<(const ligand& l) const
-	{
-		return fe < l.fe;
-	}
 };
 
 #endif

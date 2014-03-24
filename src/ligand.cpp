@@ -97,6 +97,16 @@ ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mw(
 	assert(max_atom_number >= num_atoms);
 }
 
+bool ligand::crossover_feasible() const
+{
+	return num_rotatable_bonds > 0;
+}
+
+bool ligand::operator<(const ligand& l) const
+{
+	return fe < l.fe;
+}
+
 void ligand::save() const
 {
 	boost::filesystem::ofstream ofs(p);
