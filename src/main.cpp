@@ -272,10 +272,10 @@ int main(int argc, char* argv[])
 			ligands[num_elitists + i].update(output_folder / ligand_filenames[i]);
 		}
 
-		// Sort ligands in ascending order of efficacy.
+		// Sort ligands in ascending order of free energy.
 		ligands.sort();
 
-		// Write summaries to csv and calculate average statistics.
+		// Write summaries to log.
 		for (const auto& l : ligands)
 		{
 			log << generation
