@@ -99,7 +99,7 @@ ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mw(
 
 void ligand::save() const
 {
-	boost::filesystem::ofstream ofs(p); // Dumping starts. Open the file stream as late as possible.
+	boost::filesystem::ofstream ofs(p);
 	ofs.setf(ios::fixed, ios::floatfield);
 	ofs << setprecision(3);
 
@@ -116,7 +116,7 @@ void ligand::save() const
 	ofs << "ENDROOT\n";
 
 	// Dump the BRANCH frames.
-	vector<bool> dump_branches(frames.size()); // dump_branches[0] is dummy. The ROOT frame has been dumped.
+	vector<bool> branches_written(frames.size()); // branches_written[0] is dummy. The ROOT frame has been written.
 	vector<size_t> stack; // Stack to track the depth-first traversal sequence of frames in order to avoid recursion.
 	stack.reserve(num_rotatable_bonds); // The ROOT frame is excluded.
 	{
@@ -130,7 +130,7 @@ void ligand::save() const
 	{
 		const size_t fn = stack.back();
 		const frame& f = frames[fn];
-		if (!dump_branches[fn]) // This BRANCH frame has not been dumped.
+		if (!branches_written[fn]) // This BRANCH frame has not been written.
 		{
 			ofs << "BRANCH"    << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
 			for (size_t i = f.begin; i < f.end; ++i)
@@ -138,20 +138,19 @@ void ligand::save() const
 				const atom& a = atoms[i];
 				ofs << "ATOM  " << setw(5) << a.srn << ' ' << a.columns_13_to_30 << setw(8) << a.coordinate[0] << setw(8) << a.coordinate[1] << setw(8) << a.coordinate[2] << a.columns_55_to_79 << '\n';
 			}
-			dump_branches[fn] = true;
+			branches_written[fn] = true;
 			for (auto i = f.branches.rbegin(); i < f.branches.rend(); ++i)
 			{
 				stack.push_back(*i);
 			}
 		}
-		else // This BRANCH frame has been dumped.
+		else // This BRANCH frame has been written.
 		{
 			ofs << "ENDBRANCH" << setw(4) << f.rotorX << setw(4) << f.rotorY << '\n';
 			stack.pop_back();
 		}
 	}
 	ofs << "TORSDOF " << num_rotatable_bonds << '\n';
-	ofs.close();
 }
 
 void ligand::update(const path& p)
@@ -162,7 +161,6 @@ void ligand::update(const path& p)
 		return;
 	}
 	string line;
-	line.reserve(79);
 	boost::filesystem::ifstream ifs(p);
 	getline(ifs, line); // MODEL        1
 	getline(ifs, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.976 KCAL/MOL
@@ -170,7 +168,7 @@ void ligand::update(const path& p)
 	getline(ifs, line); // REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.722 KCAL/MOL
 	getline(ifs, line); // REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.740 KCAL/MOL
 	getline(ifs, line); // REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.018 KCAL/MOL
-	getline(ifs, line); // REMARK            LIGAND EFFICIENCY PREDICTED BY IDOCK:  -0.280 KCAL/MOL
+	getline(ifs, line); // REMARK    RF-SCORE BINDING AFFINITY PREDICTED BY IDOCK:   6.532 PKD
 	for (size_t i = 0; getline(ifs, line);)
 	{
 		const string record = line.substr(0, 6);
