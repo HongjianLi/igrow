@@ -75,8 +75,8 @@ const array<double, atom::n> atom::ad_covalent_radii =
 	2.25, // 30 = Cs
 };
 
-//! AutoDock4 atomic weights. http://en.wikipedia.org/wiki/Relative_atomic_mass
-const array<double, atom::n> atom::ad_atomic_weights =
+//! AutoDock4 atomic masses. http://en.wikipedia.org/wiki/Relative_atomic_mass
+const array<double, atom::n> atom::ad_atomic_masses =
 {
 	  1.008,//  0 = HD
 	  1.008,//  1 = H
@@ -122,16 +122,16 @@ atom::atom(const string& name, const string& columns_13_to_30, const string colu
 {
 }
 
-//! Returns covalent radius from an AutoDock4 atom type.
+//! Returns covalent radius of the current AutoDock4 atom type.
 double atom::covalent_radius() const
 {
 	return ad_covalent_radii[ad];
 }
 
-//! Returns atomic weight from an AutoDock4 atom type.
-double atom::atomic_weight() const
+//! Returns atomic mass of the current AutoDock4 atom type.
+double atom::atomic_mass() const
 {
-	return ad_atomic_weights[ad];
+	return ad_atomic_masses[ad];
 }
 
 //! Returns true if the current atom is a hydrogen.

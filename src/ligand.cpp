@@ -7,7 +7,7 @@
 using namespace boost;
 using namespace boost::filesystem;
 
-ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mw(0)
+ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), ma(0)
 {
 	// Initialize necessary variables for constructing a ligand.
 	frames.reserve(30); // A ligand typically consists of <= 30 frames.
@@ -45,7 +45,7 @@ ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mw(
 			const atom& a = atoms.back();
 			if (a.is_hb_donor()) ++num_hb_donors;
 			if (a.is_hb_acceptor()) ++num_hb_acceptors;
-			mw += a.atomic_weight();
+			ma += a.atomic_mass();
 		}
 		else if (record == "BRANCH")
 		{
@@ -218,7 +218,7 @@ pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 	throw domain_error("Failed to find an atom with serial number " + to_string(srn));
 }
 
-ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx) : p(p), parent1(l1.p), parent2(l2.p), num_hb_donors(0), num_hb_acceptors(0), mw(0)
+ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx) : p(p), parent1(l1.p), parent2(l2.p), num_hb_donors(0), num_hb_acceptors(0), ma(0)
 {
 	const frame& f1 = l1.frames[f1idx];
 	const frame& f2 = l2.frames[f2idx];
@@ -380,6 +380,6 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	{
 		if (a.is_hb_donor()) ++num_hb_donors;
 		if (a.is_hb_acceptor()) ++num_hb_acceptors;
-		mw += a.atomic_weight();
+		ma += a.atomic_mass();
 	}
 }

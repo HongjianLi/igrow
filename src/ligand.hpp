@@ -37,7 +37,7 @@ public:
 	size_t num_atoms; //!< Number of atoms.
 	size_t num_hb_donors; //!< Number of hydrogen bond donors.
 	size_t num_hb_acceptors; //!< Number of hydrogen bond acceptors.
-	double mw; //!< Molecular weight.
+	double ma; //!< Molecular mass.
 	double fe; //!< Predicted free energy obtained by external docking.
 
 	//! Constructs an empty ligand.
