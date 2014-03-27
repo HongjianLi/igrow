@@ -7,7 +7,6 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/process.hpp>
-#include <boost/iostreams/stream.hpp>
 #include "io_service_pool.hpp"
 #include "safe_counter.hpp"
 #include "ligand.hpp"
@@ -15,7 +14,6 @@ using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::process;
 using namespace boost::process::initializers;
-using namespace boost::iostreams;
 
 int main(int argc, char* argv[])
 {
@@ -260,15 +258,7 @@ int main(int argc, char* argv[])
 		idock_args[4] = absolute( input_folder).string();
 		idock_args[6] = absolute(output_folder).string();
 		idock_args[8] = absolute(generation_folder / default_log_path).string();
-		const auto pipe = create_pipe();
-		const auto child = execute(start_in_dir(idock_example_folder_path.string()), set_args(idock_args), inherit_env(), throw_on_error(), bind_stdout(file_descriptor_sink(pipe.sink, close_handle)));
-		string line;
-		for (stream<file_descriptor_source> is(file_descriptor_source(pipe.source, close_handle)); getline(is, line);)
-		{
-			cout << line << endl;
-			if (line[0] == 'W') break;
-		}
-		const auto exit_code = wait_for_exit(child);
+		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_folder_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
 		{
 			cerr << "idock exited with code " << exit_code << endl;
