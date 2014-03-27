@@ -287,7 +287,7 @@ int main(int argc, char* argv[])
 				<< ',' << l.num_rotatable_bonds
 				<< ',' << l.num_hb_donors
 				<< ',' << l.num_hb_acceptors
-				<< ',' << l.ma
+				<< ',' << l.mm
 				<< endl;
 		}
 	}
