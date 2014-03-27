@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 
 	// Initialize log file for writing statistics.
 	boost::filesystem::ofstream log(log_path);
-	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors,molecular mass (daltons)\n";
+	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors,molecular mass (Da)\n";
 
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(3);
