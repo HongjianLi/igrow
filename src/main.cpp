@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 	const path default_log_path = "log.csv";
 
 	path idock_example_folder_path, output_folder_path, log_path;
-	size_t num_threads, seed, num_elitists, num_crossovers, num_generations;
+	size_t num_threads, seed, num_elitists, num_children, num_generations;
 
 	// Process program options.
 	try
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 		const path default_output_folder_path = "output";
 		const size_t default_seed = chrono::system_clock::now().time_since_epoch().count();
 		const size_t default_num_threads = thread::hardware_concurrency();
-		const size_t default_num_crossovers = 20;
+		const size_t default_num_children = 20;
 		const size_t default_num_elitists = 10;
 		const size_t default_num_generations = 8;
 
@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
-			("crossovers", value<size_t>(&num_crossovers)->default_value(default_num_crossovers), "number of child ligands created by crossover")
+			("children", value<size_t>(&num_children)->default_value(default_num_children), "number of child ligands created from elite ligands")
 			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of generations")
 			("help", "help information")
 			("version", "version information")
@@ -134,7 +134,6 @@ int main(int argc, char* argv[])
 	}
 
 	// The number of ligands (i.e. population size) is equal to the number of elitists plus children.
-	const size_t num_children = num_crossovers;
 	const size_t num_ligands = num_elitists + num_children;
 
 	// Initialize a pointer vector to dynamically hold and destroy generated ligands.
