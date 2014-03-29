@@ -21,7 +21,8 @@ int main(int argc, char* argv[])
 	const path default_log_path = "log.csv";
 
 	path idock_example_folder_path, output_folder_path, log_path;
-	size_t num_threads, seed, num_elitists, num_children, num_generations;
+	size_t num_threads, seed, num_elitists, num_children, num_generations, nrb_lb, nrb_ub, hbd_lb, hbd_ub, hba_lb, hba_ub;
+	double mms_lb, mms_ub;
 
 	// Process program options.
 	try
@@ -33,6 +34,14 @@ int main(int argc, char* argv[])
 		const size_t default_num_children = 20;
 		const size_t default_num_elitists = 10;
 		const size_t default_num_generations = 8;
+		const size_t default_nrb_lb =  0;
+		const size_t default_nrb_ub = 10;
+		const size_t default_hbd_lb =  0;
+		const size_t default_hbd_ub =  5;
+		const size_t default_hba_lb =  0;
+		const size_t default_hba_ub = 10;
+		const double default_mms_lb = 300;
+		const double default_mms_ub = 500;
 
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
@@ -51,6 +60,14 @@ int main(int argc, char* argv[])
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
 			("children", value<size_t>(&num_children)->default_value(default_num_children), "number of child ligands created from elite ligands")
 			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of generations")
+			("mms_lb", value<double>(&mms_lb)->default_value(default_mms_lb), "lower bound of molecular mass in Da unit")
+			("mms_ub", value<double>(&mms_ub)->default_value(default_mms_ub), "upper bound of molecular mass in Da unit")
+			("nrb_lb", value<size_t>(&nrb_lb)->default_value(default_nrb_lb), "lower bound of number of rotatable bonds")
+			("nrb_ub", value<size_t>(&nrb_ub)->default_value(default_nrb_ub), "upper bound of number of rotatable bonds")
+			("hbd_lb", value<size_t>(&hbd_lb)->default_value(default_hbd_lb), "lower bound of number of hydrogen bond donors")
+			("hbd_ub", value<size_t>(&hbd_ub)->default_value(default_hbd_ub), "upper bound of number of hydrogen bond donors")
+			("hba_lb", value<size_t>(&hba_lb)->default_value(default_hba_lb), "lower bound of number of hydrogen bond acceptors")
+			("hba_ub", value<size_t>(&hba_ub)->default_value(default_hba_ub), "upper bound of number of hydrogen bond acceptors")
 			("help", "help information")
 			("version", "version information")
 			("config", value<path>(), "options can be loaded from a configuration file")
