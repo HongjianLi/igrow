@@ -17,9 +17,10 @@ using namespace boost::process::initializers;
 
 int main(int argc, char* argv[])
 {
-	// Initialize the default path to log files. They will be reused when calling idock.
+	// Initialize the default path to log files. It will be reused when calling idock.
 	const path default_log_path = "log.csv";
 
+	// Declare program option variables.
 	path idock_example_folder_path, output_folder_path, log_path;
 	size_t num_threads, seed, num_elitists, num_children, num_generations, nrb_lb, nrb_ub, hbd_lb, hbd_ub, hba_lb, hba_ub;
 	double mms_lb, mms_ub;
@@ -43,6 +44,7 @@ int main(int argc, char* argv[])
 		const double default_mms_lb = 300;
 		const double default_mms_ub = 500;
 
+		// Set up the description of options.
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
 		input_options.add_options()
@@ -196,10 +198,10 @@ int main(int argc, char* argv[])
 	mt19937_64 rng(seed);
 
 	// Initialize ligand filenames.
-	vector<string> ligand_filenames(num_children);
+	vector<string> filenames(num_children);
 	for (size_t i = 0; i < num_children; ++i)
 	{
-		ligand_filenames[i] = to_string(i) + ".pdbqt";
+		filenames[i] = to_string(i) + ".pdbqt";
 	}
 
 	// Find the full path to idock executable.
@@ -263,7 +265,7 @@ int main(int argc, char* argv[])
 				const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(rng);
 				const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(rng);
 
-				ligands.replace(index, new ligand(input_folder / ligand_filenames[i], l1, l2, g1, g2));
+				ligands.replace(index, new ligand(input_folder / filenames[i], l1, l2, g1, g2));
 				ligands[index].save();
 				cnt.increment();
 			});
@@ -284,7 +286,7 @@ int main(int argc, char* argv[])
 		// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands into the ligand subfolder.
 		for (size_t i = 0; i < num_children; ++i)
 		{
-			ligands[num_elitists + i].update(output_folder / ligand_filenames[i]);
+			ligands[num_elitists + i].update(output_folder / filenames[i]);
 		}
 
 		// Sort ligands in ascending order of free energy.
