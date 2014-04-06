@@ -19,8 +19,8 @@ public:
 	//! Waits until the counter reaches its expected hit value.
 	void wait();
 private:
-	mutex m;
-	condition_variable cv;
+	std::mutex m;
+	std::condition_variable cv;
 	T n; //!< Expected hit value.
 	T i; //!< Counter value.
 };
