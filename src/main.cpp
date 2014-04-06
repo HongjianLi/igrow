@@ -309,4 +309,5 @@ int main(int argc, char* argv[])
 				<< endl;
 		}
 	}
+	io.wait();
 }
