@@ -1,11 +1,12 @@
 #include "io_service_pool.hpp"
+using namespace boost;
 
 io_service_pool::io_service_pool(const size_t num_threads) : w(new work(*this))
 {
 	reserve(num_threads);
 	for (size_t i = 0; i < num_threads; ++i)
 	{
-		emplace_back(boost::async(boost::launch::async, [&]()
+		emplace_back(async(launch::async, [&]()
 		{
 			run();
 		}));
