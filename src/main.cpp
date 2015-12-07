@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 			;
 		options_description output_options("output (optional)");
 		output_options.add_options()
-			("output_folder", value<path>(&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
+			("out", value<path>(&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
 			("log", value<path>(&log_path)->default_value(default_log_path), "log file in csv format")
 			;
 		options_description miscellaneous_options("options (optional)");
@@ -62,15 +62,15 @@ int main(int argc, char* argv[])
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
 			("children", value<size_t>(&num_children)->default_value(default_num_children), "number of child ligands created from elite ligands")
 			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of generations")
-			("mms_lb", value<double>(&mms_lb)->default_value(default_mms_lb), "lower bound of molecular mass in Da unit")
-			("mms_ub", value<double>(&mms_ub)->default_value(default_mms_ub), "upper bound of molecular mass in Da unit")
+			("mms_lb", value<double>(&mms_lb)->default_value(default_mms_lb), "lower bound of molecular mass in Dalton unit")
+			("mms_ub", value<double>(&mms_ub)->default_value(default_mms_ub), "upper bound of molecular mass in Dalton unit")
 			("nrb_lb", value<size_t>(&nrb_lb)->default_value(default_nrb_lb), "lower bound of number of rotatable bonds")
 			("nrb_ub", value<size_t>(&nrb_ub)->default_value(default_nrb_ub), "upper bound of number of rotatable bonds")
 			("hbd_lb", value<size_t>(&hbd_lb)->default_value(default_hbd_lb), "lower bound of number of hydrogen bond donors")
 			("hbd_ub", value<size_t>(&hbd_ub)->default_value(default_hbd_ub), "upper bound of number of hydrogen bond donors")
 			("hba_lb", value<size_t>(&hba_lb)->default_value(default_hba_lb), "lower bound of number of hydrogen bond acceptors")
 			("hba_ub", value<size_t>(&hba_ub)->default_value(default_hba_ub), "upper bound of number of hydrogen bond acceptors")
-			("help", "help information")
+			("help", "this help information")
 			("version", "version information")
 			("config", value<path>(), "options can be loaded from a configuration file")
 			;
@@ -194,7 +194,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialize a Mersenne Twister random number generator.
-	cout << "Using random seed " << seed << endl;
+	cout << "Seeding a random number generator with " << seed << endl;
 	mt19937_64 rng(seed);
 
 	// Initialize ligand filenames.
@@ -213,8 +213,8 @@ int main(int argc, char* argv[])
 	idock_args[0] = idock_path.string();
 	idock_args[1] = "--config";
 	idock_args[2] = "idock.conf";
-	idock_args[3] = "--input_folder";
-	idock_args[5] = "--output_folder";
+	idock_args[3] = "--ligand";
+	idock_args[5] = "--out";
 	idock_args[7] = "--log";
 	idock_args[9] = "--seed";
 	idock_args[10]= to_string(seed);
