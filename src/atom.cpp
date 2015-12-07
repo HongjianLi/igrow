@@ -37,6 +37,8 @@ const array<string, atom::n> atom::ad_strings =
 	"Sr", // 28
 	"U" , // 29
 	"Cs", // 30
+	"Mo", // 31
+	"Si", // 32
 };
 
 //! Covalent radii of AutoDock4 atom types. http://en.wikipedia.org/wiki/Atomic_radii_of_the_elements
@@ -73,6 +75,8 @@ const array<double, atom::n> atom::ad_covalent_radii =
 	1.92, // 28 = Sr
 	1.96, // 29 = U
 	2.25, // 30 = Cs
+	1.45, // 31 = Mo
+	1.11, // 32 = Si
 };
 
 //! AutoDock4 atomic masses. http://en.wikipedia.org/wiki/Relative_atomic_mass
@@ -109,6 +113,8 @@ const array<double, atom::n> atom::ad_atomic_masses =
 	 87.62, // 28 = Sr
 	238.03, // 29 = U
 	132.91, // 30 = Cs
+     95.95, // 31 = Mo
+     28.09, // 32 = Si
 };
 
 //! Returns the AutoDock4 atom type of the given string.
