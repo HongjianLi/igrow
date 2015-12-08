@@ -254,13 +254,11 @@ int main(int argc, char* argv[])
 
 		// Initialize the paths to current generation folder and its two subfolders.
 		const path generation_folder(out_path / to_string(generation));
-		const path dock0_folder(generation_folder / "dock0"); // Used to save generated ligands before docking.
-		const path dock1_folder(generation_folder / "dock1"); // Used to save docking output.
+		const path idock_folder(generation_folder / "idock"); // Used to save idock output.
 
 		// Create a new folder and two subfolders for current generation.
 		create_directory(generation_folder);
-		create_directory(dock0_folder);
-		create_directory(dock1_folder);
+		create_directory(idock_folder);
 
 		// Run crossover tasks.
 		cout << "Executing " << num_children << " crossover operations in parallel" << endl;
@@ -284,17 +282,17 @@ int main(int argc, char* argv[])
 				const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(rng);
 				const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(rng);
 
-				ligands.replace(index, new ligand(dock0_folder / filenames[i], l1, l2, g1, g2));
+				ligands.replace(index, new ligand(generation_folder / filenames[i], l1, l2, g1, g2));
 				ligands[index].save();
 				cnt.increment();
 			});
 		}
 		cnt.wait();
 
-		// Invoke idock to dock generated ligands in the dock0 folder and save the docked conformations in the dock1 folder.
-		cout << "Calling idock to dock " << num_children << " child ligands" << endl;
-		idock_args[4] = absolute(dock0_folder).string();
-		idock_args[6] = absolute(dock1_folder).string();
+		// Invoke idock to dock generated ligands and save the docked conformations in the idock subfolder.
+		cout << "Calling idock in the working directory of " << idock_example_path << endl;
+		idock_args[4] = absolute(generation_folder).string();
+		idock_args[6] = absolute(idock_folder).string();
 		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
 		{
@@ -302,11 +300,13 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands into the ligand subfolder.
+		// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands.
+		cout << "Refining ligands from docking results" << endl;
 		for (size_t i = 0; i < num_children; ++i)
 		{
-			ligands[num_elitists + i].update(dock1_folder / filenames[i]);
+			ligands[num_elitists + i].update(idock_folder / filenames[i]);
 		}
+		remove_all(idock_folder);
 
 		// Sort ligands in ascending order of free energy.
 		ligands.sort();
