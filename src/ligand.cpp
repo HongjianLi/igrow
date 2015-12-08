@@ -71,7 +71,10 @@ ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mm(
 		{
 			// A frame may be empty, e.g. "BRANCH   4   9" is immediately followed by "ENDBRANCH   4   9".
 			// This emptiness is likely to be caused by invalid input structure, especially when all the atoms are located in the same plane.
-			if (f->begin == atoms.size()) throw domain_error("Error parsing " + p.filename().string() + ": an empty BRANCH has been detected, indicating the input ligand structure is probably invalid.");
+			if (f->begin == atoms.size())
+			{
+				frames.pop_back();
+			}
 
 			// Now the parent of the following frame is the parent of current frame.
 			current = f->parent;
@@ -208,7 +211,7 @@ pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 		}
 		else // The serial numbers are not continuous, but they are sorted.
 		{
-			// Linear search at the moment. Binary search can be used.
+			// Perform linear search at the moment, which is fast enough. Binary search can also be used.
 			for (size_t i = f.begin; i < f.end; ++i)
 			{
 				if (srn == atoms[i].srn) return pair<size_t,  size_t>(k, i);
