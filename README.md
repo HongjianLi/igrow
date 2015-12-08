@@ -22,9 +22,11 @@ Supported operating systems and compilers
 * Mac OS X x86_64 and clang 3.7.0
 * Windows 8.1 x64 and Visual Studio 2015 Update 1
 
+Statically compiled 64-bit executables can be found in the `bin` directory.
 
-Compilation
------------
+
+Compilation from source code
+----------------------------
 
 igrow depends on [Boost C++ Libraries]. Boost 1.59.0 was tested. The must-be-built libraries required by igrow are `System`, `Filesystem` and `Program Options`. An unofficial header-only library, Boost.Process, is also required by igrow. The file `process.zip` must be extracted to the Boost distribution tree in order to pass compilation.
 
