@@ -7,7 +7,7 @@
 using namespace boost;
 using namespace boost::filesystem;
 
-ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mm(0)
+ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mol_mass(0)
 {
 	// Initialize necessary variables for constructing a ligand.
 	frames.reserve(30); // A ligand typically consists of <= 30 frames.
@@ -45,7 +45,7 @@ ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mm(
 			const atom& a = atoms.back();
 			if (a.is_hb_donor()) ++num_hb_donors;
 			if (a.is_hb_acceptor()) ++num_hb_acceptors;
-			mm += a.atomic_mass();
+			mol_mass += a.atomic_mass();
 		}
 		else if (record == "BRANCH")
 		{
@@ -107,7 +107,7 @@ bool ligand::crossoverable() const
 
 bool ligand::operator<(const ligand& l) const
 {
-	return fe < l.fe;
+	return id_score < l.id_score;
 }
 
 void ligand::save() const
@@ -170,18 +170,19 @@ void ligand::update(const path& p)
 {
 	if (!exists(p))
 	{
-		fe = 0;
+		id_score = 0;
 		return;
 	}
 	string line;
 	boost::filesystem::ifstream ifs(p);
 	getline(ifs, line); // MODEL        1
-	getline(ifs, line); // REMARK 921   NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.97 KCAL/MOL
-	fe = stod(line.substr(55, 7));
-	getline(ifs, line); // REMARK 922        TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.72 KCAL/MOL
-	getline(ifs, line); // REMARK 923 INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.74 KCAL/MOL
-	getline(ifs, line); // REMARK 924 INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.01 KCAL/MOL
-	getline(ifs, line); // REMARK 927      BINDING AFFINITY PREDICTED BY RF-SCORE:   6.53 PKD
+	getline(ifs, line); // REMARK 921   NORMALIZED FREE ENERGY PREDICTED BY IDOCK:   -4.97 KCAL/MOL
+	id_score = stod(line.substr(55, 8));
+	getline(ifs, line); // REMARK 922        TOTAL FREE ENERGY PREDICTED BY IDOCK:   -6.72 KCAL/MOL
+	getline(ifs, line); // REMARK 923 INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:   -7.74 KCAL/MOL
+	getline(ifs, line); // REMARK 924 INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:    1.01 KCAL/MOL
+	getline(ifs, line); // REMARK 927      BINDING AFFINITY PREDICTED BY RF-SCORE:    6.53 PKD
+	rf_score = stod(line.substr(55, 8));
 	for (size_t i = 0; getline(ifs, line);)
 	{
 		const string record = line.substr(0, 6);
@@ -221,7 +222,7 @@ pair<size_t, size_t> ligand::get_frame(const size_t srn) const
 	throw domain_error("Failed to find an atom with serial number " + to_string(srn));
 }
 
-ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx) : p(p), parent1(l1.p), parent2(l2.p), num_hb_donors(0), num_hb_acceptors(0), mm(0)
+ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f1idx, const size_t f2idx) : p(p), parent1(l1.p), parent2(l2.p), num_hb_donors(0), num_hb_acceptors(0), mol_mass(0)
 {
 	const frame& f1 = l1.frames[f1idx];
 	const frame& f2 = l2.frames[f2idx];
@@ -383,6 +384,6 @@ ligand::ligand(const path& p, const ligand& l1, const ligand& l2, const size_t f
 	{
 		if (a.is_hb_donor()) ++num_hb_donors;
 		if (a.is_hb_acceptor()) ++num_hb_acceptors;
-		mm += a.atomic_mass();
+		mol_mass += a.atomic_mass();
 	}
 }

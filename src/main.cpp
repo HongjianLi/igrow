@@ -11,7 +11,6 @@
 #include "safe_counter.hpp"
 #include "ligand.hpp"
 using namespace std::chrono;
-using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::process;
 using namespace boost::process::initializers;
@@ -32,7 +31,7 @@ int main(int argc, char* argv[])
 	{
 		// Initialize the default values of optional arguments.
 		const size_t default_seed = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
-		const size_t default_num_threads = thread::hardware_concurrency();
+		const size_t default_num_threads = boost::thread::hardware_concurrency();
 		const size_t default_num_children = 20;
 		const size_t default_num_elitists = 10;
 		const size_t default_num_generations = 8;
@@ -156,7 +155,7 @@ int main(int argc, char* argv[])
 	const size_t num_ligands = num_elitists + num_children;
 
 	// Initialize a pointer vector to dynamically hold and destroy generated ligands.
-	ptr_vector<ligand> ligands;
+	boost::ptr_vector<ligand> ligands;
 	ligands.resize(num_ligands);
 
 	// Extract initial elite ligands from the idock example folder.
@@ -170,15 +169,16 @@ int main(int argc, char* argv[])
 		// Skip the log file's header line, which is Ligand,nConfs,idock score (kcal/mol),RF-Score (pKd)
 		getline(ifs, line);
 
-		// Extract pairs of <Ligand, idock score>.
-		vector<pair<string, double>> records;
-		while (getline(ifs, line))
+		// Extract tuples of <Ligand, idock score, RF-Score> from the idock log file.
+		vector<tuple<string, double, double>> records;
+		for (const boost::char_separator<char> sep(","); getline(ifs, line);)
 		{
-			const size_t comma1 = line.find(',', 1);
-			const size_t comma2 = line.find(',', comma1 + 2);
-			if (!stoul(line.substr(comma1 + 1, comma2 - comma1 - 1))) continue;
-			const size_t comma3 = line.find(',', comma2 + 2);
-			records.emplace_back(line.substr(0, comma1), stod(line.substr(comma2 + 1, comma3 - comma2 - 1)));
+			boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+			auto tok_iter = tokens.begin();
+			const auto stem = *tok_iter++;
+			if (!stoul(*tok_iter++)) continue;
+			records.emplace_back(stem, stod(*tok_iter++), stod(*tok_iter++));
+			assert(tok_iter == tokens.end());
 		}
 
 		// Check if there are sufficient log records.
@@ -191,9 +191,9 @@ int main(int argc, char* argv[])
 		assert(num_elitists <= num_records);
 
 		// Sort the idock log records by their idock score.
-		sort(records.begin(), records.end(), [](const pair<string, double>& record0, const pair<string, double>& record1)
+		sort(records.begin(), records.end(), [](const tuple<string, double, double>& record0, const tuple<string, double, double>& record1)
 		{
-			return record0.second < record1.second;
+			return get<1>(record0) < get<1>(record1);
 		});
 
 		// Find crossoverable elite ligands.
@@ -201,14 +201,16 @@ int main(int argc, char* argv[])
 		{
 			// Create an elite ligand.
 			const auto record = records[j];
-			unique_ptr<ligand> elitist(new ligand(idock_example_out_path / (record.first + ".pdbqt")));
+			unique_ptr<ligand> elitist(new ligand(idock_example_out_path / (get<0>(record) + ".pdbqt")));
 
 			// Skip the elite ligand if it is not crossoverable.
 			if (!elitist->crossoverable()) continue;
 
 			// Save the elite ligand in the dynamic vector.
 			ligands.replace(i, elitist.release());
-			ligands[i++].fe = record.second;
+			ligands[i].id_score = get<1>(record);
+			ligands[i].rf_score = get<2>(record);
+			++i;
 		}
 		assert(ligands[num_elitists].p.empty());
 
@@ -253,10 +255,11 @@ int main(int argc, char* argv[])
 
 	// Initialize the log file for writing statistics.
 	boost::filesystem::ofstream log(log_path);
-	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),molecular mass (Da),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors\n";
+	log.setf(ios::fixed, ios::floatfield);
+	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,idock score (kcal/mol),RF-Score (pKd),molecular mass (Da),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors\n" << setprecision(2);
 
 	cout.setf(ios::fixed, ios::floatfield);
-	cout << setprecision(3);
+	cout << setprecision(2);
 	for (size_t generation = 1; generation <= num_generations; ++generation)
 	{
 		cout << "Running GA generation " << generation << endl;
@@ -330,8 +333,9 @@ int main(int argc, char* argv[])
 				<< ',' << l.connector1
 				<< ',' << l.parent2
 				<< ',' << l.connector2
-				<< ',' << l.fe
-				<< ',' << l.mm
+				<< ',' << l.id_score
+				<< ',' << l.rf_score
+				<< ',' << l.mol_mass
 				<< ',' << l.num_rotatable_bonds
 				<< ',' << l.num_hb_donors
 				<< ',' << l.num_hb_acceptors
