@@ -227,7 +227,7 @@ int main(int argc, char* argv[])
 	cout << "Using idock executable at " << idock_path << endl;
 
 	// Initialize arguments to idock.
-	vector<string> idock_args(9);
+	vector<string> idock_args(11);
 	idock_args[0] = idock_path.string();
 	idock_args[1] = "--config";
 	idock_args[2] = "idock.conf";
@@ -235,6 +235,8 @@ int main(int argc, char* argv[])
 	idock_args[5] = "--out";
 	idock_args[7] = "--seed";
 	idock_args[8] = to_string(seed);
+	idock_args[9] = "--seed";
+	idock_args[10]= num_threads;
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
