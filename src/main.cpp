@@ -159,36 +159,54 @@ int main(int argc, char* argv[])
 	ptr_vector<ligand> ligands;
 	ligands.resize(num_ligands);
 
-	// Parse the idock example folder to get initial elite ligands.
-	// TODO: sort log.csv
+	// Parse the idock example folder to extract initial elite ligands.
 	{
 		const path idock_example_log_path = idock_example_folder_path / default_log_path;
 		const path idock_example_out_path = idock_example_folder_path / default_out_path;
 		boost::filesystem::ifstream ifs(idock_example_log_path);
 		string line;
 		getline(ifs, line); // Skip the header line, which is Ligand,nConfs,idock score,RF-Score
-		size_t i = 0;
-		while (getline(ifs, line) && i < num_elitists)
+		vector<pair<string, double>> records;
+		while (getline(ifs, line))
 		{
-			// Parse the elite ligand.
 			const size_t comma1 = line.find(',', 1);
-			unique_ptr<ligand> elitist(new ligand(idock_example_out_path / (line.substr(0, comma1) + ".pdbqt")));
-
-			// Skip elite ligands that are not crossoverable.
-			if (!elitist->crossoverable()) continue;
-			ligands.replace(i, elitist.release());
-
-			// Parse the free energy.
 			const size_t comma2 = line.find(',', comma1 + 2);
+			if (!stoul(line.substr(comma1 + 1, comma2 - comma1 - 1))) continue;
 			const size_t comma3 = line.find(',', comma2 + 2);
-			ligands[i].fe = stod(line.substr(comma2 + 1, comma3 - comma2 - 1));
-
-			// Move to the next position.
-			++i;
+			records.emplace_back(line.substr(0, comma1), stod(line.substr(comma2 + 1, comma3 - comma2 - 1)));
 		}
 
 		// Check if there are sufficient initial elite ligands.
-		if (i < num_elitists)
+		const size_t num_records = records.size();
+		if (num_records < num_elitists)
+		{
+			cerr << "Failed to construct an initial generation because the idock example log " << idock_example_log_path << " contains less than " << num_elitists << " ligands." << endl;
+			return 1;
+		}
+		assert(num_elitists <= num_records);
+
+		// Sort the idock log records by their idock score.
+		sort(records.begin(), records.end(), [](const pair<string, double>& record0, const pair<string, double>& record1)
+		{
+			return record0.second < record1.second;
+		});
+		for (size_t i = 0, j = 0; i < num_elitists && j < num_records; ++j)
+		{
+			// Parse the elite ligand.
+			const auto record = records[j];
+			unique_ptr<ligand> elitist(new ligand(idock_example_out_path / (record.first + ".pdbqt")));
+
+			// Skip elite ligands that are not crossoverable.
+			if (!elitist->crossoverable()) continue;
+
+			// Save the elite ligand in the dynamic vector.
+			ligands.replace(i, elitist.release());
+			ligands[i++].fe = record.second;
+		}
+		assert(ligands[num_elitists].p.empty());
+
+		// Check if there are sufficient initial elite ligands.
+		if (ligands[num_elitists - 1].p.empty())
 		{
 			cerr << "Failed to construct an initial generation because the idock example log " << idock_example_log_path << " contains less than " << num_elitists << " crossoverable ligands whose number of rotatable bonds is at least 1." << endl;
 			return 1;
@@ -275,8 +293,8 @@ int main(int argc, char* argv[])
 		}
 		cnt.wait();
 
-		// Invoke idock.
-		cout << "Calling idock to perform docking and predict binding affinity" << endl;
+		// Invoke idock to dock generated ligands in the dock0 folder and save the docked conformations in the dock1 folder.
+		cout << "Calling idock to dock " << num_children << " child ligands" << endl;
 		idock_args[4] = absolute(dock0_folder).string();
 		idock_args[6] = absolute(dock1_folder).string();
 		idock_args[8] = absolute(generation_folder / default_log_path).string();
