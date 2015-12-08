@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
 	idock_args[7] = "--seed";
 	idock_args[8] = to_string(seed);
 	idock_args[9] = "--threads";
-	idock_args[10]= num_threads;
+	idock_args[10]= to_string(num_threads);
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
