@@ -10,6 +10,7 @@
 #include "io_service_pool.hpp"
 #include "safe_counter.hpp"
 #include "ligand.hpp"
+using namespace std::chrono;
 using namespace boost;
 using namespace boost::filesystem;
 using namespace boost::process;
@@ -30,7 +31,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the default values of optional arguments.
-		const size_t default_seed = std::chrono::system_clock::now().time_since_epoch().count();
+		const size_t default_seed = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
 		const size_t default_num_threads = thread::hardware_concurrency();
 		const size_t default_num_children = 20;
 		const size_t default_num_elitists = 10;
@@ -58,21 +59,21 @@ int main(int argc, char* argv[])
 		options_description miscellaneous_options("options (optional)");
 		miscellaneous_options.add_options()
 			("seed", value<size_t>(&seed)->default_value(default_seed), "explicit non-negative random seed")
-			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "number of worker threads to use")
-			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "number of elite ligands to carry over")
-			("children", value<size_t>(&num_children)->default_value(default_num_children), "number of child ligands created from elite ligands")
-			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "number of generations")
-			("mms_lb", value<double>(&mms_lb)->default_value(default_mms_lb), "lower bound of molecular mass in Dalton unit")
-			("mms_ub", value<double>(&mms_ub)->default_value(default_mms_ub), "upper bound of molecular mass in Dalton unit")
-			("nrb_lb", value<size_t>(&nrb_lb)->default_value(default_nrb_lb), "lower bound of number of rotatable bonds")
-			("nrb_ub", value<size_t>(&nrb_ub)->default_value(default_nrb_ub), "upper bound of number of rotatable bonds")
-			("hbd_lb", value<size_t>(&hbd_lb)->default_value(default_hbd_lb), "lower bound of number of hydrogen bond donors")
-			("hbd_ub", value<size_t>(&hbd_ub)->default_value(default_hbd_ub), "upper bound of number of hydrogen bond donors")
-			("hba_lb", value<size_t>(&hba_lb)->default_value(default_hba_lb), "lower bound of number of hydrogen bond acceptors")
-			("hba_ub", value<size_t>(&hba_ub)->default_value(default_hba_ub), "upper bound of number of hydrogen bond acceptors")
+			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "# of worker threads to use")
+			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "# of elite ligands to carry over")
+			("children", value<size_t>(&num_children)->default_value(default_num_children), "# of child ligands created from elite ligands")
+			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "# of GA generations")
+			("mms_lb", value<double>(&mms_lb)->default_value(default_mms_lb), "minimum molecular mass in Dalton")
+			("mms_ub", value<double>(&mms_ub)->default_value(default_mms_ub), "maximum molecular mass in Dalton")
+			("nrb_lb", value<size_t>(&nrb_lb)->default_value(default_nrb_lb), "minimum # of rotatable bonds")
+			("nrb_ub", value<size_t>(&nrb_ub)->default_value(default_nrb_ub), "maximum # of rotatable bonds")
+			("hbd_lb", value<size_t>(&hbd_lb)->default_value(default_hbd_lb), "minimum # of hydrogen bond donors")
+			("hbd_ub", value<size_t>(&hbd_ub)->default_value(default_hbd_ub), "maximum # of hydrogen bond donors")
+			("hba_lb", value<size_t>(&hba_lb)->default_value(default_hba_lb), "minimum # of hydrogen bond acceptors")
+			("hba_ub", value<size_t>(&hba_ub)->default_value(default_hba_ub), "maximum # of hydrogen bond acceptors")
 			("help", "this help information")
 			("version", "version information")
-			("config", value<path>(), "options can be loaded from a configuration file")
+			("config", value<path>(), "configuration file to load options from")
 			;
 		options_description all_options;
 		all_options.add(input_options).add(output_options).add(miscellaneous_options);
@@ -246,7 +247,7 @@ int main(int argc, char* argv[])
 
 	// Initialize log file for writing statistics.
 	boost::filesystem::ofstream log(log_path);
-	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors,molecular mass (Da)\n";
+	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),molecular mass (Da),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors\n";
 
 	cout.setf(ios::fixed, ios::floatfield);
 	cout << setprecision(3);
@@ -324,10 +325,10 @@ int main(int argc, char* argv[])
 				<< ',' << l.parent2
 				<< ',' << l.connector2
 				<< ',' << l.fe
+				<< ',' << l.mm
 				<< ',' << l.num_rotatable_bonds
 				<< ',' << l.num_hb_donors
 				<< ',' << l.num_hb_acceptors
-				<< ',' << l.mm
 				<< endl;
 		}
 	}
