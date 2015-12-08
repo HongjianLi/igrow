@@ -18,13 +18,13 @@ using namespace boost::process::initializers;
 
 int main(int argc, char* argv[])
 {
-	// Initialize the default path to log files. It will be reused when calling idock.
+	// Initialize constants.
 	const path default_out_path = "output";
 	const path default_log_path = "log.csv";
 
 	// Declare program option variables.
-	path idock_example_folder_path, out_path, log_path;
-	size_t num_threads, seed, num_elitists, num_children, num_generations, nrb_lb, nrb_ub, hbd_lb, hbd_ub, hba_lb, hba_ub;
+	path idock_example_path, out_path, log_path;
+	size_t seed, num_threads, num_elitists, num_children, num_generations, nrb_lb, nrb_ub, hbd_lb, hbd_ub, hba_lb, hba_ub;
 	double mms_lb, mms_ub;
 
 	// Process program options.
@@ -49,11 +49,11 @@ int main(int argc, char* argv[])
 		using namespace boost::program_options;
 		options_description input_options("input (required)");
 		input_options.add_options()
-			("idock_example_folder", value<path>(&idock_example_folder_path)->required(), "path to an idock example folder")
+			("idock_example", value<path>(&idock_example_path)->required(), "path to an idock example folder")
 			;
 		options_description output_options("output (optional)");
 		output_options.add_options()
-			("out", value<path>(&out_path)->default_value(default_out_path), "folder of output results")
+			("out", value<path>(&out_path)->default_value(default_out_path), "folder of generated ligands")
 			("log", value<path>(&log_path)->default_value(default_log_path), "log file in csv format")
 			;
 		options_description miscellaneous_options("options (optional)");
@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 			("threads", value<size_t>(&num_threads)->default_value(default_num_threads), "# of worker threads to use")
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "# of elite ligands to carry over")
 			("children", value<size_t>(&num_children)->default_value(default_num_children), "# of child ligands created from elite ligands")
-			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "# of GA generations")
+			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "# of GA generations to run")
 			("mms_lb", value<double>(&mms_lb)->default_value(default_mms_lb), "minimum molecular mass in Dalton")
 			("mms_ub", value<double>(&mms_ub)->default_value(default_mms_ub), "maximum molecular mass in Dalton")
 			("nrb_lb", value<size_t>(&nrb_lb)->default_value(default_nrb_lb), "minimum # of rotatable bonds")
@@ -114,20 +114,19 @@ int main(int argc, char* argv[])
 		vm.notify();
 
 		// Validate idock example folder.
-		if (!exists(idock_example_folder_path))
+		if (!exists(idock_example_path))
 		{
-			cerr << "idock example folder " << idock_example_folder_path << " does not exist" << endl;
+			cerr << "Option idock_example " << idock_example_path << " does not exist" << endl;
 			return 1;
 		}
-		if (!is_directory(idock_example_folder_path))
+		if (!is_directory(idock_example_path))
 		{
-			cerr << "idock example folder " << idock_example_folder_path << " is not a directory" << endl;
+			cerr << "Option idock_example " << idock_example_path << " is not a directory" << endl;
 			return 1;
 		}
 
 		// Validate output folder.
-		remove_all(out_path);
-		if (!create_directories(out_path))
+		if (!exists(out_path) && !create_directories(out_path))
 		{
 			cerr << "Failed to create output folder " << out_path << endl;
 			return 1;
@@ -136,7 +135,7 @@ int main(int argc, char* argv[])
 		// Validate log_path.
 		if (is_directory(log_path))
 		{
-			cerr << "log path " << log_path << " is a directory" << endl;
+			cerr << "Option log " << log_path << " is a directory" << endl;
 			return 1;
 		}
 
@@ -153,20 +152,25 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// The number of ligands (i.e. population size) is equal to the number of elitists plus children.
+	// Calculate the number of ligands (i.e. population size), which is the sum of number of elitists and children.
 	const size_t num_ligands = num_elitists + num_children;
 
 	// Initialize a pointer vector to dynamically hold and destroy generated ligands.
 	ptr_vector<ligand> ligands;
 	ligands.resize(num_ligands);
 
-	// Parse the idock example folder to extract initial elite ligands.
+	// Extract initial elite ligands from the idock example folder.
+	cout << "Extracting " << num_elitists << " elite ligands from " << idock_example_path << endl;
 	{
-		const path idock_example_log_path = idock_example_folder_path / default_log_path;
-		const path idock_example_out_path = idock_example_folder_path / default_out_path;
+		const path idock_example_log_path = idock_example_path / default_log_path;
+		const path idock_example_out_path = idock_example_path / default_out_path;
 		boost::filesystem::ifstream ifs(idock_example_log_path);
 		string line;
-		getline(ifs, line); // Skip the header line, which is Ligand,nConfs,idock score,RF-Score
+
+		// Skip the log file's header line, which is Ligand,nConfs,idock score (kcal/mol),RF-Score (pKd)
+		getline(ifs, line);
+
+		// Extract pairs of <Ligand, idock score>.
 		vector<pair<string, double>> records;
 		while (getline(ifs, line))
 		{
@@ -177,7 +181,7 @@ int main(int argc, char* argv[])
 			records.emplace_back(line.substr(0, comma1), stod(line.substr(comma2 + 1, comma3 - comma2 - 1)));
 		}
 
-		// Check if there are sufficient initial elite ligands.
+		// Check if there are sufficient log records.
 		const size_t num_records = records.size();
 		if (num_records < num_elitists)
 		{
@@ -191,13 +195,15 @@ int main(int argc, char* argv[])
 		{
 			return record0.second < record1.second;
 		});
+
+		// Find crossoverable elite ligands.
 		for (size_t i = 0, j = 0; i < num_elitists && j < num_records; ++j)
 		{
-			// Parse the elite ligand.
+			// Create an elite ligand.
 			const auto record = records[j];
 			unique_ptr<ligand> elitist(new ligand(idock_example_out_path / (record.first + ".pdbqt")));
 
-			// Skip elite ligands that are not crossoverable.
+			// Skip the elite ligand if it is not crossoverable.
 			if (!elitist->crossoverable()) continue;
 
 			// Save the elite ligand in the dynamic vector.
@@ -245,7 +251,7 @@ int main(int argc, char* argv[])
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
-	// Initialize log file for writing statistics.
+	// Initialize the log file for writing statistics.
 	boost::filesystem::ofstream log(log_path);
 	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,free energy (kcal/mol),molecular mass (Da),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors\n";
 
@@ -253,7 +259,7 @@ int main(int argc, char* argv[])
 	cout << setprecision(3);
 	for (size_t generation = 1; generation <= num_generations; ++generation)
 	{
-		cout << "Running generation " << generation << endl;
+		cout << "Running GA generation " << generation << endl;
 
 		// Initialize the paths to current generation folder and its two subfolders.
 		const path generation_folder(out_path / to_string(generation));
@@ -299,7 +305,7 @@ int main(int argc, char* argv[])
 		idock_args[4] = absolute(dock0_folder).string();
 		idock_args[6] = absolute(dock1_folder).string();
 		idock_args[8] = absolute(generation_folder / default_log_path).string();
-		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_folder_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
+		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
 		{
 			cerr << "idock exited with code " << exit_code << endl;
