@@ -1,31 +1,32 @@
 igrow
 =====
 
-igrow is a multithreaded structure-based [drug design] tool for computational drug discovery. It is inspired by [AutoGrow], and is hosted by GitHub at https://github.com/HongjianLi/igrow under [Apache License 2.0].
+igrow is an automatic structure-based [drug design] tool for computer-aided drug discovery. It was inspired by [AutoGrow], and is hosted on GitHub at https://github.com/HongjianLi/igrow under [Apache License 2.0].
 
 
 Features
 --------
 
-* igrow uses [idock] as backend docking engine.
+* igrow uses [idock] as the backend docking engine.
 * igrow implements branch exchange as its crossover operator.
-* igrow digests ligands in pdbqt format, saving the effort of calling the prepare_ligand4 python script.
-* igrow uses io service pool to reuse threads and maintain a high CPU utilization throughout the entire synthsizing procedure.
-* igrow utilizes dynamic pointer vector to cache and sort ligands.
-* igrow traces the sources of generated ligands and dumps the statistics in csv format so that users can easily get to know how the ligands are synthesized from the initial elite ligands.
+* igrow reads and writes ligands in pdbqt format without file format conversion.
+* igrow uses an io service pool to reuse threads and maintain a high CPU utilization throughout the entire synthsizing procedure.
+* igrow utilizes a dynamic pointer vector to cache and sort generated ligands.
+* igrow traces the sources of generated ligands and outputs the statistics in csv format.
 
 
 Supported operating systems and compilers
 -----------------------------------------
 
-* Arch Linux 3.12.9 x86_64 and CLANG 3.4
-* Windows 7 SP1 x64 and Visual Studio 2013 Update 1
+* Arch Linux x86_64 and clang 3.7.0
+* Mac OS X x86_64 and clang 3.7.0
+* Windows 8.1 x64 and Visual Studio 2015 Update 1
 
 
 Compilation
 -----------
 
-igrow depends on [Boost C++ Libraries]. Boost 1.55.0 is supported. The must-be-built libraries required by igrow are `System`, `Filesystem` and `Program Options`. An unofficial header-only library, Boost.Process, is also required by igrow. The file `process.zip` must be extracted to the Boost distribution tree in order to pass compilation.
+igrow depends on [Boost C++ Libraries]. Boost 1.59.0 was tested. The must-be-built libraries required by igrow are `System`, `Filesystem` and `Program Options`. An unofficial header-only library, Boost.Process, is also required by igrow. The file `process.zip` must be extracted to the Boost distribution tree in order to pass compilation.
 
 ### Compilation on Linux
 
@@ -39,11 +40,11 @@ The generated objects will be placed in the `obj` folder, and the generated exec
 
 ### Compilation on Windows
 
-Visual Studio 2013 solution and project files are provided. To compile, simply run
+Visual Studio 2015 solution and project files are provided. To compile, simply run
 
     msbuild /t:Build /p:Configuration=Release
 
-Or one may open `igrow.sln` in Visual Studio 2013 and do a full rebuild.
+Or one may open `igrow.sln` in Visual Studio 2015 and do a full rebuild.
 
 The generated objects will be placed in the `obj` folder, and the generated executable will be placed in the `bin` folder.
 
@@ -57,13 +58,13 @@ To display a full list of available options, simply run the program without argu
 
     igrow
 
-The `examples` folder contains several use cases. For example, to grow TMC278 and dock the generated ligands against HIV-RT of PDB ID 2ZD1,
+The `examples` folder contains several use cases. For example, to grow Staurosporine and dock the generated ligands against CDK2 of PDB ID 1AQ1,
 
-    cd examples/2ZD1
+    cd examples/1AQ1
 
 One can supply the options from command line arguments
 
-    igrow --initial_generation_csv ../../../idock/examples/2ZD1/ZINC/log.csv --fragment_folder ../../fragments --idock_config idock.cfg
+    igrow --idock_example ../../../idock/examples/1AQ1
 
 Or one can instruct igrow to load the options from a configuration file
 
@@ -90,13 +91,13 @@ Change Log
 
 ### 1.0 (under construction)
 
-* Used idock as backend docking engine.
+* Used idock as the backend docking engine.
 * Supported direct PDBQT manipulation without file format conversion.
-* Used dynamic pointer vector to cache ligands.
-* Supported dumping statistics and traceability of created ligands.
+* Used a dynamic pointer vector to cache ligands.
+* Supported outputing statistics and traceability of created ligands.
 * Used docked atom coordinates to construct child ligands of the next generation.
 * Parallelized crossover operations.
-* Provided precompiled executables for 64-bit Linux and Windows.
+* Provided precompiled executables for 64-bit Linux, Mac and Windows.
 
 
 Author
@@ -115,7 +116,6 @@ Logo
 [AutoGrow]: http://autogrow.ucsd.edu
 [idock]: https://github.com/HongjianLi/idock
 [Apache License 2.0]: http://www.apache.org/licenses/LICENSE-2.0.html
-[C++11]: http://en.wikipedia.org/wiki/C++11
 [Boost C++ Libraries]: http://www.boost.org
 [doxygen]: http://www.doxygen.org
 [Jacky Lee]: http://www.cse.cuhk.edu.hk/~hjli
