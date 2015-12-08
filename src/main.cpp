@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
 	idock_args[5] = "--out";
 	idock_args[7] = "--seed";
 	idock_args[8] = to_string(seed);
-	idock_args[9] = "--seed";
+	idock_args[9] = "--threads";
 	idock_args[10]= num_threads;
 
 	// Initialize an io service pool and create worker threads for later use.
