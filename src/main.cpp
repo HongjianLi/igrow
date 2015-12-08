@@ -17,12 +17,8 @@ using namespace boost::process::initializers;
 
 int main(int argc, char* argv[])
 {
-	// Initialize constants.
-	const path default_out_path = "output";
-	const path default_log_path = "log.csv";
-
 	// Declare program option variables.
-	path idock_example_path, out_path, log_path;
+	path idock_example_path, out_path;
 	size_t seed, num_threads, num_elitists, num_children, num_generations, nrb_lb, nrb_ub, hbd_lb, hbd_ub, hba_lb, hba_ub;
 	double mms_lb, mms_ub;
 
@@ -30,6 +26,7 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the default values of optional arguments.
+		const path default_out_path = ".";
 		const size_t default_seed = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
 		const size_t default_num_threads = boost::thread::hardware_concurrency();
 		const size_t default_num_children = 20;
@@ -53,7 +50,6 @@ int main(int argc, char* argv[])
 		options_description output_options("output (optional)");
 		output_options.add_options()
 			("out", value<path>(&out_path)->default_value(default_out_path), "folder of generated ligands")
-			("log", value<path>(&log_path)->default_value(default_log_path), "log file in csv format")
 			;
 		options_description miscellaneous_options("options (optional)");
 		miscellaneous_options.add_options()
@@ -131,13 +127,6 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Validate log_path.
-		if (is_directory(log_path))
-		{
-			cerr << "Option log " << log_path << " is a directory" << endl;
-			return 1;
-		}
-
 		// Validate miscellaneous options.
 		if (!num_threads)
 		{
@@ -160,9 +149,9 @@ int main(int argc, char* argv[])
 
 	// Extract initial elite ligands from the idock example folder.
 	cout << "Extracting " << num_elitists << " elite ligands from " << idock_example_path << endl;
+	const path default_log_path = "log.csv";
 	{
 		const path idock_example_log_path = idock_example_path / default_log_path;
-		const path idock_example_out_path = idock_example_path / default_out_path;
 		boost::filesystem::ifstream ifs(idock_example_log_path);
 		string line;
 
@@ -201,7 +190,7 @@ int main(int argc, char* argv[])
 		{
 			// Create an elite ligand.
 			const auto record = records[j];
-			unique_ptr<ligand> elitist(new ligand(idock_example_out_path / (get<0>(record) + ".pdbqt")));
+			unique_ptr<ligand> elitist(new ligand(idock_example_path / (get<0>(record) + ".pdbqt")));
 
 			// Skip the elite ligand if it is not crossoverable.
 			if (!elitist->crossoverable()) continue;
@@ -238,15 +227,14 @@ int main(int argc, char* argv[])
 	cout << "Using idock executable at " << idock_path << endl;
 
 	// Initialize arguments to idock.
-	vector<string> idock_args(11);
+	vector<string> idock_args(9);
 	idock_args[0] = idock_path.string();
 	idock_args[1] = "--config";
 	idock_args[2] = "idock.conf";
 	idock_args[3] = "--ligand";
 	idock_args[5] = "--out";
-	idock_args[7] = "--log";
-	idock_args[9] = "--seed";
-	idock_args[10]= to_string(seed);
+	idock_args[7] = "--seed";
+	idock_args[8] = to_string(seed);
 
 	// Initialize an io service pool and create worker threads for later use.
 	cout << "Creating an io service pool of " << num_threads << " worker thread" << (num_threads == 1 ? "" : "s") << endl;
@@ -254,7 +242,7 @@ int main(int argc, char* argv[])
 	safe_counter<size_t> cnt;
 
 	// Initialize the log file for writing statistics.
-	boost::filesystem::ofstream log(log_path);
+	boost::filesystem::ofstream log(out_path / default_log_path);
 	log.setf(ios::fixed, ios::floatfield);
 	log << "generation,ligand,parent 1,connector 1,parent 2,connector 2,idock score (kcal/mol),RF-Score (pKd),molecular mass (Da),rotatable bonds,hydrogen bond donors,hydrogen bond acceptors\n" << setprecision(2);
 
@@ -307,7 +295,6 @@ int main(int argc, char* argv[])
 		cout << "Calling idock to dock " << num_children << " child ligands" << endl;
 		idock_args[4] = absolute(dock0_folder).string();
 		idock_args[6] = absolute(dock1_folder).string();
-		idock_args[8] = absolute(generation_folder / default_log_path).string();
 		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
 		{
