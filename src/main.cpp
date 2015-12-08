@@ -18,10 +18,11 @@ using namespace boost::process::initializers;
 int main(int argc, char* argv[])
 {
 	// Initialize the default path to log files. It will be reused when calling idock.
+	const path default_out_path = "output";
 	const path default_log_path = "log.csv";
 
 	// Declare program option variables.
-	path idock_example_folder_path, output_folder_path, log_path;
+	path idock_example_folder_path, out_path, log_path;
 	size_t num_threads, seed, num_elitists, num_children, num_generations, nrb_lb, nrb_ub, hbd_lb, hbd_ub, hba_lb, hba_ub;
 	double mms_lb, mms_ub;
 
@@ -29,7 +30,6 @@ int main(int argc, char* argv[])
 	try
 	{
 		// Initialize the default values of optional arguments.
-		const path default_output_folder_path = "output";
 		const size_t default_seed = std::chrono::system_clock::now().time_since_epoch().count();
 		const size_t default_num_threads = thread::hardware_concurrency();
 		const size_t default_num_children = 20;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
 			;
 		options_description output_options("output (optional)");
 		output_options.add_options()
-			("out", value<path>(&output_folder_path)->default_value(default_output_folder_path), "folder of output results")
+			("out", value<path>(&out_path)->default_value(default_out_path), "folder of output results")
 			("log", value<path>(&log_path)->default_value(default_log_path), "log file in csv format")
 			;
 		options_description miscellaneous_options("options (optional)");
@@ -125,10 +125,10 @@ int main(int argc, char* argv[])
 		}
 
 		// Validate output folder.
-		remove_all(output_folder_path);
-		if (!create_directories(output_folder_path))
+		remove_all(out_path);
+		if (!create_directories(out_path))
 		{
-			cerr << "Failed to create output folder " << output_folder_path << endl;
+			cerr << "Failed to create output folder " << out_path << endl;
 			return 1;
 		}
 
@@ -160,26 +160,28 @@ int main(int argc, char* argv[])
 	ligands.resize(num_ligands);
 
 	// Parse the idock example folder to get initial elite ligands.
+	// TODO: sort log.csv
 	{
 		const path idock_example_log_path = idock_example_folder_path / default_log_path;
-		const path idock_example_output_path = idock_example_folder_path / "output";
+		const path idock_example_out_path = idock_example_folder_path / default_out_path;
 		boost::filesystem::ifstream ifs(idock_example_log_path);
 		string line;
-		getline(ifs, line); // Ligand,Energy1,Energy2,Energy3,Energy4,Energy5,Energy6,Energy7,Energy8,Energy9
+		getline(ifs, line); // Skip the header line, which is Ligand,nConfs,idock score,RF-Score
 		size_t i = 0;
 		while (getline(ifs, line) && i < num_elitists)
 		{
 			// Parse the elite ligand.
 			const size_t comma1 = line.find(',', 1);
-			unique_ptr<ligand> elitist(new ligand(idock_example_output_path / (line.substr(0, comma1) + ".pdbqt")));
+			unique_ptr<ligand> elitist(new ligand(idock_example_out_path / (line.substr(0, comma1) + ".pdbqt")));
 
-			// Skip elite ligands that are not feasible of crossover.
-			if (!elitist->crossover_feasible()) continue;
+			// Skip elite ligands that are not crossoverable.
+			if (!elitist->crossoverable()) continue;
 			ligands.replace(i, elitist.release());
 
 			// Parse the free energy.
 			const size_t comma2 = line.find(',', comma1 + 2);
-			ligands[i].fe = stod(line.substr(comma1 + 1, comma2 - comma1 - 1));
+			const size_t comma3 = line.find(',', comma2 + 2);
+			ligands[i].fe = stod(line.substr(comma2 + 1, comma3 - comma2 - 1));
 
 			// Move to the next position.
 			++i;
@@ -188,7 +190,7 @@ int main(int argc, char* argv[])
 		// Check if there are sufficient initial elite ligands.
 		if (i < num_elitists)
 		{
-			cerr << "Failed to construct initial generation because the idock example log " << idock_example_log_path << " contains less than " << num_elitists << " crossoverable ligands." << endl;
+			cerr << "Failed to construct an initial generation because the idock example log " << idock_example_log_path << " contains less than " << num_elitists << " crossoverable ligands whose number of rotatable bonds is at least 1." << endl;
 			return 1;
 		}
 	}
@@ -235,16 +237,17 @@ int main(int argc, char* argv[])
 		cout << "Running generation " << generation << endl;
 
 		// Initialize the paths to current generation folder and its two subfolders.
-		const path generation_folder(output_folder_path / to_string(generation));
-		const path  input_folder(generation_folder /  "input");
-		const path output_folder(generation_folder / "output");
+		const path generation_folder(out_path / to_string(generation));
+		const path dock0_folder(generation_folder / "dock0"); // Used to save generated ligands before docking.
+		const path dock1_folder(generation_folder / "dock1"); // Used to save docking output.
 
 		// Create a new folder and two subfolders for current generation.
 		create_directory(generation_folder);
-		create_directory( input_folder);
-		create_directory(output_folder);
+		create_directory(dock0_folder);
+		create_directory(dock1_folder);
 
-		// Create crossover tasks.
+		// Run crossover tasks.
+		cout << "Executing " << num_children << " crossover operations in parallel" << endl;
 		cnt.init(num_children);
 		for (size_t i = 0; i < num_children; ++i)
 		{
@@ -257,7 +260,7 @@ int main(int argc, char* argv[])
 				mt19937_64 rng(s);
 				uniform_int_distribution<size_t> uniform_elitist(0, num_elitists - 1);
 
-				// Obtain constant references to the two parent ligands.
+				// Obtain references to two randomly selected parent ligands.
 				ligand& l1 = ligands[uniform_elitist(rng)];
 				ligand& l2 = ligands[uniform_elitist(rng)];
 
@@ -265,7 +268,7 @@ int main(int argc, char* argv[])
 				const size_t g1 = uniform_int_distribution<size_t>(1, l1.num_rotatable_bonds)(rng);
 				const size_t g2 = uniform_int_distribution<size_t>(1, l2.num_rotatable_bonds)(rng);
 
-				ligands.replace(index, new ligand(input_folder / filenames[i], l1, l2, g1, g2));
+				ligands.replace(index, new ligand(dock0_folder / filenames[i], l1, l2, g1, g2));
 				ligands[index].save();
 				cnt.increment();
 			});
@@ -273,8 +276,9 @@ int main(int argc, char* argv[])
 		cnt.wait();
 
 		// Invoke idock.
-		idock_args[4] = absolute( input_folder).string();
-		idock_args[6] = absolute(output_folder).string();
+		cout << "Calling idock to perform docking and predict binding affinity" << endl;
+		idock_args[4] = absolute(dock0_folder).string();
+		idock_args[6] = absolute(dock1_folder).string();
 		idock_args[8] = absolute(generation_folder / default_log_path).string();
 		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_folder_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
@@ -286,7 +290,7 @@ int main(int argc, char* argv[])
 		// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands into the ligand subfolder.
 		for (size_t i = 0; i < num_children; ++i)
 		{
-			ligands[num_elitists + i].update(output_folder / filenames[i]);
+			ligands[num_elitists + i].update(dock1_folder / filenames[i]);
 		}
 
 		// Sort ligands in ascending order of free energy.

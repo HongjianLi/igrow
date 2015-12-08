@@ -50,7 +50,7 @@ public:
 	explicit ligand(const path& p, const ligand& l1, const ligand& l2, const size_t g1, const size_t g2);
 
 	//! Returns true if the current ligand is able to perform crossover.
-	bool crossover_feasible() const;
+	bool crossoverable() const;
 
 	//! Compares the efficacy of the current ligand and the other ligand for sorting ptr_vector<ligand>.
 	bool operator<(const ligand& l) const;

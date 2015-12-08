@@ -97,7 +97,7 @@ ligand::ligand(const path& p) : p(p), num_hb_donors(0), num_hb_acceptors(0), mm(
 	assert(max_atom_number >= num_atoms);
 }
 
-bool ligand::crossover_feasible() const
+bool ligand::crossoverable() const
 {
 	return num_rotatable_bonds > 0;
 }
@@ -173,12 +173,12 @@ void ligand::update(const path& p)
 	string line;
 	boost::filesystem::ifstream ifs(p);
 	getline(ifs, line); // MODEL        1
-	getline(ifs, line); // REMARK       NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.976 KCAL/MOL
-	fe = stod(line.substr(55, 8));
-	getline(ifs, line); // REMARK            TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.722 KCAL/MOL
-	getline(ifs, line); // REMARK     INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.740 KCAL/MOL
-	getline(ifs, line); // REMARK     INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.018 KCAL/MOL
-	getline(ifs, line); // REMARK    RF-SCORE BINDING AFFINITY PREDICTED BY IDOCK:   6.532 PKD
+	getline(ifs, line); // REMARK 921   NORMALIZED FREE ENERGY PREDICTED BY IDOCK:  -4.97 KCAL/MOL
+	fe = stod(line.substr(55, 7));
+	getline(ifs, line); // REMARK 922        TOTAL FREE ENERGY PREDICTED BY IDOCK:  -6.72 KCAL/MOL
+	getline(ifs, line); // REMARK 923 INTER-LIGAND FREE ENERGY PREDICTED BY IDOCK:  -7.74 KCAL/MOL
+	getline(ifs, line); // REMARK 924 INTRA-LIGAND FREE ENERGY PREDICTED BY IDOCK:   1.01 KCAL/MOL
+	getline(ifs, line); // REMARK 927      BINDING AFFINITY PREDICTED BY RF-SCORE:   6.53 PKD
 	for (size_t i = 0; getline(ifs, line);)
 	{
 		const string record = line.substr(0, 6);
