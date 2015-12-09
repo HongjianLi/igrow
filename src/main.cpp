@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 		const size_t default_num_threads = boost::thread::hardware_concurrency();
 		const size_t default_num_children = 20;
 		const size_t default_num_elitists = 10;
-		const size_t default_num_generations = 8;
+		const size_t default_num_generations = 4;
 
 		// Set up the description of options.
 		using namespace boost::program_options;
