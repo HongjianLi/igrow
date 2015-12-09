@@ -32,14 +32,6 @@ int main(int argc, char* argv[])
 		const size_t default_num_children = 20;
 		const size_t default_num_elitists = 10;
 		const size_t default_num_generations = 8;
-		const size_t default_nrb_lb =  0;
-		const size_t default_nrb_ub = 10;
-		const size_t default_hbd_lb =  0;
-		const size_t default_hbd_ub =  5;
-		const size_t default_hba_lb =  0;
-		const size_t default_hba_ub = 10;
-		const double default_mms_lb = 300;
-		const double default_mms_ub = 500;
 
 		// Set up the description of options.
 		using namespace boost::program_options;
@@ -58,14 +50,6 @@ int main(int argc, char* argv[])
 			("elitists", value<size_t>(&num_elitists)->default_value(default_num_elitists), "# of elite ligands to carry over")
 			("children", value<size_t>(&num_children)->default_value(default_num_children), "# of child ligands created from elite ligands")
 			("generations", value<size_t>(&num_generations)->default_value(default_num_generations), "# of GA generations to run")
-			("mms_lb", value<double>(&mms_lb)->default_value(default_mms_lb), "minimum molecular mass in Dalton")
-			("mms_ub", value<double>(&mms_ub)->default_value(default_mms_ub), "maximum molecular mass in Dalton")
-			("nrb_lb", value<size_t>(&nrb_lb)->default_value(default_nrb_lb), "minimum # of rotatable bonds")
-			("nrb_ub", value<size_t>(&nrb_ub)->default_value(default_nrb_ub), "maximum # of rotatable bonds")
-			("hbd_lb", value<size_t>(&hbd_lb)->default_value(default_hbd_lb), "minimum # of hydrogen bond donors")
-			("hbd_ub", value<size_t>(&hbd_ub)->default_value(default_hbd_ub), "maximum # of hydrogen bond donors")
-			("hba_lb", value<size_t>(&hba_lb)->default_value(default_hba_lb), "minimum # of hydrogen bond acceptors")
-			("hba_ub", value<size_t>(&hba_ub)->default_value(default_hba_ub), "maximum # of hydrogen bond acceptors")
 			("help", "this help information")
 			("version", "version information")
 			("config", value<path>(), "configuration file to load options from")
@@ -297,7 +281,6 @@ int main(int argc, char* argv[])
 		}
 
 		// Parse docked ligands to obtain predicted free energy and docked coordinates.
-		cout << "Refining ligands from docking results" << endl;
 		for (size_t i = 0; i < num_children; ++i)
 		{
 			ligands[num_elitists + i].update();
