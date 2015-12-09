@@ -166,11 +166,12 @@ void ligand::save() const
 	ofs << "TORSDOF " << num_rotatable_bonds << '\n';
 }
 
-void ligand::update(const path& p)
+void ligand::update()
 {
 	if (!exists(p))
 	{
 		id_score = 0;
+		rf_score = 0;
 		return;
 	}
 	string line;
@@ -193,8 +194,6 @@ void ligand::update(const path& p)
 			atoms[i++].coord = {stod(line.substr(30, 8)), stod(line.substr(38, 8)), stod(line.substr(46, 8))};
 		}
 	}
-	ifs.close();
-	save();
 }
 
 pair<size_t, size_t> ligand::get_frame(const size_t srn) const

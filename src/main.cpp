@@ -252,15 +252,10 @@ int main(int argc, char* argv[])
 	cout << setprecision(2);
 	for (size_t generation = 1; generation <= num_generations; ++generation)
 	{
+		// Create a new folder for current generation.
 		cout << "Running GA generation " << generation << endl;
-
-		// Initialize the paths to current generation folder and its two subfolders.
 		const path generation_folder(out_path / to_string(generation));
-		const path idock_folder(generation_folder / "idock"); // Used to save idock output.
-
-		// Create a new folder and two subfolders for current generation.
 		create_directory(generation_folder);
-		create_directory(idock_folder);
 
 		// Run crossover tasks.
 		cout << "Executing " << num_children << " crossover operations in parallel" << endl;
@@ -291,10 +286,9 @@ int main(int argc, char* argv[])
 		}
 		cnt.wait();
 
-		// Invoke idock to dock generated ligands and save the docked conformations in the idock subfolder.
-		cout << "Calling idock in the working directory of " << idock_example_path << endl;
-		idock_args[4] = absolute(generation_folder).string();
-		idock_args[6] = absolute(idock_folder).string();
+		// Invoke idock to dock generated ligands and save the docked conformations in the same folder.
+		cout << "Calling idock in the working directory " << idock_example_path << endl;
+		idock_args[4] = idock_args[6] = absolute(generation_folder).string();
 		const auto exit_code = wait_for_exit(execute(start_in_dir(idock_example_path.string()), set_args(idock_args), inherit_env(), throw_on_error()));
 		if (exit_code)
 		{
@@ -302,13 +296,12 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		// Parse docked ligands to obtain predicted free energy and docked coordinates, and save the updated ligands.
+		// Parse docked ligands to obtain predicted free energy and docked coordinates.
 		cout << "Refining ligands from docking results" << endl;
 		for (size_t i = 0; i < num_children; ++i)
 		{
-			ligands[num_elitists + i].update(idock_folder / filenames[i]);
+			ligands[num_elitists + i].update();
 		}
-		remove_all(idock_folder);
 
 		// Sort ligands in ascending order of free energy.
 		ligands.sort();

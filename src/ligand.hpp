@@ -60,7 +60,7 @@ public:
 	void save() const;
 
 	//! Parses the docked ligand to obtain predicted free energy and docked coordinates.
-	void update(const path& p);
+	void update();
 
 	//! Gets the frame and index to which a atom belongs to given its serial number.
 	pair<size_t, size_t> get_frame(const size_t srn) const;
